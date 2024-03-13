@@ -1,0 +1,35 @@
+main features:
+  - "Echtzeit Alarmierung via FCM / APN"
+  - "Alarmierungsverlauf"
+  - "sofortige Reaktion auf Alarme"
+  - "andere Einsatzkräfte live sehen"
+  - "alle Informationen sofort als Text zugänglich"
+
+Server gespeicherte Informationen:
+  - "Leitstellenautorisierungsdaten (Hochsicherheitsschlüssel)"
+  - "Fahrzeuge (Sitzplätze, Kennnummer, etc.) + Wache (Standort der Wache)"
+  - "Einsatzkräfte (Name, Funktion, etc.) + FCM tokens + Registrierungsschlüssel"
+  - "Alarmierungen (Art, Stichwort, Einsatzort, etc.)"
+  - "Zusage / Absage (Zeitpunkt, Standort, etc.)"
+  - "Standort (GPS Koordinaten, etc.)"
+
+Alarmierungsinformationen:
+  - "Art"
+  - "Stichwort"
+  - "Einsatzort (Adresse / Koordinaten)"
+  - "Alarmierungszeit"
+  - "Einsatznummer"
+  - "Alarmierte Fahrzeuge + Informationen dieser"
+  - "Sonstige Bemerkungen"
+
+Prozess:
+  1: "Alarmierung geht auf Leitstelle ein"
+  2: "Wird an App Server gesendet (JSON Paket mit allen Infos)"
+  3: "App-Server sammelt alle relevanten FFler und sendet FCM an jedes Gerät"
+  4: "Alarmierung wird von der App angezeigt"
+  Zusage:
+    5: "Zusage Ping wird an Server übermittelt, live Status für alle aktualisiert"
+    6: "Server fragt alle 30s Geo-Ping vom Gerät ab, um Standort für alle zu aktualisieren"
+    7: "Bei 100m Nähe zum Gerätehaus wird Geo-Ping abgeschalten"
+  Absage:
+    5: "Absage Ping wird an Server übermittelt, live Status für alle aktualisiert"
