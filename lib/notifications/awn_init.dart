@@ -67,7 +67,7 @@ Future<bool> sendTestAlarm() async {
         title: 'Testalarm',
         body: 'Dies ist eine Testalarmierung',
         wakeUpScreen: true,
-        category: NotificationCategory.Alarm,
+        category: NotificationCategory.Call,
         customSound: 'resource://raw/res_alarm',
         displayOnBackground: true,
         displayOnForeground: true,

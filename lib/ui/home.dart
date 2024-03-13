@@ -1,3 +1,4 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:flutter/material.dart';
@@ -63,6 +64,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               },
               child: const Text('Alarmieren'),
+            ),
+            // dismiss button
+            ElevatedButton(
+              onPressed: () async {
+                await AwesomeNotifications().cancel(1);
+              },
+              child: const Text('Quittieren'),
             ),
           ],
         ),

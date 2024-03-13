@@ -47,6 +47,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) async {
+  if (Platform.isIOS) return; // handled by the app extension
   WidgetsFlutterBinding.ensureInitialized();
   await Globals.initialize();
 
