@@ -24,6 +24,8 @@ void main() async {
     }
   }
 
+  // TODO logged in check
+
   // lock to portrait mode
   await SystemChrome.setPreferredOrientations(<DeviceOrientation>[DeviceOrientation.portraitUp]);
 

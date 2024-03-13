@@ -17,6 +17,8 @@ abstract class Globals {
   static late final String cachePath;
   static late final Prefs prefs;
 
+  static bool loggedIn = false;
+
   static Future<void> initialize() async {
     if (initialized) return;
     initialized = true;
@@ -42,4 +44,8 @@ abstract class Globals {
       ),
     ],
   );
+
+  static const bool sslAllowance = false;
+  static const String connectionAddress = '192.168.178.89:443';
+  static const String devPrefix = '';
 }

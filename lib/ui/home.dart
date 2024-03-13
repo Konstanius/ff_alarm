@@ -1,5 +1,5 @@
 import 'package:ff_alarm/globals.dart';
-import 'package:ff_alarm/notifications/awn_init.dart';
+import 'package:ff_alarm/server/request.dart';
 import 'package:flutter/material.dart';
 
 class FFAlarmApp extends StatelessWidget {
@@ -50,7 +50,16 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text('Startbildschirm'),
             ElevatedButton(
               onPressed: () async {
-                sendTestAlarm();
+                try {
+                  Globals.loggedIn = true;
+                  await Request('test', {"token": Globals.prefs.getString("fcm_token")}).emit(true);
+                } catch (e, s) {
+                  if (e is AckError) {
+                    print('Failed to send test request: ${e.errorMessage} (${e.errorCode})');
+                  } else {
+                    print('Failed to send test request: $e $s');
+                  }
+                }
               },
               child: const Text('Alarmieren'),
             ),
