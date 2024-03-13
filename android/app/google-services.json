@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "63559670260",
+    "project_id": "ff-alarm-1e585",
+    "storage_bucket": "ff-alarm-1e585.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:63559670260:android:e0e4c5bcfadccb00f2c1a1",
+        "android_client_info": {
+          "package_name": "de.jena.feuerwehr.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCPGBBz6K_K4yNRTyf4FSfkOkLWqmFTx9E"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyCEpzGqaN8tEs3ekulVxqKQE3EAinFsFxs</string>
+	<key>GCM_SENDER_ID</key>
+	<string>63559670260</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>de.jena.feuerwehr.app.ffAlarm</string>
+	<key>PROJECT_ID</key>
+	<string>ff-alarm-1e585</string>
+	<key>STORAGE_BUCKET</key>
+	<string>ff-alarm-1e585.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:63559670260:ios:b6ae19b374af25adf2c1a1</string>
+</dict>
+</plist>
