@@ -26,7 +26,7 @@ abstract class Globals {
       filesPath = (await getApplicationSupportDirectory()).path;
     } else {
       // Since we are trying to share resources with the app extension, we need to use the group directory
-      filesPath = (await AppGroupDirectory.getAppGroupDirectory('group.de.jena.feuerwehr.app'))!.path;
+      filesPath = (await AppGroupDirectory.getAppGroupDirectory('group.de.jena.feuerwehr.app.ffAlarm'))!.path;
     }
     cachePath = (await getTemporaryDirectory()).path;
 

@@ -1,6 +1,7 @@
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 class FFAlarmApp extends StatelessWidget {
   const FFAlarmApp({super.key});
@@ -52,7 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () async {
                 try {
                   Globals.loggedIn = true;
-                  await Request('test', {"token": Globals.prefs.getString("fcm_token")}).emit(true);
+                  await Request('test', {"token": Globals.prefs.getString("fcm_token"), "ios": Platform.isIOS}).emit(true);
                 } catch (e, s) {
                   if (e is AckError) {
                     print('Failed to send test request: ${e.errorMessage} (${e.errorCode})');

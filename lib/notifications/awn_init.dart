@@ -29,8 +29,8 @@ Future<void> initializeAwesomeNotifications() async {
   // - notifications (sound, vibration, alert)
   bool isAllowed = await AwesomeNotifications().isNotificationAllowed();
   if (!isAllowed) {
-    bool neverAskAgain = Globals.prefs.getBool('notifications_never-ask-again');
-    if (!neverAskAgain) {
+    bool? neverAskAgain = Globals.prefs.getBool('notifications_never-ask-again');
+    if (neverAskAgain != true) {
       await AwesomeNotifications().requestPermissionToSendNotifications(
         permissions: const [
           NotificationPermission.Alert,

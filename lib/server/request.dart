@@ -146,7 +146,7 @@ class Request {
       default:
         String responseBody = response.data.toString();
         Map<String, dynamic> responseJson = jsonDecode(responseBody);
-        error = AckError.from(responseJson['error']);
+        error = AckError.from(responseJson['error'], responseJson['message']);
         break;
     }
 
@@ -186,7 +186,7 @@ class AckError {
   static AckError get tooManyRequests => AckError('tooManyRequests', 'Zu viele Anfragen an den Server. Bitte warte einen Moment und versuche es erneut');
   static AckError get server => AckError('server', 'Ein Serverfehler ist aufgetreten');
 
-  static AckError from(Map<String, dynamic> error) {
-    return AckError(error['code'] as String, error['message'] as String);
+  static AckError from(String code, String message) {
+    return AckError(code, message);
   }
 }

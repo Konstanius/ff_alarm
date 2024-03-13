@@ -8,6 +8,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
 import '../firebase_options.dart';
+import 'dart:io';
 
 Future<void> initializeFirebaseMessaging() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -18,12 +19,25 @@ Future<void> initializeFirebaseMessaging() async {
   });
 
   // get token here if not gotten yet
-  FirebaseMessaging.instance.getToken().then((String? token) {
-    if (token != null) {
-      Globals.prefs.setString('fcm_token', token);
-      Logger.green('FCM token: $token');
-    }
-  });
+  if (Platform.isIOS) {
+    FirebaseMessaging.instance.getAPNSToken().then((String? token) {
+      print('APNS token: $token');
+      FirebaseMessaging.instance.getToken().then((String? token) {
+        print('FCM token: $token');
+        if (token != null) {
+          Globals.prefs.setString('fcm_token', token);
+          Logger.green('FCM token: $token');
+        }
+      });
+    });
+  } else {
+    FirebaseMessaging.instance.getToken().then((String? token) {
+      if (token != null) {
+        Globals.prefs.setString('fcm_token', token);
+        Logger.green('FCM token: $token');
+      }
+    });
+  }
 }
 
 @pragma('vm:entry-point')

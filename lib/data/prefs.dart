@@ -12,9 +12,9 @@ class Prefs {
     save();
   }
 
-  String getString(String key) {
+  String? getString(String key) {
     dynamic value = _prefs[key];
-    if (value is String) return value;
+    if (value is String || value == null) return value;
     throw Exception('Value for key $key is not a String');
   }
 
@@ -23,9 +23,9 @@ class Prefs {
     save();
   }
 
-  bool getBool(String key) {
+  bool? getBool(String key) {
     dynamic value = _prefs[key];
-    if (value is bool) return value;
+    if (value is bool || value == null) return value;
     throw Exception('Value for key $key is not a bool');
   }
 
@@ -34,9 +34,9 @@ class Prefs {
     save();
   }
 
-  int getInt(String key) {
+  int? getInt(String key) {
     dynamic value = _prefs[key];
-    if (value is int) return value;
+    if (value is int || value == null) return value;
     throw Exception('Value for key $key is not an int');
   }
 
@@ -45,9 +45,9 @@ class Prefs {
     save();
   }
 
-  double getDouble(String key) {
+  double? getDouble(String key) {
     dynamic value = _prefs[key];
-    if (value is double) return value;
+    if (value is double || value == null) return value;
     throw Exception('Value for key $key is not a double');
   }
 
