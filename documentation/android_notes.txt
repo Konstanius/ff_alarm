@@ -1,0 +1,36 @@
+achieve optimal coverage with:
+    enable battery usage -> background activity
+    enable battery usage -> allow auto-launch
+    manage notifications -> allow notifications when do not disturb is on
+    disable remove permissions if app isn't used / disable pause activity if app isn't used
+    enable background data
+
+notification behaviour:
+    silent notifications mutes it completely
+    do not disturb mutes it if alarm only, but not if important only
+    sometimes takes a while to receive FCM
+    sometimes does not play sound when not muted but app is closed
+
+// Permissions that have to be requested:
+// Permission.ignoreBatteryOptimizations
+// Permission.scheduleExactAlarm
+// Permission.notification
+// Permission.locationWhenInUse (optional) AFTER THAT Permission.locationAlways (optional)
+
+NOTES:
+- when phone off and then unlocked, ALWAYS directly opens the app and navigates
+- background and terminated has identical behaviour
+- sound & notification ALWAYS working (still uses notification sound though)
+- sound instantly turns off when pulling down notification screen
+
+on & active: notification, navigation, sound
+on & background: opens app, sound, navigation
+on & terminated: opens app, sound, navigation
+on & terminated & other app: notification, sound | on notification click -> navigation
+on & background & other app: notification, sound | on notification click -> navigation
+
+off & active: notification, sound, navigation
+off & background: notification, sound, navigation
+off & terminated: notification, sound, navigation
+off & background & other app: notification, sound, navigation
+off & terminated & other app: notification, sound, navigation

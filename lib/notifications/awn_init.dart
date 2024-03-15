@@ -1,10 +1,17 @@
-import 'dart:math';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:ff_alarm/data/models/alarm.dart';
+import 'package:ff_alarm/data/models/station.dart';
+import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
+import 'package:flutter/material.dart';
+import 'package:isar/isar.dart';
 
 Future<void> initializeAwesomeNotifications() async {
-  await AwesomeNotifications().removeChannel('test');
+  List<Station> stations = Globals.db.stations.where().findAllSync();
+
   await AwesomeNotifications().initialize(
     null,
     <NotificationChannel>[
@@ -21,12 +28,76 @@ Future<void> initializeAwesomeNotifications() async {
         importance: NotificationImportance.Max,
         soundSource: 'resource://raw/res_alarm',
       ),
-      // TODO, one for tests, one for each alarm section (station + vehicle identifier)
+      NotificationChannel(
+        channelKey: 'test_silent',
+        channelName: 'Test Alarmierungen (verpasst)',
+        channelDescription: 'Benachrichtigungskanal für regelmäßige, verpasste, Testalarmierungen',
+        channelShowBadge: true,
+        criticalAlerts: false,
+        defaultPrivacy: NotificationPrivacy.Public,
+        defaultRingtoneType: DefaultRingtoneType.Notification,
+        enableVibration: true,
+        enableLights: false,
+        importance: NotificationImportance.Default,
+        soundSource: null,
+      ),
+      NotificationChannel(
+        channelKey: 'station_fallback',
+        channelName: 'Redundanz-Alarmierungen',
+        channelDescription: 'Benachrichtigungskanal für Alarmierungen, für die keine Station zugeordnet ist',
+        channelShowBadge: true,
+        criticalAlerts: true,
+        defaultPrivacy: NotificationPrivacy.Public,
+        defaultRingtoneType: DefaultRingtoneType.Ringtone,
+        enableVibration: true,
+        enableLights: true,
+        importance: NotificationImportance.Max,
+        soundSource: 'resource://raw/res_alarm',
+      ),
+      NotificationChannel(
+        channelKey: 'station_fallback_silent',
+        channelName: 'Redundanz-Alarmierungen (verpasst)',
+        channelDescription: 'Benachrichtigungskanal für verpasste Alarmierungen, für die keine Station zugeordnet ist',
+        channelShowBadge: true,
+        criticalAlerts: false,
+        defaultPrivacy: NotificationPrivacy.Public,
+        defaultRingtoneType: DefaultRingtoneType.Notification,
+        enableVibration: true,
+        enableLights: false,
+        importance: NotificationImportance.Default,
+        soundSource: null,
+      ),
+      for (Station station in stations) ...[
+        NotificationChannel(
+          channelKey: 'station_${station.name.toLowerCase()}',
+          channelName: 'Alarmierungen für ${station.name}',
+          channelDescription: 'Benachrichtigungskanal für Alarmierungen der Feuerwehr ${station.name}',
+          channelShowBadge: true,
+          criticalAlerts: true,
+          defaultPrivacy: NotificationPrivacy.Public,
+          defaultRingtoneType: DefaultRingtoneType.Ringtone,
+          enableVibration: true,
+          enableLights: true,
+          importance: NotificationImportance.Max,
+          soundSource: 'resource://raw/res_alarm',
+        ),
+        NotificationChannel(
+          channelKey: 'station_${station.name.toLowerCase()}_silent',
+          channelName: 'Alarmierungen für ${station.name} (verpasst)',
+          channelDescription: 'Benachrichtigungskanal für verpasste Alarmierungen der Feuerwehr ${station.name}',
+          channelShowBadge: true,
+          criticalAlerts: false,
+          defaultPrivacy: NotificationPrivacy.Public,
+          defaultRingtoneType: DefaultRingtoneType.Notification,
+          enableVibration: true,
+          enableLights: false,
+          importance: NotificationImportance.Default,
+          soundSource: null,
+        ),
+      ]
     ],
   );
 
-  // TODO request permission for:
-  // - notifications (sound, vibration, alert)
   bool isAllowed = await AwesomeNotifications().isNotificationAllowed();
   if (!isAllowed) {
     bool? neverAskAgain = Globals.prefs.getBool('notifications_never-ask-again');
@@ -45,51 +116,112 @@ Future<void> initializeAwesomeNotifications() async {
   }
 
   AwesomeNotifications().setListeners(onActionReceivedMethod: onActionReceivedMethod);
-
-  // - ignore Do Not Disturb
-  // TODO
-
-  // - ignore battery optimization
-  // TODO
 }
 
 @pragma('vm:entry-point')
 Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
   Globals.fastStartBypass = true;
+
+  String actionKey = receivedAction.buttonKeyPressed;
+  Map<String, String?> payload = receivedAction.payload ?? {};
+
+  String type = payload['type'] ?? '';
+  if (type.isEmpty) return;
+
+  while (!Globals.appStarted) {
+    await Future.delayed(const Duration(milliseconds: 10));
+  }
+
+  if (actionKey.isEmpty) {
+    switch (type) {
+      case 'alarm':
+        {
+          Alarm alarm = Alarm.fromJson(jsonDecode(payload['alarm']!));
+          if (Globals.router.routeInformationProvider.value.uri.pathSegments.lastOrNull != 'alarm') {
+            Globals.router.go('/alarm', extra: alarm);
+          } else if (Globals.router.routeInformationProvider.value.uri.pathSegments.isNotEmpty) {}
+          break;
+        }
+    }
+    return;
+  }
+
+  switch (actionKey) {
+    case 'alarm_click':
+      {
+        Alarm alarm = Alarm.fromJson(jsonDecode(payload['alarm']!));
+        if (Globals.router.routeInformationProvider.value.uri.pathSegments.lastOrNull != 'alarm') {
+          Globals.router.go('/alarm', extra: alarm);
+        } else if (Globals.router.routeInformationProvider.value.uri.pathSegments.isNotEmpty) {}
+        break;
+      }
+  }
 }
 
-Future<bool> sendTestAlarm() async {
+Future<bool> sendAlarm(Alarm alarm) async {
   try {
+    AlertOption option = alarm.getAlertOption();
+
+    if (Globals.appStarted && option == AlertOption.alert) {
+      Globals.router.go('/alarm', extra: alarm);
+    }
+
+    String channelKey;
+    if (alarm.id == 0) {
+      channelKey = option == AlertOption.alert ? 'test' : 'test_silent';
+    } else {
+      List<Unit?> units = Globals.db.units.getAllSync(alarm.units);
+      units.removeWhere((element) => element == null);
+
+      Set<int> stationIds = units.map((e) => e!.stationId).toSet();
+      List<Station?> stations = Globals.db.stations.getAllSync(stationIds.toList());
+      stations.removeWhere((element) => element == null);
+
+      if (stations.isNotEmpty) {
+        // sort by higher priority given to stations (priority is nullable, so all nulls are at the end)
+        stations.sort((a, b) => (b!.priority ?? 0).compareTo(a!.priority ?? 0));
+
+        String stationName = stations.first!.name;
+        channelKey = option == AlertOption.alert ? 'station_${stationName.toLowerCase()}' : 'station_${stationName.toLowerCase()}_silent';
+      } else {
+        channelKey = option == AlertOption.alert ? 'station_fallback' : 'station_fallback_silent';
+      }
+    }
+
+    if (Platform.isAndroid) {}
+
     return await AwesomeNotifications().createNotification(
       content: NotificationContent(
         id: 1,
-        channelKey: 'test',
-        title: 'Testalarm',
-        body: 'Dies ist eine Testalarmierung',
-        wakeUpScreen: true,
-        category: NotificationCategory.Call,
-        customSound: 'resource://raw/res_alarm',
+        channelKey: channelKey,
+        title: alarm.type,
+        body: alarm.word,
+        category: option == AlertOption.alert ? NotificationCategory.Call : NotificationCategory.Event,
+        customSound: option == AlertOption.alert ? 'resource://raw/res_alarm' : null,
         displayOnBackground: true,
         displayOnForeground: true,
-        criticalAlert: true,
+        fullScreenIntent: true,
+        wakeUpScreen: option == AlertOption.alert,
+        autoDismissible: option != AlertOption.alert,
+        locked: option == AlertOption.alert,
+        criticalAlert: option == AlertOption.alert,
+        payload: {
+          'type': 'alarm',
+          'alarm': jsonEncode(alarm.toJson()),
+          'received': DateTime.now().millisecondsSinceEpoch.toString(),
+        },
       ),
       actionButtons: [
-        NotificationActionButton(
-          key: 'test_accept',
-          label: 'Annehmen',
-          enabled: true,
-          actionType: ActionType.Default,
-          isAuthenticationRequired: true,
-          showInCompactView: true,
-        ),
-        NotificationActionButton(
-          key: 'test_decline',
-          label: 'Ablehnen',
-          enabled: true,
-          actionType: ActionType.SilentAction,
-          isAuthenticationRequired: true,
-          showInCompactView: true,
-        ),
+        if (option == AlertOption.alert)
+          NotificationActionButton(
+            key: 'alarm_click',
+            label: 'Alarmierung ansehen',
+            enabled: true,
+            actionType: ActionType.Default,
+            isAuthenticationRequired: false,
+            showInCompactView: true,
+            color: Colors.blue,
+          ),
       ],
     );
   } catch (e) {

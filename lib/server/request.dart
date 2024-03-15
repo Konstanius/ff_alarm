@@ -38,31 +38,19 @@ class Request {
   }) async {
     time = DateTime.now();
 
-    if (!Globals.loggedIn) {
+    if (!Globals.loggedIn || guest) {
       authData = null;
-    } else if (authData == null && !guest) {
-      authData = await getAuthData();
-    } else if (authData != null && guest) {
-      authData = null;
-    }
-
-    Map<String, dynamic> headers = {
-      't': time.millisecondsSinceEpoch.toString(),
-      'to': timeout.toString(),
-    };
-    if (authData != null && !guest) {
-      authData!.forEach((key, value) {
-        headers[key] = value;
-      });
+    } else if (!guest) {
+      authData = getAuthData();
     }
 
     BaseOptions options = BaseOptions(
       connectTimeout: Duration(milliseconds: timeout),
       receiveTimeout: Duration(milliseconds: timeout),
       sendTimeout: Duration(milliseconds: timeout),
-      headers: headers,
+      headers: authData,
       method: 'POST',
-      baseUrl: 'http${Globals.sslAllowance ? 's' : ''}://${Globals.connectionAddress}/${Globals.devPrefix}api/',
+      baseUrl: 'http${Globals.sslAllowance ? 's' : ''}://${Globals.connectionAddress}/api/',
       receiveDataWhenStatusError: true,
       validateStatus: (_) {
         return true;
@@ -87,7 +75,7 @@ class Request {
     Response<dynamic> response;
     try {
       response = await dio.post(
-        'http${Globals.sslAllowance ? 's' : ''}://${Globals.connectionAddress}/${Globals.devPrefix}api/$type',
+        'http${Globals.sslAllowance ? 's' : ''}://${Globals.connectionAddress}/api/$type',
         data: data,
         onSendProgress: uploadProgressInt,
         onReceiveProgress: downloadProgressInt,
@@ -157,11 +145,22 @@ class Request {
     return this;
   }
 
-  static Future<Map<String, String>?> getAuthData() async {
-    // TODO
+  static Map<String, String> getAuthData() {
+    String rawAuth = '${Globals.prefs.getInt('auth_user')}:${Globals.prefs.getString('auth_token')}';
+    String encodedAuth = base64Encode(gzip.encode(utf8.encode(rawAuth)));
+
+    String rawToken = Globals.prefs.getString('fcm_token') ?? '';
+    String encodedFCM;
+    if (rawToken.isNotEmpty) {
+      rawToken = "${Platform.isAndroid ? "A" : "I"}$rawToken";
+      encodedFCM = base64Encode(gzip.encode(utf8.encode(rawToken)));
+    } else {
+      encodedFCM = '';
+    }
 
     Map<String, String> headers = {
-      "authorization": "testtoken",
+      "authorization": encodedAuth,
+      "fcmToken": encodedFCM,
     };
     return headers;
   }

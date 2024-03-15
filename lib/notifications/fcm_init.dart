@@ -1,6 +1,4 @@
-import 'dart:math';
-
-import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/notifications/awn_init.dart';
@@ -14,30 +12,14 @@ Future<void> initializeFirebaseMessaging() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-    firebaseMessagingHandler(message, true);
-  });
 
   // get token here if not gotten yet
-  if (Platform.isIOS) {
-    FirebaseMessaging.instance.getAPNSToken().then((String? token) {
-      print('APNS token: $token');
-      FirebaseMessaging.instance.getToken().then((String? token) {
-        print('FCM token: $token');
-        if (token != null) {
-          Globals.prefs.setString('fcm_token', token);
-          Logger.green('FCM token: $token');
-        }
-      });
-    });
-  } else {
-    FirebaseMessaging.instance.getToken().then((String? token) {
-      if (token != null) {
-        Globals.prefs.setString('fcm_token', token);
-        Logger.green('FCM token: $token');
-      }
-    });
-  }
+  FirebaseMessaging.instance.getToken().then((String? token) {
+    if (token != null) {
+      Globals.prefs.setString('fcm_token', token);
+      Logger.green('FCM token: $token');
+    }
+  });
 }
 
 @pragma('vm:entry-point')
@@ -51,5 +33,31 @@ Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) as
   WidgetsFlutterBinding.ensureInitialized();
   await Globals.initialize();
 
-  await sendTestAlarm();
+  Map<String, dynamic> data = message.data;
+
+  String type = data['type'];
+
+  switch (type) {
+    case "alarm":
+      {
+        Alarm alarm = Alarm.inflateFromString(data['alarm']);
+        Globals.db.writeTxn(() async {
+          Globals.db.alarms.put(alarm);
+        });
+
+        int lastAlarmTime = Globals.prefs.getInt('last_alarm_time') ?? 0;
+        if (alarm.date.millisecondsSinceEpoch > lastAlarmTime) {
+          Globals.prefs.setInt('last_alarm_id', alarm.id);
+          Globals.prefs.setInt('last_alarm_time', alarm.date.millisecondsSinceEpoch);
+        }
+
+        if (alarm.id == 0) {
+          await sendAlarm(alarm);
+          return;
+        }
+
+        // await sendAlarm(alarm);
+        break;
+      }
+  }
 }

@@ -1,0 +1,10 @@
+geotracking privilege (requested)
+critical alerts privilege (requested)
+
+do not disturb mutes it completely (overriden by critical alerts)
+focus or silent does not mute it completely
+
+// Permissions that have to be requested:
+// Permission.criticalAlerts
+// Permission.notification
+// Permission.locationWhenInUse (optional) AFTER THAT Permission.locationAlways (optional)

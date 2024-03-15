@@ -1,5 +1,0 @@
-podfile modification for both awn and fcm
-app group
-custom sound asset & implementation
-notification service extension
-geotracking privilege
