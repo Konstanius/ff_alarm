@@ -6,9 +6,6 @@ abstract class PersonDao {
   @Query('SELECT * FROM Person WHERE id = :id')
   Future<Person?> getById(int id);
 
-  @Query('SELECT * FROM Person')
-  Future<List<Person>> getAll();
-
   @update
   Future<void> updates(Person person);
 
@@ -20,4 +17,7 @@ abstract class PersonDao {
 
   @Query('DELETE FROM Person WHERE id = :id')
   Future<void> deleteById(int id);
+
+  @Query('SELECT * FROM Person WHERE id < :id ORDER BY id DESC LIMIT :limit')
+  Future<List<Person>> getWithLowerIdThan(int id, int limit);
 }

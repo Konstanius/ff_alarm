@@ -1,3 +1,4 @@
+import 'package:ff_alarm/globals.dart';
 import 'package:flutter/material.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -21,7 +22,18 @@ class _SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAlive
       body: ListView(
         padding: const EdgeInsets.all(8),
         children: <Widget>[
-          ListTile(title: const Text('Setting 1'), subtitle: const Text('This is the first setting'), onTap: () {}),
+          ElevatedButton(
+            onPressed: () {
+              Globals.router.go('/lifecycle');
+            },
+            child: const Text('App Optimierungen'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Globals.router.go('/notifications');
+            },
+            child: const Text('Benachrichtigungseinstellungen'),
+          ),
         ],
       ),
     );

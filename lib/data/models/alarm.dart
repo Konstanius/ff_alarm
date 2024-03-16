@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:floor/floor.dart';
 
 @entity
@@ -112,6 +114,57 @@ class Alarm {
     } else {
       return AlarmOption.none;
     }
+  }
+
+  static Future<List<Alarm>> getBatched({
+    bool Function(Alarm)? filter,
+    int? limit,
+    int startingId = 2 ^ 31,
+  }) async {
+    var alarms = <Alarm>[];
+
+    int lowestId = startingId;
+    const batchSize = 50;
+    while (true) {
+      var newAlarms = await Globals.db.alarmDao.getWithLowerIdThan(startingId, batchSize);
+      if (newAlarms.isEmpty) break;
+
+      var toAdd = <Alarm>[];
+      for (var alarm in newAlarms) {
+        if (filter == null || filter(alarm)) toAdd.add(alarm);
+        if (alarm.id < lowestId) lowestId = alarm.id;
+
+        if (limit != null && toAdd.length + alarms.length >= limit) break;
+      }
+
+      alarms.addAll(toAdd);
+      if ((limit != null && alarms.length >= limit )|| newAlarms.length < batchSize) break;
+    }
+
+    alarms.sort((a, b) => b.date.compareTo(a.date));
+
+    return alarms;
+  }
+
+  static Future<List<Alarm>> getAll({bool Function(Alarm)? filter}) => getBatched(filter: filter);
+
+  static Future<void> update(Alarm alarm, bool bc) async {
+    var existing = await Globals.db.alarmDao.getById(alarm.id);
+    if (existing != null) {
+      await Globals.db.alarmDao.updates(alarm);
+    } else {
+      await Globals.db.alarmDao.inserts(alarm);
+    }
+
+    if (!bc) return;
+    UpdateInfo(UpdateType.alarm, {alarm.id});
+  }
+
+  static Future<void> delete(int alarmId, bool bc) async {
+    await Globals.db.alarmDao.deleteById(alarmId);
+
+    if (!bc) return;
+    UpdateInfo(UpdateType.alarm, {alarmId});
   }
 }
 

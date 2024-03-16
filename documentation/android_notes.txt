@@ -6,15 +6,14 @@ achieve optimal coverage with:
     enable background data
 
 notification behaviour:
-    silent notifications mutes it completely
-    do not disturb mutes it if alarm only, but not if important only
+    do not disturb mutes it if alarm only, but not if important only -> disable for each notification channel
     sometimes takes a while to receive FCM
-    sometimes does not play sound when not muted but app is closed
 
 // Permissions that have to be requested:
 // Permission.ignoreBatteryOptimizations
 // Permission.scheduleExactAlarm
 // Permission.notification
+// Permission.accessNotificationPolicy
 // Permission.locationWhenInUse (optional) AFTER THAT Permission.locationAlways (optional)
 
 NOTES:
@@ -22,6 +21,7 @@ NOTES:
 - background and terminated has identical behaviour
 - sound & notification ALWAYS working (still uses notification sound though)
 - sound instantly turns off when pulling down notification screen
+- reset sound levels after alarm was acknowledged and app was opened
 
 on & active: notification, navigation, sound
 on & background: opens app, sound, navigation

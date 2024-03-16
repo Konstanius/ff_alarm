@@ -3,14 +3,12 @@ import 'dart:io';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
-import 'package:ff_alarm/data/models/station.dart';
-import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/log/logger.dart';
 import 'package:flutter/material.dart';
+import 'package:real_volume/real_volume.dart';
 
 Future<void> initializeAwesomeNotifications() async {
-  List<Station> stations = await Globals.db.stationDao.getAll();
-
   await AwesomeNotifications().initialize(
     null,
     <NotificationChannel>[
@@ -41,9 +39,9 @@ Future<void> initializeAwesomeNotifications() async {
         soundSource: null,
       ),
       NotificationChannel(
-        channelKey: 'station_fallback',
-        channelName: 'Redundanz-Alarmierungen',
-        channelDescription: 'Benachrichtigungskanal für Alarmierungen, für die keine Station zugeordnet ist',
+        channelKey: 'alarm',
+        channelName: 'Alarmierungen',
+        channelDescription: 'Benachrichtigungskanal für Alarmierungen',
         channelShowBadge: true,
         criticalAlerts: true,
         defaultPrivacy: NotificationPrivacy.Public,
@@ -54,9 +52,9 @@ Future<void> initializeAwesomeNotifications() async {
         soundSource: 'resource://raw/res_alarm',
       ),
       NotificationChannel(
-        channelKey: 'station_fallback_silent',
-        channelName: 'Redundanz-Alarmierungen (verpasst)',
-        channelDescription: 'Benachrichtigungskanal für verpasste Alarmierungen, für die keine Station zugeordnet ist',
+        channelKey: 'alarm_silent',
+        channelName: 'Alarmierungen (verpasst)',
+        channelDescription: 'Benachrichtigungskanal für verpasste Alarmierungen',
         channelShowBadge: true,
         criticalAlerts: false,
         defaultPrivacy: NotificationPrivacy.Public,
@@ -66,34 +64,6 @@ Future<void> initializeAwesomeNotifications() async {
         importance: NotificationImportance.Default,
         soundSource: null,
       ),
-      for (Station station in stations) ...[
-        NotificationChannel(
-          channelKey: 'station_${station.name.toLowerCase()}',
-          channelName: 'Alarmierungen für ${station.name}',
-          channelDescription: 'Benachrichtigungskanal für Alarmierungen der Feuerwehr ${station.name}',
-          channelShowBadge: true,
-          criticalAlerts: true,
-          defaultPrivacy: NotificationPrivacy.Public,
-          defaultRingtoneType: DefaultRingtoneType.Ringtone,
-          enableVibration: true,
-          enableLights: true,
-          importance: NotificationImportance.Max,
-          soundSource: 'resource://raw/res_alarm',
-        ),
-        NotificationChannel(
-          channelKey: 'station_${station.name.toLowerCase()}_silent',
-          channelName: 'Alarmierungen für ${station.name} (verpasst)',
-          channelDescription: 'Benachrichtigungskanal für verpasste Alarmierungen der Feuerwehr ${station.name}',
-          channelShowBadge: true,
-          criticalAlerts: false,
-          defaultPrivacy: NotificationPrivacy.Public,
-          defaultRingtoneType: DefaultRingtoneType.Notification,
-          enableVibration: true,
-          enableLights: false,
-          importance: NotificationImportance.Default,
-          soundSource: null,
-        ),
-      ],
     ],
   );
 
@@ -119,6 +89,8 @@ Future<void> initializeAwesomeNotifications() async {
 
 @pragma('vm:entry-point')
 Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
+  Logger.info('Received action: ${receivedAction.buttonKeyPressed}, payload: ${receivedAction.payload}');
+
   Globals.fastStartBypass = true;
 
   String actionKey = receivedAction.buttonKeyPressed;
@@ -135,6 +107,7 @@ Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
     switch (type) {
       case 'alarm':
         {
+          resetAndroidNotificationVolume();
           Alarm alarm = Alarm.fromJson(jsonDecode(payload['alarm']!));
           if (Globals.router.routeInformationProvider.value.uri.pathSegments.lastOrNull != 'alarm') {
             Globals.router.go('/alarm', extra: alarm);
@@ -148,12 +121,39 @@ Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
   switch (actionKey) {
     case 'alarm_click':
       {
+        resetAndroidNotificationVolume();
         Alarm alarm = Alarm.fromJson(jsonDecode(payload['alarm']!));
         if (Globals.router.routeInformationProvider.value.uri.pathSegments.lastOrNull != 'alarm') {
           Globals.router.go('/alarm', extra: alarm);
         } else if (Globals.router.routeInformationProvider.value.uri.pathSegments.isNotEmpty) {}
         break;
       }
+  }
+}
+
+Future<void> resetAndroidNotificationVolume() async {
+  if (Platform.isAndroid) {
+    () async {
+      double? lastVolume = Globals.prefs.getDouble('last_volume');
+      Globals.prefs.remove('last_volume');
+      if (lastVolume != null) {
+        try {
+          await RealVolume.setVolume(lastVolume, streamType: StreamType.NOTIFICATION);
+        } catch (e) {
+          print('Failed to set volume: $e');
+        }
+      }
+
+      int? lastMode = Globals.prefs.getInt('last_mode');
+      Globals.prefs.remove('last_mode');
+      if (lastMode != null) {
+        try {
+          await RealVolume.setRingerMode(RingerMode.values[lastMode]);
+        } catch (e) {
+          print('Failed to set mode: $e');
+        }
+      }
+    }();
   }
 }
 
@@ -166,26 +166,32 @@ Future<bool> sendAlarm(Alarm alarm) async {
     }
 
     String channelKey;
-    if (alarm.id == 0) {
+    if (alarm.type.startsWith('Test')) {
       channelKey = option == AlarmOption.alert ? 'test' : 'test_silent';
     } else {
-      List<Unit> units = await Globals.db.unitDao.getAll();
-      units = units.where((unit) => alarm.units.contains(unit.id)).toList();
-
-      List<Station> stations = await Globals.db.stationDao.getAll();
-
-      if (stations.isNotEmpty) {
-        // sort by higher priority given to stations (priority is nullable, so all nulls are at the end)
-        stations.sort((a, b) => (b.priority ?? 0).compareTo(a.priority ?? 0));
-
-        String stationName = stations.first.name;
-        channelKey = option == AlarmOption.alert ? 'station_${stationName.toLowerCase()}' : 'station_${stationName.toLowerCase()}_silent';
-      } else {
-        channelKey = option == AlarmOption.alert ? 'station_fallback' : 'station_fallback_silent';
-      }
+      channelKey = option == AlarmOption.alert ? 'alarm' : 'alarm_silent';
     }
 
-    if (Platform.isAndroid) {}
+    if (Platform.isAndroid) {
+      try {
+        try {
+          double? volume = await RealVolume.getCurrentVol(StreamType.NOTIFICATION);
+          RingerMode? mode = await RealVolume.getRingerMode();
+
+          if (volume != null && mode != null) {
+            Globals.prefs.setDouble('last_volume', volume);
+            Globals.prefs.setInt('last_mode', mode.index);
+          }
+        } catch (e) {
+          Logger.error('Failed to get volume: $e');
+        }
+        await RealVolume.setRingerMode(RingerMode.NORMAL);
+        await RealVolume.setAudioMode(AudioMode.NORMAL);
+        await RealVolume.setVolume(1.0, streamType: StreamType.NOTIFICATION);
+      } catch (e) {
+        Logger.error('Failed to set volume: $e');
+      }
+    }
 
     return await AwesomeNotifications().createNotification(
       content: NotificationContent(

@@ -1,4 +1,6 @@
 import 'package:ff_alarm/data/models/station.dart';
+import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:floor/floor.dart';
 
 @entity
@@ -76,6 +78,63 @@ class Unit {
 
   String unitCallSign(Station station) {
     return "${station.prefix} ${station.area} ${station.stationNumber}-$unitType-$unitIdentifier";
+  }
+
+  static Future<List<Unit>> getBatched({
+    bool Function(Unit)? filter,
+    int? limit,
+    int startingId = 2 ^ 31,
+  }) async {
+    var units = <Unit>[];
+
+    int lowestId = startingId;
+    const batchSize = 50;
+    while (true) {
+      var newUnits = await Globals.db.unitDao.getWithLowerIdThan(startingId, batchSize);
+      if (newUnits.isEmpty) break;
+
+      var toAdd = <Unit>[];
+      for (var unit in newUnits) {
+        if (filter == null || filter(unit)) toAdd.add(unit);
+        if (unit.id < lowestId) lowestId = unit.id;
+
+        if (limit != null && toAdd.length + units.length >= limit) break;
+      }
+
+      units.addAll(toAdd);
+      if ((limit != null && units.length >= limit) || newUnits.length < batchSize) break;
+    }
+
+    var stations = Station.getAll();
+    Map<int, Station> stationMap = {};
+    for (var station in await stations) {
+      stationMap[station.id] = station;
+    }
+
+    units.sort((a, b) => a.unitCallSign(stationMap[a.stationId]!).compareTo(b.unitCallSign(stationMap[b.stationId]!)));
+
+    return units;
+  }
+
+  static Future<List<Unit>> getAll({bool Function(Unit)? filter}) => getBatched(filter: filter);
+
+  static Future<void> update(Unit unit, bool bc) async {
+    var existing = await Globals.db.unitDao.getById(unit.id);
+    if (existing != null) {
+      await Globals.db.unitDao.updates(unit);
+    } else {
+      await Globals.db.unitDao.inserts(unit);
+    }
+
+    if (!bc) return;
+    UpdateInfo(UpdateType.unit, {unit.id});
+  }
+
+  static Future<void> delete(int unitId, bool bc) async {
+    await Globals.db.unitDao.deleteById(unitId);
+
+    if (!bc) return;
+    UpdateInfo(UpdateType.unit, {unitId});
   }
 }
 

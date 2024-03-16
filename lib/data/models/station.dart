@@ -1,3 +1,5 @@
+import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:floor/floor.dart';
 
 @entity
@@ -85,5 +87,56 @@ class Station  {
       jsonShorts["adminPersons"]!: adminPersons,
       jsonShorts["updated"]!: updated.millisecondsSinceEpoch,
     };
+  }
+
+  static Future<List<Station>> getBatched({
+    bool Function(Station)? filter,
+    int? limit,
+    int startingId = 2 ^ 31,
+  }) async {
+    var stations = <Station>[];
+
+    int lowestId = startingId;
+    const batchSize = 50;
+    while (true) {
+      var newStations = await Globals.db.stationDao.getWithLowerIdThan(startingId, batchSize);
+      if (newStations.isEmpty) break;
+
+      var toAdd = <Station>[];
+      for (var station in newStations) {
+        if (filter == null || filter(station)) toAdd.add(station);
+        if (station.id < lowestId) lowestId = station.id;
+
+        if (limit != null && toAdd.length + stations.length >= limit) break;
+      }
+
+      stations.addAll(toAdd);
+      if ((limit != null && stations.length >= limit) || newStations.length < batchSize) break;
+    }
+
+    stations.sort((a, b) => a.name.compareTo(b.name));
+
+    return stations;
+  }
+
+  static Future<List<Station>> getAll({bool Function(Station)? filter}) => getBatched(filter: filter);
+
+  static Future<void> update(Station station, bool bc) async {
+    var existing = await Globals.db.stationDao.getById(station.id);
+    if (existing != null) {
+      await Globals.db.stationDao.updates(station);
+    } else {
+      await Globals.db.stationDao.inserts(station);
+    }
+
+    if (!bc) return;
+    UpdateInfo(UpdateType.station, {station.id});
+  }
+
+  static Future<void> delete(int stationId, bool bc) async {
+    await Globals.db.stationDao.deleteById(stationId);
+
+    if (!bc) return;
+    UpdateInfo(UpdateType.station, {stationId});
   }
 }

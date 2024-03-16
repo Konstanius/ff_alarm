@@ -1,4 +1,4 @@
-geotracking privilege (requested)
+geotracking privilege (denied, go to https://developer.apple.com/documentation/bundleresources/entitlements/com_apple_developer_location_push)
 critical alerts privilege (requested)
 
 do not disturb mutes it completely (overriden by critical alerts)

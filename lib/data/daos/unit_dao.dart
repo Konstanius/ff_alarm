@@ -6,9 +6,6 @@ abstract class UnitDao {
   @Query('SELECT * FROM Unit WHERE id = :id')
   Future<Unit?> getById(int id);
 
-  @Query('SELECT * FROM Unit')
-  Future<List<Unit>> getAll();
-
   @update
   Future<void> updates(Unit unit);
 
@@ -20,4 +17,7 @@ abstract class UnitDao {
 
   @Query('DELETE FROM Unit WHERE id = :id')
   Future<void> deleteById(int id);
+
+  @Query('SELECT * FROM Unit WHERE id < :id ORDER BY id DESC LIMIT :limit')
+  Future<List<Unit>> getWithLowerIdThan(int id, int limit);
 }

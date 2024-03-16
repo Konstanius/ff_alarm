@@ -88,8 +88,8 @@ class Request {
       );
     } catch (e, s) {
       if (!e.toString().contains('timeout') && !e.toString().contains('The connection errored')) {
-        Logger.yellow(e);
-        Logger.yellow(s);
+        Logger.warn(e);
+        Logger.warn(s);
       }
 
       error = AckError.timeout;
@@ -117,6 +117,7 @@ class Request {
 
           String responseBody = response.data.toString();
           ackData = jsonDecode(responseBody);
+          Logger.net('$type: $ackData');
         } catch (e) {
           error = AckError('client', 'Die Antwort des Servers war fehlerhaft');
           status = RequestStatus.failed;
@@ -135,6 +136,7 @@ class Request {
         String responseBody = response.data.toString();
         Map<String, dynamic> responseJson = jsonDecode(responseBody);
         error = AckError.from(responseJson['error'], responseJson['message']);
+        Logger.net('$type: ${error!.errorCode} - ${error!.errorMessage}');
         break;
     }
 

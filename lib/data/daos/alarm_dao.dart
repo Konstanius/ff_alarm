@@ -17,4 +17,7 @@ abstract class AlarmDao {
 
   @Query('DELETE FROM Alarm WHERE id = :id')
   Future<void> deleteById(int id);
+
+  @Query('SELECT * FROM Alarm WHERE id < :id ORDER BY id DESC LIMIT :limit')
+  Future<List<Alarm>> getWithLowerIdThan(int id, int limit);
 }

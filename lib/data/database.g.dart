@@ -219,6 +219,28 @@ class _$AlarmDao extends AlarmDao {
   }
 
   @override
+  Future<List<Alarm>> getWithLowerIdThan(
+    int id,
+    int limit,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM Alarm WHERE id < ?1 ORDER BY id DESC LIMIT ?2',
+        mapper: (Map<String, Object?> row) => Alarm(
+            id: row['id'] as int,
+            type: row['type'] as String,
+            word: row['word'] as String,
+            date: _dateTimeConverter.decode(row['date'] as int),
+            number: row['number'] as int,
+            address: row['address'] as String,
+            notes: _listStringConverter.decode(row['notes'] as String),
+            units: _listIntConverter.decode(row['units'] as String),
+            responses: _mapIntAlarmResponseConverter
+                .decode(row['responses'] as String),
+            updated: _dateTimeConverter.decode(row['updated'] as int)),
+        arguments: [id, limit]);
+  }
+
+  @override
   Future<void> inserts(Alarm alarm) async {
     await _alarmInsertionAdapter.insert(alarm, OnConflictStrategy.abort);
   }
@@ -329,8 +351,18 @@ class _$StationDao extends StationDao {
   }
 
   @override
-  Future<List<Station>> getAll() async {
-    return _queryAdapter.queryList('SELECT * FROM Station',
+  Future<void> deleteById(int id) async {
+    await _queryAdapter
+        .queryNoReturn('DELETE FROM Station WHERE id = ?1', arguments: [id]);
+  }
+
+  @override
+  Future<List<Station>> getWithLowerIdThan(
+    int id,
+    int limit,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM Station WHERE id < ?1 ORDER BY id DESC LIMIT ?2',
         mapper: (Map<String, Object?> row) => Station(
             id: row['id'] as int,
             name: row['name'] as String,
@@ -344,13 +376,8 @@ class _$StationDao extends StationDao {
             persons:
                 _nullableListIntConverter.decode(row['persons'] as String?),
             adminPersons: _nullableListIntConverter
-                .decode(row['adminPersons'] as String?)));
-  }
-
-  @override
-  Future<void> deleteById(int id) async {
-    await _queryAdapter
-        .queryNoReturn('DELETE FROM Station WHERE id = ?1', arguments: [id]);
+                .decode(row['adminPersons'] as String?)),
+        arguments: [id, limit]);
   }
 
   @override
@@ -452,8 +479,18 @@ class _$UnitDao extends UnitDao {
   }
 
   @override
-  Future<List<Unit>> getAll() async {
-    return _queryAdapter.queryList('SELECT * FROM Unit',
+  Future<void> deleteById(int id) async {
+    await _queryAdapter
+        .queryNoReturn('DELETE FROM Unit WHERE id = ?1', arguments: [id]);
+  }
+
+  @override
+  Future<List<Unit>> getWithLowerIdThan(
+    int id,
+    int limit,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM Unit WHERE id < ?1 ORDER BY id DESC LIMIT ?2',
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as int,
             stationId: row['stationId'] as int,
@@ -464,13 +501,8 @@ class _$UnitDao extends UnitDao {
             positions:
                 _listUnitPositionConverter.decode(row['positions'] as String),
             capacity: row['capacity'] as int,
-            updated: _dateTimeConverter.decode(row['updated'] as int)));
-  }
-
-  @override
-  Future<void> deleteById(int id) async {
-    await _queryAdapter
-        .queryNoReturn('DELETE FROM Unit WHERE id = ?1', arguments: [id]);
+            updated: _dateTimeConverter.decode(row['updated'] as int)),
+        arguments: [id, limit]);
   }
 
   @override
@@ -561,8 +593,18 @@ class _$PersonDao extends PersonDao {
   }
 
   @override
-  Future<List<Person>> getAll() async {
-    return _queryAdapter.queryList('SELECT * FROM Person',
+  Future<void> deleteById(int id) async {
+    await _queryAdapter
+        .queryNoReturn('DELETE FROM Person WHERE id = ?1', arguments: [id]);
+  }
+
+  @override
+  Future<List<Person>> getWithLowerIdThan(
+    int id,
+    int limit,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM Person WHERE id < ?1 ORDER BY id DESC LIMIT ?2',
         mapper: (Map<String, Object?> row) => Person(
             id: row['id'] as int,
             firstName: row['firstName'] as String,
@@ -571,13 +613,8 @@ class _$PersonDao extends PersonDao {
                 _listIntConverter.decode(row['allowedUnits'] as String),
             qualifications: row['qualifications'] as String,
             response: _alarmResponseConverter.decode(row['response'] as String),
-            updated: _dateTimeConverter.decode(row['updated'] as int)));
-  }
-
-  @override
-  Future<void> deleteById(int id) async {
-    await _queryAdapter
-        .queryNoReturn('DELETE FROM Person WHERE id = ?1', arguments: [id]);
+            updated: _dateTimeConverter.decode(row['updated'] as int)),
+        arguments: [id, limit]);
   }
 
   @override

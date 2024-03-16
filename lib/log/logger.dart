@@ -7,37 +7,44 @@ abstract class Logger {
     log(text, type: LogType.info, color: LogColor.black);
   }
 
-  static void red(dynamic text) {
+  // error
+  static void error(dynamic text) {
     if (!kDebugMode) return;
     log(text, type: LogType.error, color: LogColor.red);
   }
 
-  static void green(dynamic text) {
+  // success
+  static void ok(dynamic text) {
     if (!kDebugMode) return;
     log(text, type: LogType.success, color: LogColor.green);
   }
 
-  static void yellow(dynamic text) {
+  // warn
+  static void warn(dynamic text) {
     if (!kDebugMode) return;
     log(text, type: LogType.warning, color: LogColor.yellow);
   }
 
-  static void blue(dynamic text) {
+  // info
+  static void info(dynamic text) {
     if (!kDebugMode) return;
     log(text, type: LogType.info, color: LogColor.blue);
   }
 
-  static void magenta(dynamic text) {
+  // fcm
+  static void fcm(dynamic text) {
     if (!kDebugMode) return;
     log(text, type: LogType.info, color: LogColor.magenta);
   }
 
-  static void cyan(dynamic text) {
+  // networking
+  static void net(dynamic text) {
     if (!kDebugMode) return;
     log(text, type: LogType.info, color: LogColor.cyan);
   }
 
-  static void grey(dynamic text) {
+  // Update stream
+  static void updateStream(dynamic text) {
     if (!kDebugMode) return;
     log(text, type: LogType.info, color: LogColor.grey);
   }

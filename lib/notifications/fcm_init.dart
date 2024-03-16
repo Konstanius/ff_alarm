@@ -17,7 +17,7 @@ Future<void> initializeFirebaseMessaging() async {
   FirebaseMessaging.instance.getToken().then((String? token) {
     if (token != null) {
       Globals.prefs.setString('fcm_token', token);
-      Logger.green('FCM token: $token');
+      Logger.ok('FCM token: $token');
     }
   });
 }
@@ -29,6 +29,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) async {
+  Logger.fcm('FCM message received: ${message.data}');
   if (Platform.isIOS) return; // handled by the app extension
   WidgetsFlutterBinding.ensureInitialized();
   await Globals.initialize();
@@ -41,7 +42,12 @@ Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) as
     case "alarm":
       {
         Alarm alarm = Alarm.inflateFromString(data['alarm']);
-        await Globals.db.alarmDao.inserts(alarm);
+        Alarm? existing = await Globals.db.alarmDao.getById(alarm.id);
+        if (existing != null && existing.date.isAfter(alarm.date)) {
+          Logger.warn('Received outdated alarm: $alarm');
+          return;
+        }
+        await Alarm.update(alarm, true);
 
         int lastAlarmTime = Globals.prefs.getInt('last_alarm_time') ?? 0;
         if (alarm.date.millisecondsSinceEpoch > lastAlarmTime) {
@@ -49,12 +55,7 @@ Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) as
           Globals.prefs.setInt('last_alarm_time', alarm.date.millisecondsSinceEpoch);
         }
 
-        if (alarm.id == 0) {
-          await sendAlarm(alarm);
-          return;
-        }
-
-        // await sendAlarm(alarm);
+        await sendAlarm(alarm);
         break;
       }
   }

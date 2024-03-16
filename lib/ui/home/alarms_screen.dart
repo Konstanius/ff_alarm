@@ -1,4 +1,6 @@
 import 'package:ff_alarm/data/models/alarm.dart';
+import 'package:ff_alarm/server/request.dart';
+import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 
 class AlarmsScreen extends StatefulWidget {
@@ -8,9 +10,15 @@ class AlarmsScreen extends StatefulWidget {
   State<AlarmsScreen> createState() => _AlarmsScreenState();
 }
 
-class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClientMixin {
+class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClientMixin, Updates {
   @override
   bool get wantKeepAlive => true;
+
+  @override
+  void initState() {
+    super.initState();
+    setupListener({UpdateType.alarm});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,8 +36,19 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
               subtitle: Text(alarm.date.toLocal().toString()),
               onTap: () {},
             ),
+          ElevatedButton(
+            onPressed: () async {
+              await Request('test', {}).emit(true);
+            },
+            child: const Text('Test Alarmierung'),
+          ),
         ],
       ),
     );
+  }
+
+  @override
+  void onUpdate(UpdateInfo info) {
+    // TODO: implement onUpdate
   }
 }

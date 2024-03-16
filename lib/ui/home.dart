@@ -6,8 +6,8 @@ import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/ui/home/alarms_screen.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/home/units_screen.dart';
+import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class FFAlarmApp extends StatelessWidget {
   const FFAlarmApp({super.key});
@@ -37,8 +37,19 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final TabController tabController;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+
+    if (!Globals.foreground && state == AppLifecycleState.resumed) {
+      UpdateInfo(UpdateType.ui, {0});
+    }
+
+    Globals.foreground = state == AppLifecycleState.resumed;
+  }
 
   @override
   void initState() {

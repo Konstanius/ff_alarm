@@ -6,9 +6,6 @@ abstract class StationDao {
   @Query('SELECT * FROM Station WHERE id = :id')
   Future<Station?> getById(int id);
 
-  @Query('SELECT * FROM Station')
-  Future<List<Station>> getAll();
-
   @update
   Future<void> updates(Station station);
 
@@ -20,4 +17,7 @@ abstract class StationDao {
 
   @Query('DELETE FROM Station WHERE id = :id')
   Future<void> deleteById(int id);
+
+  @Query('SELECT * FROM Station WHERE id < :id ORDER BY id DESC LIMIT :limit')
+  Future<List<Station>> getWithLowerIdThan(int id, int limit);
 }
