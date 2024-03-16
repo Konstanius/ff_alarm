@@ -1,39 +1,35 @@
-import 'package:isar/isar.dart';
+import 'package:ff_alarm/data/models/alarm.dart';
+import 'package:floor/floor.dart';
 
-part 'person.g.dart';
-
-@collection
+@entity
 class Person {
-  @Name('id')
-  final Id id;
+  @primaryKey
+  final int id;
 
-  @Name('firstName')
   String firstName;
 
-  @Name('lastName')
   String lastName;
 
-  @Name('allowedUnits')
   List<int> allowedUnits;
 
-  /// Qualifications Format (Index basiert):
-  /// 0 : Verfügbar allgemein
-  /// 1 : Truppmann
-  /// 2 : Funkausbildung
-  /// 3 : Atemschutzausbildung
-  /// 4 : Truppführerausbildung
-  /// 5 : Maschinistenausbildung
-  /// 6 : Bootsführerausbildung
-  /// 7 : Gruppenführerausbildung
-  /// 8 : Zugführerausbildung
-  /// 9 : Rettungsassistent
-  /// 10: Rettungssanitäter
-  /// 11: Notfallsanitäter
-  /// 12: Notarzt
-  @Name('qualifications')
+  /// Qualifications Format:
+  /// comma separated, no spaces
+  /// Supported:
+  /// - tm (Truppmann)
+  /// - tf (Truppführer)
+  /// - agt (Atemschutzgeräteträger)
+  /// - gf (Gruppenführer)
+  /// - zf (Zugführer)
+  /// - ma (Maschinist)
+  /// - b (B-Führerschen)
+  /// - c1 (C-Führerschein)
+  /// - c (C-Führerschein)
+  /// - ce (CE-Führerschein)
+  /// - bo (Bootsführerschein)
   String qualifications;
 
-  @Name('updated')
+  AlarmResponse response;
+
   DateTime updated;
 
   Person({
@@ -42,6 +38,7 @@ class Person {
     required this.lastName,
     required this.allowedUnits,
     required this.qualifications,
+    required this.response,
     required this.updated,
   });
 
@@ -51,6 +48,7 @@ class Person {
     "lastName": "l",
     "allowedUnits": "au",
     "qualifications": "q",
+    "response": "r",
     "updated": "up",
   };
 
@@ -61,6 +59,7 @@ class Person {
       lastName: json[jsonShorts["lastName"]],
       allowedUnits: List<int>.from(json[jsonShorts["allowedUnits"]]),
       qualifications: json[jsonShorts["qualifications"]],
+      response: AlarmResponse.fromJson(json[jsonShorts["response"]]),
       updated: DateTime.fromMillisecondsSinceEpoch(json[jsonShorts["updated"]]),
     );
   }
@@ -72,6 +71,7 @@ class Person {
       jsonShorts["lastName"]!: lastName,
       jsonShorts["allowedUnits"]!: allowedUnits,
       jsonShorts["qualifications"]!: qualifications,
+      jsonShorts["response"]!: response.toJson(),
       jsonShorts["updated"]!: updated.millisecondsSinceEpoch,
     };
   }

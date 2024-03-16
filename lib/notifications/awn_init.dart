@@ -7,10 +7,9 @@ import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:flutter/material.dart';
-import 'package:isar/isar.dart';
 
 Future<void> initializeAwesomeNotifications() async {
-  List<Station> stations = Globals.db.stations.where().findAllSync();
+  List<Station> stations = await Globals.db.stationDao.getAll();
 
   await AwesomeNotifications().initialize(
     null,
@@ -94,7 +93,7 @@ Future<void> initializeAwesomeNotifications() async {
           importance: NotificationImportance.Default,
           soundSource: null,
         ),
-      ]
+      ],
     ],
   );
 
@@ -160,31 +159,29 @@ Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
 
 Future<bool> sendAlarm(Alarm alarm) async {
   try {
-    AlertOption option = alarm.getAlertOption();
+    AlarmOption option = alarm.getAlertOption();
 
-    if (Globals.appStarted && option == AlertOption.alert) {
+    if (Globals.appStarted && option == AlarmOption.alert) {
       Globals.router.go('/alarm', extra: alarm);
     }
 
     String channelKey;
     if (alarm.id == 0) {
-      channelKey = option == AlertOption.alert ? 'test' : 'test_silent';
+      channelKey = option == AlarmOption.alert ? 'test' : 'test_silent';
     } else {
-      List<Unit?> units = Globals.db.units.getAllSync(alarm.units);
-      units.removeWhere((element) => element == null);
+      List<Unit> units = await Globals.db.unitDao.getAll();
+      units = units.where((unit) => alarm.units.contains(unit.id)).toList();
 
-      Set<int> stationIds = units.map((e) => e!.stationId).toSet();
-      List<Station?> stations = Globals.db.stations.getAllSync(stationIds.toList());
-      stations.removeWhere((element) => element == null);
+      List<Station> stations = await Globals.db.stationDao.getAll();
 
       if (stations.isNotEmpty) {
         // sort by higher priority given to stations (priority is nullable, so all nulls are at the end)
-        stations.sort((a, b) => (b!.priority ?? 0).compareTo(a!.priority ?? 0));
+        stations.sort((a, b) => (b.priority ?? 0).compareTo(a.priority ?? 0));
 
-        String stationName = stations.first!.name;
-        channelKey = option == AlertOption.alert ? 'station_${stationName.toLowerCase()}' : 'station_${stationName.toLowerCase()}_silent';
+        String stationName = stations.first.name;
+        channelKey = option == AlarmOption.alert ? 'station_${stationName.toLowerCase()}' : 'station_${stationName.toLowerCase()}_silent';
       } else {
-        channelKey = option == AlertOption.alert ? 'station_fallback' : 'station_fallback_silent';
+        channelKey = option == AlarmOption.alert ? 'station_fallback' : 'station_fallback_silent';
       }
     }
 
@@ -196,15 +193,15 @@ Future<bool> sendAlarm(Alarm alarm) async {
         channelKey: channelKey,
         title: alarm.type,
         body: alarm.word,
-        category: option == AlertOption.alert ? NotificationCategory.Call : NotificationCategory.Event,
-        customSound: option == AlertOption.alert ? 'resource://raw/res_alarm' : null,
+        category: option == AlarmOption.alert ? NotificationCategory.Call : NotificationCategory.Event,
+        customSound: option == AlarmOption.alert ? 'resource://raw/res_alarm' : null,
         displayOnBackground: true,
         displayOnForeground: true,
         fullScreenIntent: true,
-        wakeUpScreen: option == AlertOption.alert,
-        autoDismissible: option != AlertOption.alert,
-        locked: option == AlertOption.alert,
-        criticalAlert: option == AlertOption.alert,
+        wakeUpScreen: option == AlarmOption.alert,
+        autoDismissible: option != AlarmOption.alert,
+        locked: option == AlarmOption.alert,
+        criticalAlert: option == AlarmOption.alert,
         payload: {
           'type': 'alarm',
           'alarm': jsonEncode(alarm.toJson()),
@@ -212,7 +209,7 @@ Future<bool> sendAlarm(Alarm alarm) async {
         },
       ),
       actionButtons: [
-        if (option == AlertOption.alert)
+        if (option == AlarmOption.alert)
           NotificationActionButton(
             key: 'alarm_click',
             label: 'Alarmierung ansehen',

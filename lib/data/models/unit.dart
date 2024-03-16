@@ -1,36 +1,25 @@
 import 'package:ff_alarm/data/models/station.dart';
-import 'package:isar/isar.dart';
+import 'package:floor/floor.dart';
 
-part 'unit.g.dart';
-
-@collection
+@entity
 class Unit {
-  @Name('id')
-  final Id id;
-  
-  @Name('stationId')
+  @primaryKey
+  final int id;
+
   int stationId;
-  
-  @Name('unitType')
+
   int unitType;
-  
-  @Name('unitIdentifier')
+
   int unitIdentifier;
-  
-  @Name('unitDescription')
+
   String unitDescription;
-  
-  @Name('status')
+
   int status;
-  
-  @Name('positions')
-  @enumerated
+
   List<UnitPosition> positions;
 
-  @Name('capacity')
   int capacity;
 
-  @Name('updated')
   DateTime updated;
 
   Unit({
@@ -91,6 +80,8 @@ class Unit {
 }
 
 enum UnitPosition {
+  zf,
+  bf,
   ma,
   gf,
   atf,

@@ -1,37 +1,29 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:isar/isar.dart';
+import 'package:floor/floor.dart';
 
-part 'alarm.g.dart';
-
-@collection
+@entity
 class Alarm {
-  @Name('id')
-  final Id id;
+  @primaryKey
+  final int id;
 
-  @Name('type')
   String type;
 
-  @Name('word')
   String word;
 
-  @Name('date')
   DateTime date;
 
-  @Name('number')
   int number;
 
-  @Name('address')
   String address;
 
-  @Name('notes')
   List<String> notes;
 
-  @Name('units')
   List<int> units;
 
-  @Name('updated')
+  Map<int, AlarmResponse> responses;
+
   DateTime updated;
 
   Alarm({
@@ -43,6 +35,7 @@ class Alarm {
     required this.address,
     required this.notes,
     required this.units,
+    required this.responses,
     required this.updated,
   });
 
@@ -55,6 +48,7 @@ class Alarm {
     "address": "a",
     "notes": "no",
     "units": "u",
+    "responses": "r",
     "updated": "up",
   };
 
@@ -69,6 +63,14 @@ class Alarm {
       notes: List<String>.from(json[jsonShorts["notes"]]),
       units: List<int>.from(json[jsonShorts["units"]]),
       updated: DateTime.fromMillisecondsSinceEpoch(json[jsonShorts["updated"]]),
+      responses: () {
+        Map<int, AlarmResponse> result = {};
+        Map<String, dynamic> decoded = json[jsonShorts["responses"]];
+        decoded.forEach((key, value) {
+          result[int.parse(key)] = AlarmResponse.fromJson(value);
+        });
+        return result;
+      }(),
     );
   }
 
@@ -83,6 +85,13 @@ class Alarm {
       jsonShorts["notes"]!: notes,
       jsonShorts["units"]!: units,
       jsonShorts["updated"]!: updated.millisecondsSinceEpoch,
+      jsonShorts["responses"]!: () {
+        Map<String, dynamic> result = {};
+        responses.forEach((key, value) {
+          result[key.toString()] = value.toJson();
+        });
+        return result;
+      }(),
     };
   }
 
@@ -94,20 +103,44 @@ class Alarm {
     return Alarm.fromJson(json);
   }
 
-  AlertOption getAlertOption() {
+  AlarmOption getAlertOption() {
     DateTime now = DateTime.now();
     if (now.difference(date).inMinutes < 15 || date.difference(now).inMinutes < 15) {
-      return AlertOption.alert;
+      return AlarmOption.alert;
     } else if (now.difference(date).inHours < 24 || date.difference(now).inHours < 24) {
-      return AlertOption.silent;
+      return AlarmOption.silent;
     } else {
-      return AlertOption.none;
+      return AlarmOption.none;
     }
   }
 }
 
-enum AlertOption {
+enum AlarmOption {
   alert,
   silent,
   none,
+}
+
+class AlarmResponse {
+  String? note;
+  DateTime? time;
+  int? duration;
+
+  AlarmResponse({this.note, this.time, this.duration});
+
+  factory AlarmResponse.fromJson(Map<String, dynamic> json) {
+    return AlarmResponse(
+      note: json['n'],
+      time: json['t'] != null ? DateTime.fromMillisecondsSinceEpoch(json['t']) : null,
+      duration: json['d'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'n': note,
+      't': time?.millisecondsSinceEpoch,
+      'd': duration,
+    };
+  }
 }

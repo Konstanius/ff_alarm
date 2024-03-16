@@ -1,43 +1,30 @@
-import 'package:isar/isar.dart';
+import 'package:floor/floor.dart';
 
-part 'station.g.dart';
-
-@collection
+@entity
 class Station  {
-  @Name('id')
-  final Id id;
+  @primaryKey
+  final int id;
 
-  @Name('name')
   String name;
 
-  @Name('area')
   String area;
-  
-  @Name('prefix')
+
   String prefix;
-  
-  @Name('stationNumber')
+
   int stationNumber;
-  
-  @Name('address')
+
   String address;
-  
-  @Name('coordinates')
+
   String coordinates;
 
-  @Name('units')
   List<int>? units;
-  
-  @Name('persons')
+
   List<int>? persons;
-  
-  @Name('adminPersons')
+
   List<int>? adminPersons;
 
-  @Name('updated')
   DateTime updated;
 
-  @Name('priority')
   int? priority;
   
   Station({

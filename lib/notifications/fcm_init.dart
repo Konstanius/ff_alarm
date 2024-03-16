@@ -41,9 +41,7 @@ Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) as
     case "alarm":
       {
         Alarm alarm = Alarm.inflateFromString(data['alarm']);
-        Globals.db.writeTxn(() async {
-          Globals.db.alarms.put(alarm);
-        });
+        await Globals.db.alarmDao.inserts(alarm);
 
         int lastAlarmTime = Globals.prefs.getInt('last_alarm_time') ?? 0;
         if (alarm.date.millisecondsSinceEpoch > lastAlarmTime) {
