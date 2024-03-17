@@ -9,11 +9,25 @@ import 'package:flutter/material.dart';
 import 'package:real_volume/real_volume.dart';
 
 Future<void> initializeAwesomeNotifications() async {
+  String? alarmSound = Globals.prefs.getString('alarm_soundPath');
+  alarmSound ??= "res_alarm_1";
+
   await AwesomeNotifications().initialize(
     null,
+    channelGroups: <NotificationChannelGroup>[
+      NotificationChannelGroup(
+        channelGroupKey: 'test',
+        channelGroupName: 'Test Alarmierungen',
+      ),
+      NotificationChannelGroup(
+        channelGroupKey: 'alarm',
+        channelGroupName: 'Alarmierungen',
+      ),
+    ],
     <NotificationChannel>[
       NotificationChannel(
         channelKey: 'test',
+        channelGroupKey: 'test',
         channelName: 'Test Alarmierungen',
         channelDescription: 'Benachrichtigungskanal für regelmäßige Testalarmierungen',
         channelShowBadge: true,
@@ -23,10 +37,11 @@ Future<void> initializeAwesomeNotifications() async {
         enableVibration: true,
         enableLights: true,
         importance: NotificationImportance.Max,
-        soundSource: 'resource://raw/res_alarm',
+        soundSource: 'resource://raw/$alarmSound',
       ),
       NotificationChannel(
         channelKey: 'test_silent',
+        channelGroupKey: 'test',
         channelName: 'Test Alarmierungen (verpasst)',
         channelDescription: 'Benachrichtigungskanal für regelmäßige, verpasste, Testalarmierungen',
         channelShowBadge: true,
@@ -40,6 +55,7 @@ Future<void> initializeAwesomeNotifications() async {
       ),
       NotificationChannel(
         channelKey: 'alarm',
+        channelGroupKey: 'alarm',
         channelName: 'Alarmierungen',
         channelDescription: 'Benachrichtigungskanal für Alarmierungen',
         channelShowBadge: true,
@@ -49,10 +65,11 @@ Future<void> initializeAwesomeNotifications() async {
         enableVibration: true,
         enableLights: true,
         importance: NotificationImportance.Max,
-        soundSource: 'resource://raw/res_alarm',
+        soundSource: 'resource://raw/$alarmSound',
       ),
       NotificationChannel(
         channelKey: 'alarm_silent',
+        channelGroupKey: 'alarm',
         channelName: 'Alarmierungen (verpasst)',
         channelDescription: 'Benachrichtigungskanal für verpasste Alarmierungen',
         channelShowBadge: true,
@@ -71,7 +88,7 @@ Future<void> initializeAwesomeNotifications() async {
   if (!isAllowed) {
     bool? neverAskAgain = Globals.prefs.getBool('notifications_never-ask-again');
     if (neverAskAgain != true) {
-      await AwesomeNotifications().requestPermissionToSendNotifications(
+      bool granted = await AwesomeNotifications().requestPermissionToSendNotifications(
         permissions: const [
           NotificationPermission.Alert,
           NotificationPermission.Sound,
@@ -81,6 +98,44 @@ Future<void> initializeAwesomeNotifications() async {
           NotificationPermission.FullScreenIntent,
         ],
       );
+
+      if (!granted) {
+        () async {
+          while (!Globals.appStarted) {
+            await Future.delayed(const Duration(milliseconds: 10));
+          }
+
+          var res = await showDialog<bool>(
+            context: Globals.navigatorKey.currentContext!,
+            builder: (context) {
+              return AlertDialog(
+                title: const Text('Benachrichtigungen deaktiviert'),
+                content: const Text('Die App benötigt Benachrichtigungen, um Alarmierungen anzuzeigen.'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                    child: const Text('Erneut versuchen'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(false);
+                    },
+                    child: const Text('Nicht fragen'),
+                  ),
+                ],
+              );
+            },
+          );
+
+          if (res == true) {
+            await initializeAwesomeNotifications();
+          } else {
+            Globals.prefs.setBool('notifications_never-ask-again', true);
+          }
+        }();
+      }
     }
   }
 
@@ -107,7 +162,6 @@ Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
     switch (type) {
       case 'alarm':
         {
-          resetAndroidNotificationVolume();
           Alarm alarm = Alarm.fromJson(jsonDecode(payload['alarm']!));
           if (Globals.router.routeInformationProvider.value.uri.pathSegments.lastOrNull != 'alarm') {
             Globals.router.go('/alarm', extra: alarm);
@@ -132,28 +186,26 @@ Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
 }
 
 Future<void> resetAndroidNotificationVolume() async {
-  if (Platform.isAndroid) {
-    () async {
-      double? lastVolume = Globals.prefs.getDouble('last_volume');
-      Globals.prefs.remove('last_volume');
-      if (lastVolume != null) {
-        try {
-          await RealVolume.setVolume(lastVolume, streamType: StreamType.NOTIFICATION);
-        } catch (e) {
-          print('Failed to set volume: $e');
-        }
-      }
+  if (!Platform.isAndroid) return;
 
-      int? lastMode = Globals.prefs.getInt('last_mode');
-      Globals.prefs.remove('last_mode');
-      if (lastMode != null) {
-        try {
-          await RealVolume.setRingerMode(RingerMode.values[lastMode]);
-        } catch (e) {
-          print('Failed to set mode: $e');
-        }
-      }
-    }();
+  double? lastVolume = Globals.prefs.getDouble('last_volume');
+  Globals.prefs.remove('last_volume');
+  if (lastVolume != null) {
+    try {
+      await RealVolume.setVolume(lastVolume, streamType: StreamType.NOTIFICATION, showUI: false);
+    } catch (e) {
+      print('Failed to set volume: $e');
+    }
+  }
+
+  int? lastMode = Globals.prefs.getInt('last_mode');
+  Globals.prefs.remove('last_mode');
+  if (lastMode != null) {
+    try {
+      await RealVolume.setRingerMode(RingerMode.values[lastMode]);
+    } catch (e) {
+      print('Failed to set mode: $e');
+    }
   }
 }
 
@@ -187,20 +239,23 @@ Future<bool> sendAlarm(Alarm alarm) async {
         }
         await RealVolume.setRingerMode(RingerMode.NORMAL);
         await RealVolume.setAudioMode(AudioMode.NORMAL);
-        await RealVolume.setVolume(1.0, streamType: StreamType.NOTIFICATION);
+        await RealVolume.setVolume(1.0, streamType: StreamType.NOTIFICATION, showUI: false);
       } catch (e) {
         Logger.error('Failed to set volume: $e');
       }
     }
 
+    String? alarmSound = Globals.prefs.getString('alarm_soundPath');
+    alarmSound ??= "res_alarm_1";
+
     return await AwesomeNotifications().createNotification(
       content: NotificationContent(
-        id: 1,
+        id: alarm.id,
         channelKey: channelKey,
         title: alarm.type,
         body: alarm.word,
         category: option == AlarmOption.alert ? NotificationCategory.Call : NotificationCategory.Event,
-        customSound: option == AlarmOption.alert ? 'resource://raw/res_alarm' : null,
+        customSound: option == AlarmOption.alert ? 'resource://raw/$alarmSound' : null,
         displayOnBackground: true,
         displayOnForeground: true,
         fullScreenIntent: true,
@@ -223,6 +278,7 @@ Future<bool> sendAlarm(Alarm alarm) async {
             actionType: ActionType.Default,
             isAuthenticationRequired: false,
             showInCompactView: true,
+            autoDismissible: true,
             color: Colors.blue,
           ),
       ],

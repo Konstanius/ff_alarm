@@ -24,6 +24,10 @@ dependencies:
   floor: 1.4.2
   real_volume: 1.0.8
   another_flushbar: 1.12.30
+  share_plus: 7.2.2
+  pulsator: 1.0.0+2
+  badges: 3.1.2
+  assets_audio_player: 3.1.1
   flutter_colored_print:
     path: ./packages/flutter_colored_print/
 
@@ -55,8 +59,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
-    - assets/android/
-    - assets/ios/
+    - android/app/src/main/res/raw/
 
 flutter_native_splash:
   # This package generates native code to customize Flutter's default white native splash screen

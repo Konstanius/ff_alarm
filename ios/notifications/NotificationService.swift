@@ -20,7 +20,7 @@ class NotificationService: UNNotificationServiceExtension {
             bestAttemptContent.title = "Test Alarmierung"
             bestAttemptContent.body = "Dies ist eine Test Alarmierung"
             
-            let customSound = UNNotificationSound.criticalSoundNamed(UNNotificationSoundName(rawValue: "res_alarm.m4r"), withAudioVolume: 1.0)
+            let customSound = UNNotificationSound.criticalSoundNamed(UNNotificationSoundName(rawValue: "res_alarm_1.mp3"), withAudioVolume: 1.0)
             bestAttemptContent.sound = customSound
             
             if #available(iOSApplicationExtension 15.0, *) {

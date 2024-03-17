@@ -6,6 +6,12 @@ abstract class AlarmInterface {
   static Future<void> fetchAll() async {
     DateTime archiveDate = DateTime.now().subtract(const Duration(days: 90));
     var allAlarms = await Alarm.getAll(filter: (alarm) => alarm.date.isAfter(archiveDate));
+    // print all as json
+    for (Alarm alarm in allAlarms) {
+      alarm.address = "Jena";
+      alarm.notes = [];
+      print(alarm.deflateToString());
+    }
     Map<String, dynamic> alarms = {};
     for (Alarm alarm in allAlarms) {
       alarms[alarm.id.toString()] = alarm.updated.millisecondsSinceEpoch;
@@ -40,5 +46,17 @@ abstract class AlarmInterface {
     await Future.wait(futures);
 
     UpdateInfo(UpdateType.alarm, updatedIds);
+  }
+
+  static Future<Alarm> setResponse(Alarm alarm, AlarmResponse response) async {
+    var json = response.toJson();
+    json['alarmId'] = alarm.id;
+
+    Request request = await Request('alarmSetResponse', json).emit(true);
+
+    Alarm newAlarm = Alarm.fromJson(request.ackData!);
+    await Alarm.update(newAlarm, true);
+
+    return newAlarm;
   }
 }

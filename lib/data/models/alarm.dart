@@ -28,6 +28,14 @@ class Alarm {
 
   DateTime updated;
 
+  String deflateToString() {
+    Map<String, dynamic> json = toJson();
+    String jsonString = jsonEncode(json);
+    final enCodedJson = utf8.encode(jsonString);
+    final gZipJson = gzip.encode(enCodedJson);
+    return base64.encode(gZipJson);
+  }
+
   Alarm({
     required this.id,
     required this.type,
@@ -178,14 +186,16 @@ class AlarmResponse {
   String? note;
   DateTime? time;
   int? duration;
+  int? stationId;
 
-  AlarmResponse({this.note, this.time, this.duration});
+  AlarmResponse({this.note, this.time, this.duration, this.stationId});
 
   factory AlarmResponse.fromJson(Map<String, dynamic> json) {
     return AlarmResponse(
       note: json['n'],
       time: json['t'] != null ? DateTime.fromMillisecondsSinceEpoch(json['t']) : null,
       duration: json['d'],
+      stationId: json['s'],
     );
   }
 
@@ -194,6 +204,7 @@ class AlarmResponse {
       'n': note,
       't': time?.millisecondsSinceEpoch,
       'd': duration,
+      's': stationId,
     };
   }
 }

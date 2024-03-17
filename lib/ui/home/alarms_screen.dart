@@ -4,7 +4,9 @@ import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 
 class AlarmsScreen extends StatefulWidget {
-  const AlarmsScreen({super.key});
+  const AlarmsScreen({super.key, required this.badge});
+
+  final ValueNotifier<int> badge;
 
   @override
   State<AlarmsScreen> createState() => _AlarmsScreenState();

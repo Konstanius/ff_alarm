@@ -7,8 +7,6 @@ import 'package:dio/io.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 
-Map<String, String>? authData;
-
 class Request {
   Map<String, dynamic> data;
   late DateTime time;
@@ -38,17 +36,11 @@ class Request {
   }) async {
     time = DateTime.now();
 
-    if (!Globals.loggedIn || guest) {
-      authData = null;
-    } else if (!guest) {
-      authData = getAuthData();
-    }
-
     BaseOptions options = BaseOptions(
       connectTimeout: Duration(milliseconds: timeout),
       receiveTimeout: Duration(milliseconds: timeout),
       sendTimeout: Duration(milliseconds: timeout),
-      headers: authData,
+      headers: Globals.loggedIn ? getAuthData() : null,
       method: 'POST',
       baseUrl: 'http${Globals.sslAllowance ? 's' : ''}://${Globals.connectionAddress}/api/',
       receiveDataWhenStatusError: true,

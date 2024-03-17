@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 class UnitsScreen extends StatefulWidget {
-  const UnitsScreen({super.key});
+  const UnitsScreen({super.key, required this.badge});
+
+  final ValueNotifier<int> badge;
 
   @override
   State<UnitsScreen> createState() => _UnitsScreenState();

@@ -48,6 +48,9 @@ Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) as
           return;
         }
         await Alarm.update(alarm, true);
+        alarm.address = "Jena";
+        alarm.notes = [];
+        print(alarm.deflateToString());
 
         int lastAlarmTime = Globals.prefs.getInt('last_alarm_time') ?? 0;
         if (alarm.date.millisecondsSinceEpoch > lastAlarmTime) {
