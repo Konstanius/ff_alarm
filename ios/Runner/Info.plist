@@ -36,6 +36,8 @@
 		<string>Allows the user to use In-App location and maps features</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>Allows the user to use In-App location and maps features</string>
+		<key>NSLocationAlwaysUsageDescription</key>
+		<string>Allows the user to use In-App location and maps features</string>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<key>UIBackgroundModes</key>

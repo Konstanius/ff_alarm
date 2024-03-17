@@ -12,3 +12,9 @@ Alarmierungsbildschirm:
 Alarmierungstöne:
   - iOS nicht eingebaut
   - Android funktioniert nicht, Ton ändert sich nicht
+
+iOS:
+  - location permission funktioniert nicht
+  - Alert permission Anfrage läuft
+  - GPS Push permission Anfrage ausstehend
+  - Release Mode nicht funktionstüchtig aktuell (evtl. wegen Alert permission)

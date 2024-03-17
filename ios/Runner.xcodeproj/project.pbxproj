@@ -10,6 +10,12 @@
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
+		92A5EF7A2BA7507600172B40 /* res_alarm_2.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 92A5EF772BA7507500172B40 /* res_alarm_2.mp3 */; };
+		92A5EF7B2BA7507600172B40 /* res_alarm_2.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 92A5EF772BA7507500172B40 /* res_alarm_2.mp3 */; };
+		92A5EF7C2BA7507600172B40 /* res_alarm_3.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 92A5EF782BA7507500172B40 /* res_alarm_3.mp3 */; };
+		92A5EF7D2BA7507600172B40 /* res_alarm_3.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 92A5EF782BA7507500172B40 /* res_alarm_3.mp3 */; };
+		92A5EF7E2BA7507600172B40 /* res_alarm_4.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 92A5EF792BA7507600172B40 /* res_alarm_4.mp3 */; };
+		92A5EF7F2BA7507600172B40 /* res_alarm_4.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 92A5EF792BA7507600172B40 /* res_alarm_4.mp3 */; };
 		92A7EB5B2BA22050002047EF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 92A7EB5A2BA22050002047EF /* GoogleService-Info.plist */; };
 		92A7EB632BA228D8002047EF /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92A7EB622BA228D8002047EF /* NotificationService.swift */; };
 		92A7EB672BA228D8002047EF /* notifications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 92A7EB602BA228D8002047EF /* notifications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -66,13 +72,16 @@
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
+		92A5EF772BA7507500172B40 /* res_alarm_2.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = res_alarm_2.mp3; path = ../../android/app/src/main/res/raw/res_alarm_2.mp3; sourceTree = "<group>"; };
+		92A5EF782BA7507500172B40 /* res_alarm_3.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = res_alarm_3.mp3; path = ../../android/app/src/main/res/raw/res_alarm_3.mp3; sourceTree = "<group>"; };
+		92A5EF792BA7507600172B40 /* res_alarm_4.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = res_alarm_4.mp3; path = ../../android/app/src/main/res/raw/res_alarm_4.mp3; sourceTree = "<group>"; };
 		92A7EB592BA215A8002047EF /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		92A7EB5A2BA22050002047EF /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		92A7EB602BA228D8002047EF /* notifications.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = notifications.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		92A7EB622BA228D8002047EF /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		92A7EB642BA228D8002047EF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		92A7EB6D2BA228EE002047EF /* notifications.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = notifications.entitlements; sourceTree = "<group>"; };
-		92A7EB6E2BA22B4E002047EF /* res_alarm_1.mp3 */ = {isa = PBXFileReference; lastKnownFileType = file; name = res_alarm_1.mp3; path = ../../android/app/src/main/res/raw/res_alarm_1.mp3; sourceTree = "<group>"; };
+		92A7EB6E2BA22B4E002047EF /* res_alarm_1.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = res_alarm_1.mp3; path = ../../android/app/src/main/res/raw/res_alarm_1.mp3; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -121,6 +130,9 @@
 		92A7EB612BA228D8002047EF /* notifications */ = {
 			isa = PBXGroup;
 			children = (
+				92A5EF772BA7507500172B40 /* res_alarm_2.mp3 */,
+				92A5EF782BA7507500172B40 /* res_alarm_3.mp3 */,
+				92A5EF792BA7507600172B40 /* res_alarm_4.mp3 */,
 				92A7EB6E2BA22B4E002047EF /* res_alarm_1.mp3 */,
 				92A7EB6D2BA228EE002047EF /* notifications.entitlements */,
 				92A7EB622BA228D8002047EF /* NotificationService.swift */,
@@ -277,7 +289,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				92A5EF7B2BA7507600172B40 /* res_alarm_2.mp3 in Resources */,
 				92A7EB702BA22B4E002047EF /* res_alarm_1.mp3 in Resources */,
+				92A5EF7F2BA7507600172B40 /* res_alarm_4.mp3 in Resources */,
+				92A5EF7D2BA7507600172B40 /* res_alarm_3.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -285,12 +300,15 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				92A5EF7A2BA7507600172B40 /* res_alarm_2.mp3 in Resources */,
 				97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */,
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				92A7EB6F2BA22B4E002047EF /* res_alarm_1.mp3 in Resources */,
 				92A7EB5B2BA22050002047EF /* GoogleService-Info.plist in Resources */,
+				92A5EF7C2BA7507600172B40 /* res_alarm_3.mp3 in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
+				92A5EF7E2BA7507600172B40 /* res_alarm_4.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
