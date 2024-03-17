@@ -58,33 +58,16 @@ class RealTimeListener {
         lastPing = DateTime.now().millisecondsSinceEpoch ~/ 1000;
         Map<String, dynamic> packet = jsonDecode(eventString);
         if (packet.isEmpty) return;
+        Logger.net('Realtime: $eventString');
 
         Map<String, dynamic> data = packet['data'];
-        var method = packetTypes[packet['type']];
+        var method = packetTypes[packet['event']];
         if (method == null) {
-          Logger.error('Realtime received invalid type: ${packet['type']}');
+          Logger.error('Realtime received invalid type: ${packet['event']}');
           return;
         }
 
         await method(data);
-
-        if (kDebugMode) {
-          if (eventString.length > 200) {
-            List<String> log = [];
-            while (eventString.length > 200) {
-              log.add(eventString.substring(0, 200));
-              eventString = eventString.substring(200);
-            }
-            log.add(eventString);
-
-            Logger.net('Realtime (Type: ${packet['type']}):');
-            for (String logString in log) {
-              Logger.net(logString);
-            }
-          } else {
-            Logger.net('Realtime (Type: ${packet['type']}): $eventString');
-          }
-        }
       } catch (e) {
         Logger.error('RealTimeListener: $e');
       }

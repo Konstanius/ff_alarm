@@ -1,9 +1,13 @@
 import 'dart:async';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:ff_alarm/data/interfaces/alarm_interface.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
+import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/notifications/awn_init.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
+import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 import 'package:pulsator/pulsator.dart';
 
@@ -18,7 +22,7 @@ class AlarmPage extends StatefulWidget {
   State<AlarmPage> createState() => _AlarmPageState();
 }
 
-class _AlarmPageState extends State<AlarmPage> {
+class _AlarmPageState extends State<AlarmPage> with Updates {
   ValueNotifier<int> clickDuration = ValueNotifier<int>(0);
   Set<int> clickIndices = {};
   static const Map<int, Color> clickColors = {
@@ -33,10 +37,15 @@ class _AlarmPageState extends State<AlarmPage> {
   Timer? clickTimer;
   bool timerBusy = false;
 
+  late Alarm alarm;
+
   @override
   void initState() {
     super.initState();
     AlarmPage.currentAlarmId = widget.alarm.id;
+    alarm = widget.alarm;
+
+    setupListener({UpdateType.alarm});
 
     clickTimer = Timer.periodic(const Duration(milliseconds: 10), (Timer timer) async {
       if (timerBusy) return;
@@ -44,6 +53,7 @@ class _AlarmPageState extends State<AlarmPage> {
         clickDuration.value = clickDuration.value + 10;
         if (clickDuration.value >= 1000) {
           timerBusy = true;
+          int index = clickIndices.first;
 
           try {
             await resetAndroidNotificationVolume();
@@ -52,9 +62,20 @@ class _AlarmPageState extends State<AlarmPage> {
             await AwesomeNotifications().cancelNotificationsByChannelKey('alarm');
             await AwesomeNotifications().cancelNotificationsByChannelKey('test');
 
-            // TODO notify the server
+            try {
+              AlarmResponse response = AlarmResponse(
+                duration: clickDuration.value,
+                note: null,
+                stationId: 1,
+                time: DateTime.now(),
+              );
+              await AlarmInterface.setResponse(alarm, response);
+            } catch (e, s) {
+              Logger.error('Error setting alarm response: $e\n$s');
+              return;
+            }
 
-            successToast('Alarm bestätigt: ${clickIndices.first}');
+            successToast('Alarm bestätigt: $index');
 
             clickDuration.value = 0;
           } catch (e) {
@@ -79,31 +100,33 @@ class _AlarmPageState extends State<AlarmPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        // TODO replace entire app bar with the progress bar
-        title: const Text('Alarmierung'),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(50.0),
+        child: Stack(
+          children: [
+            ValueListenableBuilder<int>(
+              valueListenable: clickDuration,
+              builder: (BuildContext context, int value, Widget? child) {
+                return Positioned.fill(
+                  child: LinearProgressIndicator(
+                    value: value / 1000,
+                    backgroundColor: Colors.transparent,
+                    valueColor: clickIndices.length == 1 ? AlwaysStoppedAnimation<Color>(clickColors[clickIndices.first]!) : const AlwaysStoppedAnimation<Color>(Colors.transparent),
+                  ),
+                );
+              },
+            ),
+            AppBar(
+              backgroundColor: Colors.transparent,
+              title: const Text('Alarmierung'),
+            ),
+          ],
+        ),
       ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            ValueListenableBuilder<int>(
-              valueListenable: clickDuration,
-              builder: (BuildContext context, int value, Widget? child) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: LinearProgressIndicator(
-                      value: value / 1000,
-                      minHeight: 20,
-                      backgroundColor: Colors.grey,
-                      valueColor: clickIndices.length == 1 ? AlwaysStoppedAnimation<Color>(clickColors[clickIndices.first]!) : const AlwaysStoppedAnimation<Color>(Colors.transparent),
-                    ),
-                  ),
-                );
-              },
-            ),
             const SizedBox(height: 20),
             Row(
               mainAxisSize: MainAxisSize.max,
@@ -131,13 +154,15 @@ class _AlarmPageState extends State<AlarmPage> {
                 clickField(upper: 'Auf Abruf\nnachkommen', index: 5),
               ],
             ),
-            Text('Alarm: ${widget.alarm.type}'),
-            Text('Word: ${widget.alarm.word}'),
-            Text('Date: ${widget.alarm.date}'),
-            Text('Number: ${widget.alarm.number}'),
-            Text('Address: ${widget.alarm.address}'),
-            Text('Notes: ${widget.alarm.notes}'),
-            Text('Units: ${widget.alarm.units}'),
+            Text('Alarm: ${alarm.type}'),
+            Text('Word: ${alarm.word}'),
+            Text('Date: ${alarm.date}'),
+            Text('Number: ${alarm.number}'),
+            Text('Address: ${alarm.address}'),
+            Text('Notes: ${alarm.notes}'),
+            Text('Units: ${alarm.units}'),
+            Text('Updated: ${alarm.updated}'),
+            Text('Responses: ${alarm.responses}'),
           ],
         ),
       ),
@@ -182,5 +207,19 @@ class _AlarmPageState extends State<AlarmPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void onUpdate(UpdateInfo info) async {
+    if (info.type == UpdateType.alarm && info.ids.contains(widget.alarm.id)) {
+      var a = await Globals.db.alarmDao.getById(widget.alarm.id);
+      if (!mounted) return;
+      if (a == null) {
+        Navigator.of(Globals.context!).pop();
+      } else {
+        alarm = a;
+        setState(() {});
+      }
+    }
   }
 }

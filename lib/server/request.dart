@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
+import 'package:flutter/foundation.dart';
 
 class Request {
   Map<String, dynamic> data;
@@ -102,6 +103,9 @@ class Request {
     }
 
     int responseCode = response.statusCode!;
+    if (kDebugMode) {
+      Logger.net('$type: $responseCode - ${response.data.toString()}');
+    }
     switch (responseCode) {
       case HttpStatus.ok:
         try {
@@ -109,9 +113,8 @@ class Request {
 
           String responseBody = response.data.toString();
           ackData = jsonDecode(responseBody);
-          Logger.net('$type: $ackData');
         } catch (e) {
-          error = AckError('client', 'Die Antwort des Servers war fehlerhaft');
+          error = AckError(400, 'Die Antwort des Servers war fehlerhaft');
           status = RequestStatus.failed;
         }
         break;
@@ -127,7 +130,7 @@ class Request {
       default:
         String responseBody = response.data.toString();
         Map<String, dynamic> responseJson = jsonDecode(responseBody);
-        error = AckError.from(responseJson['error'], responseJson['message']);
+        error = AckError.from(responseCode, responseJson['message']);
         Logger.net('$type: ${error!.errorCode} - ${error!.errorMessage}');
         break;
     }
@@ -169,17 +172,17 @@ enum RequestStatus {
 }
 
 class AckError {
-  String errorCode;
+  int errorCode;
   String errorMessage;
 
   AckError(this.errorCode, this.errorMessage);
 
-  static AckError get timeout => AckError('timeout', 'Die Anfrage an den Server hat die Zeitüberschreitung erreicht');
-  static AckError get offline => AckError('offline', 'Du bist aktuell offline');
-  static AckError get tooManyRequests => AckError('tooManyRequests', 'Zu viele Anfragen an den Server. Bitte warte einen Moment und versuche es erneut');
-  static AckError get server => AckError('server', 'Ein Serverfehler ist aufgetreten');
+  static AckError get timeout => AckError(408, 'Die Anfrage an den Server hat die Zeitüberschreitung erreicht');
+  static AckError get offline => AckError(0, 'Du bist aktuell offline');
+  static AckError get tooManyRequests => AckError(429, 'Zu viele Anfragen an den Server. Bitte warte einen Moment und versuche es erneut');
+  static AckError get server => AckError(500, 'Ein Serverfehler ist aufgetreten');
 
-  static AckError from(String code, String message) {
+  static AckError from(int code, String message) {
     return AckError(code, message);
   }
 }

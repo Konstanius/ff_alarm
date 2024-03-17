@@ -5,7 +5,7 @@ import 'package:app_group_directory/app_group_directory.dart';
 import 'package:ff_alarm/data/database.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/prefs.dart';
-import 'package:ff_alarm/ui/alarm_info.dart';
+import 'package:ff_alarm/ui/alarm/alarm_info.dart';
 import 'package:ff_alarm/ui/home.dart';
 import 'package:ff_alarm/ui/settings/lifecycle.dart';
 import 'package:ff_alarm/ui/settings/notifications.dart';

@@ -19,11 +19,11 @@ class Station  {
 
   String coordinates;
 
-  List<int>? units;
+  List<int> units;
 
-  List<int>? persons;
+  List<int> persons;
 
-  List<int>? adminPersons;
+  List<int> adminPersons;
 
   DateTime updated;
 
@@ -38,9 +38,9 @@ class Station  {
     required this.address,
     required this.coordinates,
     required this.updated,
-    this.units,
-    this.persons,
-    this.adminPersons,
+    required this.units,
+    required this.persons,
+    required this.adminPersons,
   });
 
   static const Map<String, String> jsonShorts = {

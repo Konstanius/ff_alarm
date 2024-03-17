@@ -93,7 +93,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `Alarm` (`id` INTEGER NOT NULL, `type` TEXT NOT NULL, `word` TEXT NOT NULL, `date` INTEGER NOT NULL, `number` INTEGER NOT NULL, `address` TEXT NOT NULL, `notes` TEXT NOT NULL, `units` TEXT NOT NULL, `responses` TEXT NOT NULL, `updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `Station` (`id` INTEGER NOT NULL, `name` TEXT NOT NULL, `area` TEXT NOT NULL, `prefix` TEXT NOT NULL, `stationNumber` INTEGER NOT NULL, `address` TEXT NOT NULL, `coordinates` TEXT NOT NULL, `units` TEXT, `persons` TEXT, `adminPersons` TEXT, `updated` INTEGER NOT NULL, `priority` INTEGER, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `Station` (`id` INTEGER NOT NULL, `name` TEXT NOT NULL, `area` TEXT NOT NULL, `prefix` TEXT NOT NULL, `stationNumber` INTEGER NOT NULL, `address` TEXT NOT NULL, `coordinates` TEXT NOT NULL, `units` TEXT NOT NULL, `persons` TEXT NOT NULL, `adminPersons` TEXT NOT NULL, `updated` INTEGER NOT NULL, `priority` INTEGER, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `Unit` (`id` INTEGER NOT NULL, `stationId` INTEGER NOT NULL, `unitType` INTEGER NOT NULL, `unitIdentifier` INTEGER NOT NULL, `unitDescription` TEXT NOT NULL, `status` INTEGER NOT NULL, `positions` TEXT NOT NULL, `capacity` INTEGER NOT NULL, `updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
@@ -272,10 +272,9 @@ class _$StationDao extends StationDao {
                   'stationNumber': item.stationNumber,
                   'address': item.address,
                   'coordinates': item.coordinates,
-                  'units': _nullableListIntConverter.encode(item.units),
-                  'persons': _nullableListIntConverter.encode(item.persons),
-                  'adminPersons':
-                      _nullableListIntConverter.encode(item.adminPersons),
+                  'units': _listIntConverter.encode(item.units),
+                  'persons': _listIntConverter.encode(item.persons),
+                  'adminPersons': _listIntConverter.encode(item.adminPersons),
                   'updated': _dateTimeConverter.encode(item.updated),
                   'priority': item.priority
                 }),
@@ -291,10 +290,9 @@ class _$StationDao extends StationDao {
                   'stationNumber': item.stationNumber,
                   'address': item.address,
                   'coordinates': item.coordinates,
-                  'units': _nullableListIntConverter.encode(item.units),
-                  'persons': _nullableListIntConverter.encode(item.persons),
-                  'adminPersons':
-                      _nullableListIntConverter.encode(item.adminPersons),
+                  'units': _listIntConverter.encode(item.units),
+                  'persons': _listIntConverter.encode(item.persons),
+                  'adminPersons': _listIntConverter.encode(item.adminPersons),
                   'updated': _dateTimeConverter.encode(item.updated),
                   'priority': item.priority
                 }),
@@ -310,10 +308,9 @@ class _$StationDao extends StationDao {
                   'stationNumber': item.stationNumber,
                   'address': item.address,
                   'coordinates': item.coordinates,
-                  'units': _nullableListIntConverter.encode(item.units),
-                  'persons': _nullableListIntConverter.encode(item.persons),
-                  'adminPersons':
-                      _nullableListIntConverter.encode(item.adminPersons),
+                  'units': _listIntConverter.encode(item.units),
+                  'persons': _listIntConverter.encode(item.persons),
+                  'adminPersons': _listIntConverter.encode(item.adminPersons),
                   'updated': _dateTimeConverter.encode(item.updated),
                   'priority': item.priority
                 });
@@ -342,11 +339,10 @@ class _$StationDao extends StationDao {
             address: row['address'] as String,
             coordinates: row['coordinates'] as String,
             updated: _dateTimeConverter.decode(row['updated'] as int),
-            units: _nullableListIntConverter.decode(row['units'] as String?),
-            persons:
-                _nullableListIntConverter.decode(row['persons'] as String?),
-            adminPersons: _nullableListIntConverter
-                .decode(row['adminPersons'] as String?)),
+            units: _listIntConverter.decode(row['units'] as String),
+            persons: _listIntConverter.decode(row['persons'] as String),
+            adminPersons:
+                _listIntConverter.decode(row['adminPersons'] as String)),
         arguments: [id]);
   }
 
@@ -372,11 +368,10 @@ class _$StationDao extends StationDao {
             address: row['address'] as String,
             coordinates: row['coordinates'] as String,
             updated: _dateTimeConverter.decode(row['updated'] as int),
-            units: _nullableListIntConverter.decode(row['units'] as String?),
-            persons:
-                _nullableListIntConverter.decode(row['persons'] as String?),
-            adminPersons: _nullableListIntConverter
-                .decode(row['adminPersons'] as String?)),
+            units: _listIntConverter.decode(row['units'] as String),
+            persons: _listIntConverter.decode(row['persons'] as String),
+            adminPersons:
+                _listIntConverter.decode(row['adminPersons'] as String)),
         arguments: [id, limit]);
   }
 

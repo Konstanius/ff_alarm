@@ -60,6 +60,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       AwesomeNotifications().cancelNotificationsByChannelKey('alarm');
       AwesomeNotifications().cancelNotificationsByChannelKey('test');
       resetAndroidNotificationVolume();
+
       RealTimeListener.init();
 
       PersonInterface.fetchAll();

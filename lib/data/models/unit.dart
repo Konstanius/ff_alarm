@@ -56,7 +56,7 @@ class Unit {
       unitIdentifier: json[jsonShorts["unitIdentifier"]],
       unitDescription: json[jsonShorts["unitDescription"]],
       status: json[jsonShorts["status"]],
-      positions: json[jsonShorts["positions"]].map((e) => UnitPosition.values[e]).toList(),
+      positions: List<UnitPosition>.from(json[jsonShorts["positions"]].map((e) => UnitPosition.values[e])),
       capacity: json[jsonShorts["capacity"]],
       updated: DateTime.fromMillisecondsSinceEpoch(json[jsonShorts["updated"]]),
     );
