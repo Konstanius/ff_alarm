@@ -23,7 +23,7 @@ Future<dynamic> generalDialog({
           ),
         ),
         backgroundColor: Theme.of(Globals.context!).colorScheme.background.withBlue(color.blue ~/ 7).withGreen(color.green ~/ 7).withRed(color.red ~/ 7),
-        title: Text(title, style: Theme.of(Globals.context!).textTheme.headline6!.copyWith(color: color)),
+        title: Text(title, style: Theme.of(Globals.context!).textTheme.titleLarge!.copyWith(color: color)),
         content: SingleChildScrollView(child: content),
         actions: actions,
       );

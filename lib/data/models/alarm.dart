@@ -28,14 +28,6 @@ class Alarm {
 
   DateTime updated;
 
-  String deflateToString() {
-    Map<String, dynamic> json = toJson();
-    String jsonString = jsonEncode(json);
-    final enCodedJson = utf8.encode(jsonString);
-    final gZipJson = gzip.encode(enCodedJson);
-    return base64.encode(gZipJson);
-  }
-
   Alarm({
     required this.id,
     required this.type,
@@ -115,13 +107,9 @@ class Alarm {
 
   AlarmOption getAlertOption() {
     DateTime now = DateTime.now();
-    if (now.difference(date).inMinutes < 15 || date.difference(now).inMinutes < 15) {
-      return AlarmOption.alert;
-    } else if (now.difference(date).inHours < 24 || date.difference(now).inHours < 24) {
-      return AlarmOption.silent;
-    } else {
-      return AlarmOption.none;
-    }
+    if (date.isAfter(now.subtract(const Duration(minutes: 15)))) return AlarmOption.alert;
+    if (date.isAfter(now.subtract(const Duration(hours: 24)))) return AlarmOption.silent;
+    return AlarmOption.none;
   }
 
   static Future<List<Alarm>> getBatched({
@@ -146,7 +134,7 @@ class Alarm {
       }
 
       alarms.addAll(toAdd);
-      if ((limit != null && alarms.length >= limit )|| newAlarms.length < batchSize) break;
+      if ((limit != null && alarms.length >= limit) || newAlarms.length < batchSize) break;
     }
 
     alarms.sort((a, b) => b.date.compareTo(a.date));
@@ -159,6 +147,7 @@ class Alarm {
   static Future<void> update(Alarm alarm, bool bc) async {
     var existing = await Globals.db.alarmDao.getById(alarm.id);
     if (existing != null) {
+      if (existing.updated.isAfter(alarm.updated)) return;
       await Globals.db.alarmDao.updates(alarm);
     } else {
       await Globals.db.alarmDao.inserts(alarm);

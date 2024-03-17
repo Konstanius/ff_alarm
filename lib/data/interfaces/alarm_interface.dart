@@ -6,16 +6,16 @@ abstract class AlarmInterface {
   static Future<void> fetchAll() async {
     DateTime archiveDate = DateTime.now().subtract(const Duration(days: 90));
     var allAlarms = await Alarm.getAll(filter: (alarm) => alarm.date.isAfter(archiveDate));
-    // print all as json
+
+    StringBuffer sb = StringBuffer();
     for (Alarm alarm in allAlarms) {
-      alarm.address = "Jena";
-      alarm.notes = [];
-      print(alarm.deflateToString());
+      sb.write(alarm.id);
+      sb.write(':');
+      sb.write(alarm.updated.millisecondsSinceEpoch);
+      sb.write(',');
     }
-    Map<String, dynamic> alarms = {};
-    for (Alarm alarm in allAlarms) {
-      alarms[alarm.id.toString()] = alarm.updated.millisecondsSinceEpoch;
-    }
+
+    Map<String, dynamic> alarms = {'data': sb.toString()};
 
     Request response = await Request('alarmGetAll', alarms).emit(true);
     if (response.ackData!.isEmpty) return;

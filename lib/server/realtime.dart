@@ -2,6 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:ff_alarm/data/models/alarm.dart';
+import 'package:ff_alarm/data/models/person.dart';
+import 'package:ff_alarm/data/models/station.dart';
+import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/server/request.dart';
@@ -47,8 +51,6 @@ class RealTimeListener {
         String eventString;
         if (event is String) {
           eventString = event;
-        } else if (event is List<int>) {
-          eventString = utf8.decode(event);
         } else {
           Logger.error('Realtime received invalid data: ${event.runtimeType}');
           return;
@@ -92,6 +94,37 @@ class RealTimeListener {
   }
 }
 
-const Map<String, Future<void> Function(Map<String, dynamic> data)> packetTypes = {
-
+Map<String, Future<void> Function(Map<String, dynamic> data)> packetTypes = {
+  "alarm": (Map<String, dynamic> data) async {
+    Alarm alarm = Alarm.fromJson(data);
+    await Alarm.update(alarm, true);
+  },
+  "alarm_delete": (Map<String, dynamic> data) async {
+    int alarmId = data['id'];
+    await Alarm.delete(alarmId, true);
+  },
+  "person": (Map<String, dynamic> data) async {
+    Person person = Person.fromJson(data);
+    await Person.update(person, true);
+  },
+  "person_delete": (Map<String, dynamic> data) async {
+    int personId = data['id'];
+    await Person.delete(personId, true);
+  },
+  "station": (Map<String, dynamic> data) async {
+    Station station = Station.fromJson(data);
+    await Station.update(station, true);
+  },
+  "station_delete": (Map<String, dynamic> data) async {
+    int stationId = data['id'];
+    await Station.delete(stationId, true);
+  },
+  "unit": (Map<String, dynamic> data) async {
+    Unit unit = Unit.fromJson(data);
+    await Unit.update(unit, true);
+  },
+  "unit_delete": (Map<String, dynamic> data) async {
+    int unitId = data['id'];
+    await Unit.delete(unitId, true);
+  },
 };

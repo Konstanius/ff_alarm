@@ -115,6 +115,7 @@ class Person {
   static Future<void> update(Person person, bool bc) async {
     var existing = await Globals.db.personDao.getById(person.id);
     if (existing != null) {
+      if (existing.updated.isAfter(person.updated)) return;
       await Globals.db.personDao.updates(person);
     } else {
       await Globals.db.personDao.inserts(person);

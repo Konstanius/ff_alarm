@@ -124,6 +124,7 @@ class Station  {
   static Future<void> update(Station station, bool bc) async {
     var existing = await Globals.db.stationDao.getById(station.id);
     if (existing != null) {
+      if (existing.updated.isAfter(station.updated)) return;
       await Globals.db.stationDao.updates(station);
     } else {
       await Globals.db.stationDao.inserts(station);

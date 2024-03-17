@@ -18,3 +18,4 @@ iOS:
   - Alert permission Anfrage läuft
   - GPS Push permission Anfrage ausstehend
   - Release Mode nicht funktionstüchtig aktuell (evtl. wegen Alert permission)
+  - Swift Code für iOS NSE

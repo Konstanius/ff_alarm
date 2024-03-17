@@ -5,10 +5,16 @@ import 'package:ff_alarm/ui/utils/updater.dart';
 abstract class PersonInterface {
   static Future<void> fetchAll() async {
     var allPersons = await Person.getAll();
-    Map<String, dynamic> persons = {};
+
+    StringBuffer sb = StringBuffer();
     for (Person person in allPersons) {
-      persons[person.id.toString()] = person.updated.millisecondsSinceEpoch;
+      sb.write(person.id);
+      sb.write(':');
+      sb.write(person.updated.millisecondsSinceEpoch);
+      sb.write(',');
     }
+
+    Map<String, dynamic> persons = {'data': sb.toString()};
 
     Request response = await Request('personGetAll', persons).emit(true);
     if (response.ackData!.isEmpty) return;

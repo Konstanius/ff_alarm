@@ -121,6 +121,7 @@ class Unit {
   static Future<void> update(Unit unit, bool bc) async {
     var existing = await Globals.db.unitDao.getById(unit.id);
     if (existing != null) {
+      if (existing.updated.isAfter(unit.updated)) return;
       await Globals.db.unitDao.updates(unit);
     } else {
       await Globals.db.unitDao.inserts(unit);

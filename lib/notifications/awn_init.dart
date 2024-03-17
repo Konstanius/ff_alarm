@@ -194,7 +194,7 @@ Future<void> resetAndroidNotificationVolume() async {
     try {
       await RealVolume.setVolume(lastVolume, streamType: StreamType.NOTIFICATION, showUI: false);
     } catch (e) {
-      print('Failed to set volume: $e');
+      Logger.error('Failed to set volume: $e');
     }
   }
 
@@ -204,7 +204,7 @@ Future<void> resetAndroidNotificationVolume() async {
     try {
       await RealVolume.setRingerMode(RingerMode.values[lastMode]);
     } catch (e) {
-      print('Failed to set mode: $e');
+      Logger.error('Failed to set mode: $e');
     }
   }
 }
@@ -284,7 +284,7 @@ Future<bool> sendAlarm(Alarm alarm) async {
       ],
     );
   } catch (e) {
-    print('Failed to send test alarm: $e');
+    Logger.error('Failed to send test alarm: $e');
     return false;
   }
 }

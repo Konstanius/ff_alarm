@@ -5,10 +5,16 @@ import 'package:ff_alarm/ui/utils/updater.dart';
 abstract class StationInterface {
   static Future<void> fetchAll() async {
     var allStations = await Station.getAll();
-    Map<String, dynamic> stations = {};
+
+    StringBuffer sb = StringBuffer();
     for (Station station in allStations) {
-      stations[station.id.toString()] = station.updated.millisecondsSinceEpoch;
+      sb.write(station.id);
+      sb.write(':');
+      sb.write(station.updated.millisecondsSinceEpoch);
+      sb.write(',');
     }
+
+    Map<String, dynamic> stations = {'data': sb.toString()};
 
     Request response = await Request('stationGetAll', stations).emit(true);
     if (response.ackData!.isEmpty) return;
