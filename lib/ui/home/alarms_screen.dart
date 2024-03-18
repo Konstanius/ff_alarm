@@ -54,7 +54,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
               title: Text('${alarm.type} | ${alarm.word}'),
               subtitle: Text(alarm.date.toLocal().toString()),
               onTap: () {
-                Globals.router.go('/alarm', extra: alarm);
+                Globals.router.push('/alarm', extra: alarm);
               },
             ),
         ],

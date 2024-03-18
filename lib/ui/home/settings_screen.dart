@@ -94,7 +94,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
               ],
             ),
             onTap: () {
-              Globals.router.go('/lifecycle');
+              Globals.router.push('/lifecycle');
             },
           ),
           ListTile(
@@ -109,7 +109,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
               ],
             ),
             onTap: () {
-              Globals.router.go('/notifications');
+              Globals.router.push('/notifications');
             },
           ),
           const SettingsDivider(text: 'Personalisierung'),

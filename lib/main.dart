@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/notifications/awn_init.dart';
 import 'package:ff_alarm/notifications/fcm_init.dart';
+import 'package:ff_alarm/server/realtime.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/home.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -23,11 +23,9 @@ void main() async {
   };
 
   runZonedGuarded(() async {
-    print('1');
     WidgetsFlutterBinding.ensureInitialized();
 
     await Globals.initialize();
-    print('2');
 
     if (!Globals.fastStartBypass) {
       try {
@@ -35,36 +33,20 @@ void main() async {
       } catch (e, s) {
         Logger.error('Failed to initialize awesome_notifications: $e\n$s');
       }
-      print('3');
 
       try {
         await initializeFirebaseMessaging();
       } catch (e, s) {
         Logger.error('Failed to initialize firebase_messaging: $e\n$s');
       }
-      print('4');
     }
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       firebaseMessagingHandler(message, true);
     });
-    print('5');
-
-    // TODO logged in check
 
     // lock to portrait mode
     await SystemChrome.setPreferredOrientations(<DeviceOrientation>[DeviceOrientation.portraitUp]);
-    print('6');
-
-    Globals.prefs.setInt('auth_user', 1);
-    Globals.prefs.setString('auth_token', 'abcdefgh');
-    Globals.loggedIn = true;
-
-    Person? person = await Globals.db.personDao.getById(1);
-    if (person != null) {
-      Globals.person = person;
-    }
-    print('7');
 
     runApp(const FFAlarmApp());
   }, (error, stack) {
@@ -74,4 +56,25 @@ void main() async {
     }
     Logger.error('runZonedGuarded error: $error\n$stack');
   });
+}
+
+Future<void> logout() async {
+  Globals.prefs.remove('auth_token');
+  Globals.prefs.remove('auth_user');
+  Globals.loggedIn = false;
+  Globals.person = null;
+  try {
+    await RealTimeListener.socket?.close();
+  } catch (e, s) {
+    Logger.error('Failed to disconnect socket: $e\n$s');
+  }
+
+  while (true) {
+    try {
+      Globals.router.go('/login');
+      break;
+    } catch (_) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+  }
 }

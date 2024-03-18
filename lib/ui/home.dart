@@ -13,7 +13,6 @@ import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/home/units_screen.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
-import 'package:share_plus/share_plus.dart';
 
 class FFAlarmApp extends StatelessWidget {
   const FFAlarmApp({super.key});
@@ -84,11 +83,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     Globals.appStarted = true;
     tabController = TabController(length: 3, vsync: this);
 
-    PersonInterface.fetchAll();
-    UnitInterface.fetchAll();
-    StationInterface.fetchAll();
-    AlarmInterface.fetchAll();
-
     Future.delayed(const Duration(seconds: 2), () {
       Globals.fastStartBypass = false;
     });
@@ -99,10 +93,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     RealTimeListener.init();
 
-    Future.delayed(const Duration(seconds: 2)).then((value) {
-      String? fcmToken = Globals.prefs.getString('fcm_token');
-      Share.share('FCM Token: $fcmToken');
-    });
+    if (Globals.loggedIn) {
+      PersonInterface.fetchAll();
+      UnitInterface.fetchAll();
+      StationInterface.fetchAll();
+      AlarmInterface.fetchAll();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        Globals.router.go('/login');
+      });
+    }
   }
 
   @override

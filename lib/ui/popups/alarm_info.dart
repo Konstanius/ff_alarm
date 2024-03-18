@@ -70,7 +70,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates {
               AlarmResponse response = AlarmResponse(
                 type: type,
                 note: null, // TODO
-                stationId: selectedStation,
+                stationId: type == AlarmResponseType.notReady ? null : selectedStation,
                 time: DateTime.now(),
               );
               await AlarmInterface.setResponse(alarm, response);
@@ -166,6 +166,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates {
       body: ListView(
         padding: const EdgeInsets.all(8),
         children: <Widget>[
+          // TODO a button to set response to no, without selecting a station
           for (var station in stations)
             // required to display:
             // name
@@ -486,6 +487,9 @@ class _AlarmPageState extends State<AlarmPage> with Updates {
                   setState(() {
                     selectedStation = null;
                     newAnswer = true;
+                    if (stations.length == 1) {
+                      selectedStation = stations.first.id;
+                    }
                   });
                 }
               },

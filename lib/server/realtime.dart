@@ -39,7 +39,7 @@ class RealTimeListener {
     }
 
     try {
-      socket = await WebSocket.connect('ws${Globals.sslAllowance ? 's' : ''}://${Globals.connectionAddress}/realtime/', customClient: client, headers: Request.getAuthData());
+      socket = await WebSocket.connect('ws${Globals.connectionAddress}/realtime/', customClient: client, headers: Request.getAuthData());
     } catch (e, s) {
       Logger.warn('RealTimeListener: $e\n$s');
       return;

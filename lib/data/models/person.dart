@@ -102,7 +102,7 @@ class Person {
       }
 
       persons.addAll(toAdd);
-      if ((limit != null && persons.length >= limit )|| newPersons.length < batchSize) break;
+      if ((limit != null && persons.length >= limit) || newPersons.length < batchSize) break;
     }
 
     persons.sort((a, b) => a.fullName.compareTo(b.fullName));
@@ -120,6 +120,8 @@ class Person {
     } else {
       await Globals.db.personDao.inserts(person);
     }
+
+    if (person.id == Globals.person?.id) Globals.person = person;
 
     if (!bc) return;
     UpdateInfo(UpdateType.person, {person.id});

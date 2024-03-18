@@ -7,8 +7,9 @@ import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/prefs.dart';
 import 'package:ff_alarm/log/logger.dart';
-import 'package:ff_alarm/ui/alarm/alarm_info.dart';
 import 'package:ff_alarm/ui/home.dart';
+import 'package:ff_alarm/ui/popups/alarm_info.dart';
+import 'package:ff_alarm/ui/popups/login_screen.dart';
 import 'package:ff_alarm/ui/settings/lifecycle.dart';
 import 'package:ff_alarm/ui/settings/notifications.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
@@ -35,7 +36,10 @@ abstract class Globals {
   static late final AppDatabase db;
 
   static Future<void> initialize() async {
-    if (initialized) return;
+    if (initialized) {
+      await initializeTemporary();
+      return;
+    }
     initialized = true;
     if (!Platform.isIOS) {
       filesPath = (await getApplicationSupportDirectory()).path;
@@ -54,6 +58,10 @@ abstract class Globals {
 
     db = await $FloorAppDatabase.databaseBuilder('database.db').buildBetterPath();
 
+    await initializeTemporary();
+  }
+
+  static Future<void> initializeTemporary() async {
     try {
       positionSubscription = Geolocator.getPositionStream().listen((Position position) {
         lastPosition = position;
@@ -62,11 +70,35 @@ abstract class Globals {
       });
 
       // get initial position
-      lastPosition = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 5));
-      lastPositionTime = DateTime.now();
-      UpdateInfo(UpdateType.ui, {2});
+      Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 5)).then((Position? position) {
+        lastPosition = position;
+        lastPositionTime = DateTime.now();
+        UpdateInfo(UpdateType.ui, {2});
+      }).catchError((e, s) {
+        Logger.error('Failed to get initial position: $e\n$s');
+      });
     } catch (e, s) {
       Logger.error('Failed to initialize geolocator: $e\n$s');
+    }
+
+    int? userId = Globals.prefs.getInt('auth_user');
+    String? token = Globals.prefs.getString('auth_token');
+    String? connectionAddress = Globals.prefs.getString('connection_address');
+    if (userId != null && token != null && connectionAddress != null) {
+      Person? person = await Globals.db.personDao.getById(userId);
+      if (person != null) {
+        Globals.loggedIn = true;
+        Globals.person = person;
+        Globals.connectionAddress = connectionAddress;
+      } else {
+        Globals.loggedIn = false;
+        Globals.prefs.remove('auth_user');
+        Globals.prefs.remove('auth_token');
+      }
+    } else {
+      Globals.loggedIn = false;
+      Globals.prefs.remove('auth_user');
+      Globals.prefs.remove('auth_token');
     }
   }
 
@@ -105,11 +137,17 @@ abstract class Globals {
             path: 'notifications',
             builder: (BuildContext context, GoRouterState state) => const NotificationSettings(),
           ),
+          GoRoute(
+            path: 'login',
+            onExit: (BuildContext context) {
+              return Globals.loggedIn;
+            },
+            builder: (BuildContext context, GoRouterState state) => const LoginScreen(),
+          ),
         ],
       ),
     ],
   );
 
-  static const bool sslAllowance = false;
-  static const String connectionAddress = '192.168.178.89:443';
+  static String connectionAddress = '://192.168.178.89:443';
 }

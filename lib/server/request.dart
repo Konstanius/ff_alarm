@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
+import 'package:ff_alarm/main.dart';
 import 'package:flutter/foundation.dart';
 
 class Request {
@@ -43,7 +44,7 @@ class Request {
       sendTimeout: Duration(milliseconds: timeout),
       headers: Globals.loggedIn ? getAuthData() : null,
       method: 'POST',
-      baseUrl: 'http${Globals.sslAllowance ? 's' : ''}://${Globals.connectionAddress}/api/',
+      baseUrl: 'http${Globals.connectionAddress}/api/',
       receiveDataWhenStatusError: true,
       validateStatus: (_) {
         return true;
@@ -68,7 +69,7 @@ class Request {
     Response<dynamic> response;
     try {
       response = await dio.post(
-        'http${Globals.sslAllowance ? 's' : ''}://${Globals.connectionAddress}/api/$type',
+        'http${Globals.connectionAddress}/api/$type',
         data: data,
         onSendProgress: uploadProgressInt,
         onReceiveProgress: downloadProgressInt,
@@ -126,6 +127,13 @@ class Request {
       case HttpStatus.tooManyRequests:
         error = AckError.tooManyRequests;
         status = RequestStatus.timeout;
+        break;
+      case HttpStatus.unauthorized:
+        if (!guest) {
+          error = AckError(HttpStatus.unauthorized, 'Du bist nicht angemeldet');
+          status = RequestStatus.failed;
+          await logout();
+        }
         break;
       default:
         String responseBody = response.data.toString();

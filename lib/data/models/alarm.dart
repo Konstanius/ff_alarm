@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:ff_alarm/globals.dart';
-import 'package:ff_alarm/ui/alarm/alarm_info.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:floor/floor.dart';
+
+import '../../ui/popups/alarm_info.dart';
 
 @entity
 class Alarm {
