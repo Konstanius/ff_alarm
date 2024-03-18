@@ -1,6 +1,7 @@
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:floor/floor.dart';
+import 'package:geolocator/geolocator.dart';
 
 @entity
 class Station  {
@@ -18,16 +19,33 @@ class Station  {
   String address;
 
   String coordinates;
-
-  List<int> units;
+  Position? get position {
+    var split = coordinates.split(',');
+    try {
+      return Position(
+        latitude: double.parse(split[0]),
+        longitude: double.parse(split[1]),
+        accuracy: 0,
+        altitude: 0,
+        altitudeAccuracy: 0,
+        heading: 0,
+        headingAccuracy: 0,
+        speed: 0,
+        speedAccuracy: 0,
+        timestamp: DateTime.now(),
+        floor: 0,
+        isMocked: false,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 
   List<int> persons;
 
   List<int> adminPersons;
 
   DateTime updated;
-
-  int? priority;
   
   Station({
     required this.id,
@@ -38,7 +56,6 @@ class Station  {
     required this.address,
     required this.coordinates,
     required this.updated,
-    required this.units,
     required this.persons,
     required this.adminPersons,
   });
@@ -51,7 +68,6 @@ class Station  {
     "stationNumber": "s",
     "address": "ad",
     "coordinates": "c",
-    "units": "u",
     "persons": "pe",
     "adminPersons": "ap",
     "updated": "up",
@@ -66,7 +82,6 @@ class Station  {
       stationNumber: json[jsonShorts["stationNumber"]],
       address: json[jsonShorts["address"]],
       coordinates: json[jsonShorts["coordinates"]],
-      units: List<int>.from(json[jsonShorts["units"]]),
       persons: List<int>.from(json[jsonShorts["persons"]]),
       adminPersons: List<int>.from(json[jsonShorts["adminPersons"]]),
       updated: DateTime.fromMillisecondsSinceEpoch(json[jsonShorts["updated"]]),
@@ -82,7 +97,6 @@ class Station  {
       jsonShorts["stationNumber"]!: stationNumber,
       jsonShorts["address"]!: address,
       jsonShorts["coordinates"]!: coordinates,
-      jsonShorts["units"]!: units,
       jsonShorts["persons"]!: persons,
       jsonShorts["adminPersons"]!: adminPersons,
       jsonShorts["updated"]!: updated.millisecondsSinceEpoch,

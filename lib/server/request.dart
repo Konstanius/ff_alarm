@@ -131,7 +131,6 @@ class Request {
         String responseBody = response.data.toString();
         Map<String, dynamic> responseJson = jsonDecode(responseBody);
         error = AckError.from(responseCode, responseJson['message']);
-        Logger.net('$type: ${error!.errorCode} - ${error!.errorMessage}');
         break;
     }
 

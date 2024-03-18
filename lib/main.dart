@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/notifications/awn_init.dart';
@@ -58,6 +59,11 @@ void main() async {
     Globals.prefs.setInt('auth_user', 1);
     Globals.prefs.setString('auth_token', 'abcdefgh');
     Globals.loggedIn = true;
+
+    Person? person = await Globals.db.personDao.getById(1);
+    if (person != null) {
+      Globals.person = person;
+    }
     print('7');
 
     runApp(const FFAlarmApp());

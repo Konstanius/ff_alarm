@@ -9,7 +9,6 @@ import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/server/request.dart';
-import 'package:flutter/foundation.dart';
 
 // Constant WebSocket listener to realtime updates on the server
 class RealTimeListener {

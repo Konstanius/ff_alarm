@@ -30,6 +30,7 @@ enum UpdateType {
   /// UI update ids:
   /// 0 = app resumed
   /// 1 = permission changed
+  /// 2 = location changed
   ui,
   other;
 }

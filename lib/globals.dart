@@ -4,7 +4,9 @@ import 'dart:io';
 import 'package:app_group_directory/app_group_directory.dart';
 import 'package:ff_alarm/data/database.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
+import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/prefs.dart';
+import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/ui/alarm/alarm_info.dart';
 import 'package:ff_alarm/ui/home.dart';
 import 'package:ff_alarm/ui/settings/lifecycle.dart';
@@ -13,6 +15,7 @@ import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -50,6 +53,21 @@ abstract class Globals {
     }
 
     db = await $FloorAppDatabase.databaseBuilder('database.db').buildBetterPath();
+
+    try {
+      positionSubscription = Geolocator.getPositionStream().listen((Position position) {
+        lastPosition = position;
+        lastPositionTime = DateTime.now();
+        UpdateInfo(UpdateType.ui, {2});
+      });
+
+      // get initial position
+      lastPosition = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 5));
+      lastPositionTime = DateTime.now();
+      UpdateInfo(UpdateType.ui, {2});
+    } catch (e, s) {
+      Logger.error('Failed to initialize geolocator: $e\n$s');
+    }
   }
 
   static bool initialized = false;
@@ -57,6 +75,13 @@ abstract class Globals {
   static bool fastStartBypass = false;
   static bool foreground = false;
   static bool loggedIn = false;
+
+  static Person? person;
+
+  static Position? lastPosition;
+  static DateTime? lastPositionTime;
+
+  static StreamSubscription<Position>? positionSubscription;
 
   static final GoRouter router = GoRouter(
     navigatorKey: navigatorKey,

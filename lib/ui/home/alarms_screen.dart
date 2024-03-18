@@ -43,6 +43,12 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
       body: ListView(
         padding: const EdgeInsets.all(8),
         children: <Widget>[
+          ElevatedButton(
+            onPressed: () async {
+              await Request('test', {}).emit(true);
+            },
+            child: const Text('Test Alarmierung'),
+          ),
           for (Alarm alarm in alarms)
             ListTile(
               title: Text('${alarm.type} | ${alarm.word}'),
@@ -51,12 +57,6 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                 Globals.router.go('/alarm', extra: alarm);
               },
             ),
-          ElevatedButton(
-            onPressed: () async {
-              await Request('test', {}).emit(true);
-            },
-            child: const Text('Test Alarmierung'),
-          ),
         ],
       ),
     );

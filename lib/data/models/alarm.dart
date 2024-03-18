@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/ui/alarm/alarm_info.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:floor/floor.dart';
 
@@ -69,7 +70,8 @@ class Alarm {
         Map<int, AlarmResponse> result = {};
         Map<String, dynamic> decoded = json[jsonShorts["responses"]];
         decoded.forEach((key, value) {
-          result[int.parse(key)] = AlarmResponse.fromJson(value);
+          var response = AlarmResponse.fromJson(value);
+          if (response != null) result[int.parse(key)] = response;
         });
         return result;
       }(),
@@ -174,16 +176,17 @@ enum AlarmOption {
 class AlarmResponse {
   String? note;
   DateTime? time;
-  int? duration;
+  AlarmResponseType type;
   int? stationId;
 
-  AlarmResponse({this.note, this.time, this.duration, this.stationId});
+  AlarmResponse({this.note, this.time, required this.type, this.stationId});
 
-  factory AlarmResponse.fromJson(Map<String, dynamic> json) {
+  static AlarmResponse? fromJson(Map<String, dynamic>? json) {
+    if (json == null || !json.containsKey('d')) return null;
     return AlarmResponse(
       note: json['n'],
       time: json['t'] != null ? DateTime.fromMillisecondsSinceEpoch(json['t']) : null,
-      duration: json['d'],
+      type: AlarmResponseType.values[json['d']],
       stationId: json['s'],
     );
   }
@@ -192,7 +195,7 @@ class AlarmResponse {
     return {
       'n': note,
       't': time?.millisecondsSinceEpoch,
-      'd': duration,
+      'd': type.index,
       's': stationId,
     };
   }

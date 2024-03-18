@@ -8,6 +8,7 @@ import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class LifeCycleSettings extends StatefulWidget {
@@ -419,6 +420,22 @@ class _LifeCycleSettingsState extends State<LifeCycleSettings> {
               }
               if (result.isGranted) {
                 successToast('Einstellung erfolgreich!');
+
+                try {
+                  Globals.positionSubscription?.cancel();
+                  Globals.positionSubscription = Geolocator.getPositionStream().listen((Position position) async {
+                    Globals.lastPosition = position;
+                    Globals.lastPositionTime = DateTime.now();
+                    UpdateInfo(UpdateType.ui, {2});
+                  });
+
+                  // get initial position
+                  Globals.lastPosition = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 5));
+                  Globals.lastPositionTime = DateTime.now();
+                  UpdateInfo(UpdateType.ui, {2});
+                } catch (e, s) {
+                  Logger.error('Failed to initialize geolocator: $e\n$s');
+                }
               } else {
                 errorToast('Einstellung fehlgeschlagen!');
               }

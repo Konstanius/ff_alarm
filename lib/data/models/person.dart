@@ -32,7 +32,7 @@ class Person {
   /// - bo (Bootsführerschein)
   String qualifications;
 
-  AlarmResponse response;
+  AlarmResponse? response;
 
   DateTime updated;
 
@@ -75,7 +75,7 @@ class Person {
       jsonShorts["lastName"]!: lastName,
       jsonShorts["allowedUnits"]!: allowedUnits,
       jsonShorts["qualifications"]!: qualifications,
-      jsonShorts["response"]!: response.toJson(),
+      jsonShorts["response"]!: response?.toJson(),
       jsonShorts["updated"]!: updated.millisecondsSinceEpoch,
     };
   }

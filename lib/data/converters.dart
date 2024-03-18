@@ -64,7 +64,8 @@ class MapIntAlarmResponseConverter extends TypeConverter<Map<int, AlarmResponse>
     Map<String, dynamic> decoded = jsonDecode(databaseValue);
     Map<int, AlarmResponse> result = {};
     decoded.forEach((key, value) {
-      result[int.parse(key)] = AlarmResponse.fromJson(value);
+      var response = AlarmResponse.fromJson(value);
+      if (response != null) result[int.parse(key)] = response;
     });
     return result;
   }
@@ -79,14 +80,16 @@ class MapIntAlarmResponseConverter extends TypeConverter<Map<int, AlarmResponse>
   }
 }
 
-class AlarmResponseConverter extends TypeConverter<AlarmResponse, String> {
+class AlarmResponseConverter extends TypeConverter<AlarmResponse?, String?> {
   @override
-  AlarmResponse decode(String databaseValue) {
+  AlarmResponse? decode(String? databaseValue) {
+    if (databaseValue == null) return null;
     return AlarmResponse.fromJson(jsonDecode(databaseValue));
   }
 
   @override
-  String encode(AlarmResponse value) {
+  String? encode(AlarmResponse? value) {
+    if (value == null) return null;
     return jsonEncode(value.toJson());
   }
 }
@@ -102,6 +105,7 @@ class DateTimeConverter extends TypeConverter<DateTime, int> {
     return value.millisecondsSinceEpoch;
   }
 }
+
 class ListUnitPositionConverter extends TypeConverter<List<UnitPosition>, String> {
   @override
   List<UnitPosition> decode(String databaseValue) {
