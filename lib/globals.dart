@@ -51,11 +51,6 @@ abstract class Globals {
 
     prefs = Prefs(identifier: 'main');
 
-    Directory dbDir = Directory('$filesPath/isar');
-    if (!dbDir.existsSync()) {
-      dbDir.createSync();
-    }
-
     db = await $FloorAppDatabase.databaseBuilder('database.db').buildBetterPath();
 
     await initializeTemporary();
@@ -75,10 +70,10 @@ abstract class Globals {
         lastPositionTime = DateTime.now();
         UpdateInfo(UpdateType.ui, {2});
       }).catchError((e, s) {
-        Logger.error('Failed to get initial position: $e\n$s');
+        Logger.warn('Failed to get initial position: $e\n$s');
       });
     } catch (e, s) {
-      Logger.error('Failed to initialize geolocator: $e\n$s');
+      Logger.warn('Failed to initialize geolocator: $e\n$s');
     }
 
     int? userId = Globals.prefs.getInt('auth_user');

@@ -22,7 +22,9 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
   @override
   void initState() {
     super.initState();
-    setupListener({UpdateType.alarm});
+    setupListener({UpdateType.alarm, UpdateType.ui});
+
+    if (!Globals.loggedIn) return;
 
     Alarm.getBatched(limit: 25).then((List<Alarm> value) {
       if (!mounted) return;
@@ -64,36 +66,47 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
 
   @override
   void onUpdate(UpdateInfo info) async {
-    DateTime lowest = DateTime.now().subtract(const Duration(minutes: 20));
-    for (var alarm in this.alarms) {
-      if (alarm.date.isBefore(lowest)) lowest = alarm.date;
-    }
-
-    var alarms = <Alarm>[];
-    var futures = <Future<Alarm?>>[];
-    for (int id in info.ids) {
-      futures.add(Globals.db.alarmDao.getById(id));
-    }
-
-    var values = await Future.wait(futures);
-    for (var value in values) {
-      if (value == null) continue;
-      if (value.date.isBefore(lowest)) continue;
-      alarms.add(value);
-    }
-
-    for (var alarm in alarms) {
-      var index = this.alarms.indexWhere((element) => element.id == alarm.id);
-      if (index != -1) {
-        this.alarms[index] = alarm;
-      } else {
-        this.alarms.add(alarm);
+    if (info.type == UpdateType.alarm) {
+      DateTime lowest = DateTime.now().subtract(const Duration(minutes: 20));
+      for (var alarm in this.alarms) {
+        if (alarm.date.isBefore(lowest)) lowest = alarm.date;
       }
+
+      var alarms = <Alarm>[];
+      var futures = <Future<Alarm?>>[];
+      for (int id in info.ids) {
+        futures.add(Globals.db.alarmDao.getById(id));
+      }
+
+      var values = await Future.wait(futures);
+      for (var value in values) {
+        if (value == null) continue;
+        if (value.date.isBefore(lowest)) continue;
+        alarms.add(value);
+      }
+
+      for (var alarm in alarms) {
+        var index = this.alarms.indexWhere((element) => element.id == alarm.id);
+        if (index != -1) {
+          this.alarms[index] = alarm;
+        } else {
+          this.alarms.add(alarm);
+        }
+      }
+
+      this.alarms.sort((a, b) => b.date.compareTo(a.date));
+
+      if (!mounted) return;
+      setState(() {});
+    } else if (info.type == UpdateType.ui && info.ids.contains(3)) {
+      alarms.clear();
+      Alarm.getBatched(limit: 25).then((List<Alarm> value) {
+        if (!mounted) return;
+        value.sort((a, b) => b.date.compareTo(a.date));
+        setState(() {
+          alarms = value;
+        });
+      });
     }
-
-    this.alarms.sort((a, b) => b.date.compareTo(a.date));
-
-    if (!mounted) return;
-    setState(() {});
   }
 }

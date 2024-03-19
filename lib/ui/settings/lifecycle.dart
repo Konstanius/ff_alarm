@@ -430,11 +430,15 @@ class _LifeCycleSettingsState extends State<LifeCycleSettings> {
                   });
 
                   // get initial position
-                  Globals.lastPosition = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 5));
-                  Globals.lastPositionTime = DateTime.now();
-                  UpdateInfo(UpdateType.ui, {2});
+                  Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 5)).then((Position? position) {
+                    Globals.lastPosition = position;
+                    Globals.lastPositionTime = DateTime.now();
+                    UpdateInfo(UpdateType.ui, {2});
+                  }).catchError((e, s) {
+                    Logger.warn('Failed to get initial position: $e\n$s');
+                  });
                 } catch (e, s) {
-                  Logger.error('Failed to initialize geolocator: $e\n$s');
+                  Logger.warn('Failed to initialize geolocator: $e\n$s');
                 }
               } else {
                 errorToast('Einstellung fehlgeschlagen!');

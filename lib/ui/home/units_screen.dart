@@ -23,9 +23,11 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
   @override
   void initState() {
     super.initState();
-    setupListener({UpdateType.unit, UpdateType.station});
+    setupListener({UpdateType.unit, UpdateType.station, UpdateType.ui});
 
-    Station.getAll().then((List<Station> value) {
+    if (!Globals.loggedIn) return;
+
+    Station.getAll(filter: (station) => station.persons.contains(Globals.person!.id)).then((List<Station> value) {
       if (!mounted) return;
       setState(() {
         stations = value;
@@ -102,6 +104,25 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
           }
         }
       });
+    } else if (info.type == UpdateType.ui && info.ids.contains(3)) {
+      if (Globals.loggedIn) {
+        stations.clear();
+        units.clear();
+        Station.getAll(filter: (station) => station.persons.contains(Globals.person!.id)).then((List<Station> value) {
+          if (!mounted) return;
+          setState(() {
+            stations = value;
+            stations.sort((a, b) => a.name.compareTo(b.name));
+          });
+        });
+
+        Unit.getAll().then((List<Unit> value) {
+          if (!mounted) return;
+          setState(() {
+            units = value;
+          });
+        });
+      }
     }
   }
 }

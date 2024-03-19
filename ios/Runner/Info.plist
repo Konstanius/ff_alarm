@@ -31,13 +31,15 @@
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>Allows the user to use In-App location and maps features</string>
+		<string>This app needs location permission to share the live location of the user if requested</string>
 		<key>NSLocationUsageDescription</key>
-		<string>Allows the user to use In-App location and maps features</string>
+		<string>This app needs location permission to share the live location of the user if requested</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>Allows the user to use In-App location and maps features</string>
+		<string>This app needs location permission to share the live location of the user if requested</string>
 		<key>NSLocationAlwaysUsageDescription</key>
-		<string>Allows the user to use In-App location and maps features</string>
+		<string>This app needs location permission to share the live location of the user if requested</string>
+		<key>NSCameraUsageDescription</key>
+        <string>This app needs camera access to scan QR codes</string>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<key>UIBackgroundModes</key>
