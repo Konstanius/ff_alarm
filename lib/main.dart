@@ -25,36 +25,56 @@ void main() async {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
-    await Globals.initialize();
+    try {
+      await Globals.initialize();
+    } catch (e, s) {
+      Logger.error('Failed to initialize globals: $e\n$s');
+      print('Failed to initialize globals: $e\n$s');
+      return;
+    }
 
     if (!Globals.fastStartBypass) {
       try {
         await initializeAwesomeNotifications();
       } catch (e, s) {
         Logger.error('Failed to initialize awesome_notifications: $e\n$s');
+        print('Failed to initialize awesome_notifications: $e\n$s');
       }
 
       try {
         await initializeFirebaseMessaging();
       } catch (e, s) {
         Logger.error('Failed to initialize firebase_messaging: $e\n$s');
+        print('Failed to initialize firebase_messaging: $e\n$s');
       }
     }
 
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      firebaseMessagingHandler(message, true);
-    });
+    try {
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        firebaseMessagingHandler(message, true);
+      });
+    } catch (e, s) {
+      Logger.error('Failed to set up firebase messaging listeners: $e\n$s');
+      print('Failed to set up firebase messaging listeners: $e\n$s');
+    }
 
     // lock to portrait mode
-    await SystemChrome.setPreferredOrientations(<DeviceOrientation>[DeviceOrientation.portraitUp]);
+    try {
+      await SystemChrome.setPreferredOrientations(<DeviceOrientation>[DeviceOrientation.portraitUp]);
+    } catch (e, s) {
+      Logger.error('Failed to lock to portrait mode: $e\n$s');
+      print('Failed to lock to portrait mode: $e\n$s');
+    }
 
     runApp(const FFAlarmApp());
   }, (error, stack) {
     if (error is AckError) {
       Logger.warn('runZonedGuarded error: ${error.errorCode}, ${error.errorMessage}');
+      print('runZonedGuarded error: ${error.errorCode}, ${error.errorMessage}');
       return;
     }
     Logger.error('runZonedGuarded error: $error\n$stack');
+    print('runZonedGuarded error: $error\n$stack');
   });
 }
 

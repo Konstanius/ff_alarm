@@ -1,8 +1,8 @@
 geotracking privilege (denied, go to https://developer.apple.com/documentation/bundleresources/entitlements/com_apple_developer_location_push)
-critical alerts privilege (requested)
+critical alerts privilege granted
 
 do not disturb mutes it completely (overriden by critical alerts)
-focus or silent does not mute it completely
+focus or silent does not mute it at all
 
 // Permissions that have to be requested:
 // Permission.criticalAlerts

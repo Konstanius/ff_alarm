@@ -6,6 +6,7 @@ import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:real_volume/real_volume.dart';
 
 Future<void> initializeAwesomeNotifications() async {
@@ -84,60 +85,7 @@ Future<void> initializeAwesomeNotifications() async {
     ],
   );
 
-  bool isAllowed = await AwesomeNotifications().isNotificationAllowed();
-  if (!isAllowed) {
-    bool? neverAskAgain = Globals.prefs.getBool('notifications_never-ask-again');
-    if (neverAskAgain != true) {
-      bool granted = await AwesomeNotifications().requestPermissionToSendNotifications(
-        permissions: const [
-          NotificationPermission.Alert,
-          NotificationPermission.Sound,
-          NotificationPermission.Badge,
-          NotificationPermission.CriticalAlert,
-          NotificationPermission.Vibration,
-          NotificationPermission.FullScreenIntent,
-        ],
-      );
-
-      if (!granted) {
-        () async {
-          while (!Globals.appStarted) {
-            await Future.delayed(const Duration(milliseconds: 10));
-          }
-
-          var res = await showDialog<bool>(
-            context: Globals.navigatorKey.currentContext!,
-            builder: (context) {
-              return AlertDialog(
-                title: const Text('Benachrichtigungen deaktiviert'),
-                content: const Text('Die App benötigt Benachrichtigungen, um Alarmierungen anzuzeigen.'),
-                actions: <Widget>[
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(true);
-                    },
-                    child: const Text('Erneut versuchen'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(false);
-                    },
-                    child: const Text('Nicht fragen'),
-                  ),
-                ],
-              );
-            },
-          );
-
-          if (res == true) {
-            await initializeAwesomeNotifications();
-          } else {
-            Globals.prefs.setBool('notifications_never-ask-again', true);
-          }
-        }();
-      }
-    }
-  }
+  AwesomeNotifications().setGlobalBadgeCounter(0);
 
   AwesomeNotifications().setListeners(onActionReceivedMethod: onActionReceivedMethod);
 }

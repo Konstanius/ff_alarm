@@ -58,6 +58,16 @@ abstract class Globals {
 
   static Future<void> initializeTemporary() async {
     try {
+      // check if permission is granted, else throw
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        throw Exception('Location service is disabled');
+      }
+
+      var status = await Geolocator.checkPermission();
+      if (status == LocationPermission.denied) {
+        throw Exception('Location permission is denied');
+      }
+
       positionSubscription = Geolocator.getPositionStream().listen((Position position) {
         lastPosition = position;
         lastPositionTime = DateTime.now();

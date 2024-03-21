@@ -32,7 +32,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
     }
 
     if (Platform.isIOS) {
-      criticalAlerts = await Permission.criticalAlerts.isGranted;
+      criticalAlerts = (await Globals.channel.invokeMethod('checkCriticalAlertPermission')) ?? false;
       criticalAlertsTests = false;
     } else if (Platform.isAndroid) {
       criticalAlerts = Globals.prefs.getBool('critical_alerts') ?? false;
@@ -223,8 +223,9 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                 );
                 if (res != true) return;
 
-                final status = await Permission.criticalAlerts.request();
-                if (status.isGranted) {
+                // request via method channel from Globals
+                final response = await Globals.channel.invokeMethod('requestCriticalAlertPermission');
+                if (response == true) {
                   successToast('Einstellung aktiviert!');
                 } else {
                   errorToast('Einstellung fehlgeschlagen!');
