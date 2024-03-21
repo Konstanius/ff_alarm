@@ -11,7 +11,7 @@ abstract class AlarmInterface {
     for (Alarm alarm in allAlarms) {
       sb.write(alarm.id);
       sb.write(':');
-      sb.write(alarm.updated.millisecondsSinceEpoch);
+      sb.write(alarm.updated);
       sb.write(',');
     }
 

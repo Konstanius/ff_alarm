@@ -28,7 +28,7 @@ class Alarm {
 
   Map<int, AlarmResponse> responses;
 
-  DateTime updated;
+  int updated;
 
   Alarm({
     required this.id,
@@ -66,7 +66,7 @@ class Alarm {
       address: json[jsonShorts["address"]],
       notes: List<String>.from(json[jsonShorts["notes"]]),
       units: List<int>.from(json[jsonShorts["units"]]),
-      updated: DateTime.fromMillisecondsSinceEpoch(json[jsonShorts["updated"]]),
+      updated: json[jsonShorts["updated"]],
       responses: () {
         Map<int, AlarmResponse> result = {};
         Map<String, dynamic> decoded = json[jsonShorts["responses"]];
@@ -89,7 +89,7 @@ class Alarm {
       jsonShorts["address"]!: address,
       jsonShorts["notes"]!: notes,
       jsonShorts["units"]!: units,
-      jsonShorts["updated"]!: updated.millisecondsSinceEpoch,
+      jsonShorts["updated"]!: updated,
       jsonShorts["responses"]!: () {
         Map<String, dynamic> result = {};
         responses.forEach((key, value) {
@@ -118,14 +118,14 @@ class Alarm {
   static Future<List<Alarm>> getBatched({
     bool Function(Alarm)? filter,
     int? limit,
-    int startingId = 2 ^ 31,
+    int? startingId,
   }) async {
     var alarms = <Alarm>[];
 
-    int lowestId = startingId;
+    int lowestId = startingId ?? double.maxFinite.toInt();
     const batchSize = 50;
     while (true) {
-      var newAlarms = await Globals.db.alarmDao.getWithLowerIdThan(startingId, batchSize);
+      var newAlarms = await Globals.db.alarmDao.getWithLowerIdThan(lowestId, batchSize);
       if (newAlarms.isEmpty) break;
 
       var toAdd = <Alarm>[];
@@ -150,7 +150,7 @@ class Alarm {
   static Future<void> update(Alarm alarm, bool bc) async {
     var existing = await Globals.db.alarmDao.getById(alarm.id);
     if (existing != null) {
-      if (existing.updated.isAfter(alarm.updated)) return;
+      if (existing.updated >= alarm.updated) return;
       await Globals.db.alarmDao.updates(alarm);
     } else {
       await Globals.db.alarmDao.inserts(alarm);

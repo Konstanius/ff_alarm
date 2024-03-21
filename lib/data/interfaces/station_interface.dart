@@ -10,7 +10,7 @@ abstract class StationInterface {
     for (Station station in allStations) {
       sb.write(station.id);
       sb.write(':');
-      sb.write(station.updated.millisecondsSinceEpoch);
+      sb.write(station.updated);
       sb.write(',');
     }
 

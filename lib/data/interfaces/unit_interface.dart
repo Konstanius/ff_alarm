@@ -10,7 +10,7 @@ abstract class UnitInterface {
     for (Unit unit in allUnits) {
       sb.write(unit.id);
       sb.write(':');
-      sb.write(unit.updated.millisecondsSinceEpoch);
+      sb.write(unit.updated);
       sb.write(',');
     }
 

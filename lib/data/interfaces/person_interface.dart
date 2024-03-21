@@ -10,7 +10,7 @@ abstract class PersonInterface {
     for (Person person in allPersons) {
       sb.write(person.id);
       sb.write(':');
-      sb.write(person.updated.millisecondsSinceEpoch);
+      sb.write(person.updated);
       sb.write(',');
     }
 

@@ -60,12 +60,12 @@ abstract class Globals {
     try {
       // check if permission is granted, else throw
       if (!await Geolocator.isLocationServiceEnabled()) {
-        throw Exception('Location service is disabled');
+        throw 'Location service is disabled';
       }
 
       var status = await Geolocator.checkPermission();
       if (status == LocationPermission.denied) {
-        throw Exception('Location permission is denied');
+        throw 'Location permission is denied';
       }
 
       positionSubscription = Geolocator.getPositionStream().listen((Position position) {
@@ -83,7 +83,9 @@ abstract class Globals {
         Logger.warn('Failed to get initial position: $e\n$s');
       });
     } catch (e, s) {
-      Logger.warn('Failed to initialize geolocator: $e\n$s');
+      if (e is! String) {
+        Logger.warn('Failed to initialize geolocator: $e\n$s');
+      }
     }
 
     int? userId = Globals.prefs.getInt('auth_user');

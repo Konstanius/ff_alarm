@@ -34,7 +34,7 @@ class Person {
 
   AlarmResponse? response;
 
-  DateTime updated;
+  int updated;
 
   Person({
     required this.id,
@@ -64,7 +64,7 @@ class Person {
       allowedUnits: List<int>.from(json[jsonShorts["allowedUnits"]]),
       qualifications: json[jsonShorts["qualifications"]],
       response: AlarmResponse.fromJson(json[jsonShorts["response"]]),
-      updated: DateTime.fromMillisecondsSinceEpoch(json[jsonShorts["updated"]]),
+      updated: json[jsonShorts["updated"]],
     );
   }
 
@@ -76,21 +76,21 @@ class Person {
       jsonShorts["allowedUnits"]!: allowedUnits,
       jsonShorts["qualifications"]!: qualifications,
       jsonShorts["response"]!: response?.toJson(),
-      jsonShorts["updated"]!: updated.millisecondsSinceEpoch,
+      jsonShorts["updated"]!: updated,
     };
   }
 
   static Future<List<Person>> getBatched({
     bool Function(Person)? filter,
     int? limit,
-    int startingId = 2 ^ 31,
+    int? startingId,
   }) async {
     var persons = <Person>[];
 
-    int lowestId = startingId;
+    int lowestId = startingId ?? double.maxFinite.toInt();
     const batchSize = 50;
     while (true) {
-      var newPersons = await Globals.db.personDao.getWithLowerIdThan(startingId, batchSize);
+      var newPersons = await Globals.db.personDao.getWithLowerIdThan(lowestId, batchSize);
       if (newPersons.isEmpty) break;
 
       var toAdd = <Person>[];
@@ -115,7 +115,7 @@ class Person {
   static Future<void> update(Person person, bool bc) async {
     var existing = await Globals.db.personDao.getById(person.id);
     if (existing != null) {
-      if (existing.updated.isAfter(person.updated)) return;
+      if (existing.updated >= person.updated) return;
       await Globals.db.personDao.updates(person);
     } else {
       await Globals.db.personDao.inserts(person);

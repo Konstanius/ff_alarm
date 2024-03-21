@@ -28,22 +28,35 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
   int notificationsBad = 0;
   int lifeCycleBad = 0;
 
-  Future<void> checkSettings() async {
-    notificationsBad = 0;
-    lifeCycleBad = 0;
+  static Future<int> getBadNotificationsAmount() async {
+    int notificationsBad = 0;
 
-    var notifications = await Permission.notification.isGranted;
-    if (!notifications) notificationsBad++;
+    try {
+      var notifications = await Permission.notification.isGranted;
+      if (!notifications) notificationsBad++;
 
-    if (Platform.isAndroid) {
+      if (Platform.isAndroid) {
+        var accessNotificationPolicy = await Permission.accessNotificationPolicy.isGranted;
+        if (!accessNotificationPolicy) notificationsBad++;
+      }
+
+      return notificationsBad;
+    } catch (e) {
+      Logger.error('Failed to get bad notifications amount: $e');
+      return 0;
+    }
+  }
+
+  static Future<int> getBadLifeCycle() async {
+    int lifeCycleBad = 0;
+    if (Platform.isIOS) return lifeCycleBad;
+
+    try {
       var ignoreBatteryOptimizations = await Permission.ignoreBatteryOptimizations.isGranted;
       if (!ignoreBatteryOptimizations) lifeCycleBad++;
 
       var scheduleExactAlarm = await Permission.scheduleExactAlarm.isGranted;
       if (!scheduleExactAlarm) lifeCycleBad++;
-
-      var accessNotificationPolicy = await Permission.accessNotificationPolicy.isGranted;
-      if (!accessNotificationPolicy) notificationsBad++;
 
       var appOptimizations = Globals.prefs.getBool('appOptimizations') ?? false;
       if (!appOptimizations) lifeCycleBad++;
@@ -57,9 +70,20 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
         backgroundData = false;
       }
       if (!backgroundData) lifeCycleBad++;
-    }
 
-    widget.badge.value = notificationsBad + lifeCycleBad;
+      return lifeCycleBad;
+    } catch (e) {
+      Logger.error('Failed to get bad life cycle: $e');
+      return 0;
+    }
+  }
+
+  Future<void> checkSettings() async {
+    notificationsBad = 0;
+    lifeCycleBad = 0;
+
+    notificationsBad = await getBadNotificationsAmount();
+    lifeCycleBad = await getBadLifeCycle();
 
     if (mounted) setState(() {});
   }
@@ -192,7 +216,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                 Globals.prefs.setString('alarm_sound', result);
                 Globals.prefs.setString('alarm_soundPath', selectedPath);
                 if (mounted) setState(() {});
-                
+
                 initializeAwesomeNotifications();
               }
             },

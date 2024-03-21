@@ -30,6 +30,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) async {
   Logger.fcm('FCM message received: ${message.data}');
+  // TODO UI update streams have to fire here if the app is open
   if (Platform.isIOS) return; // handled by the app extension
   WidgetsFlutterBinding.ensureInitialized();
   await Globals.initialize();

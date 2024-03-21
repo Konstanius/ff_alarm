@@ -11,10 +11,7 @@ import 'package:ff_alarm/notifications/awn_init.dart';
 import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/painting.dart';
-import 'package:flutter/widgets.dart';
 import 'package:pulsator/pulsator.dart';
 
 class AlarmPage extends StatefulWidget {

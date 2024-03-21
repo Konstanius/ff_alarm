@@ -22,7 +22,7 @@ class Unit {
 
   int capacity;
 
-  DateTime updated;
+  int updated;
 
   Unit({
     required this.id,
@@ -58,7 +58,7 @@ class Unit {
       status: json[jsonShorts["status"]],
       positions: List<UnitPosition>.from(json[jsonShorts["positions"]].map((e) => UnitPosition.values[e])),
       capacity: json[jsonShorts["capacity"]],
-      updated: DateTime.fromMillisecondsSinceEpoch(json[jsonShorts["updated"]]),
+      updated: json[jsonShorts["updated"]],
     );
   }
 
@@ -72,7 +72,7 @@ class Unit {
       jsonShorts["status"]!: status,
       jsonShorts["positions"]!: positions.map((e) => e.index).toList(),
       jsonShorts["capacity"]!: capacity,
-      jsonShorts["updated"]!: updated.millisecondsSinceEpoch,
+      jsonShorts["updated"]!: updated,
     };
   }
 
@@ -83,14 +83,14 @@ class Unit {
   static Future<List<Unit>> getBatched({
     bool Function(Unit)? filter,
     int? limit,
-    int startingId = 2 ^ 31,
+    int? startingId,
   }) async {
     var units = <Unit>[];
 
-    int lowestId = startingId;
+    int lowestId = startingId ?? double.maxFinite.toInt();
     const batchSize = 50;
     while (true) {
-      var newUnits = await Globals.db.unitDao.getWithLowerIdThan(startingId, batchSize);
+      var newUnits = await Globals.db.unitDao.getWithLowerIdThan(lowestId, batchSize);
       if (newUnits.isEmpty) break;
 
       var toAdd = <Unit>[];
@@ -121,7 +121,7 @@ class Unit {
   static Future<void> update(Unit unit, bool bc) async {
     var existing = await Globals.db.unitDao.getById(unit.id);
     if (existing != null) {
-      if (existing.updated.isAfter(unit.updated)) return;
+      if (existing.updated >= unit.updated) return;
       await Globals.db.unitDao.updates(unit);
     } else {
       await Globals.db.unitDao.inserts(unit);

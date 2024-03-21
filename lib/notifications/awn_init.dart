@@ -6,7 +6,6 @@ import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:real_volume/real_volume.dart';
 
 Future<void> initializeAwesomeNotifications() async {

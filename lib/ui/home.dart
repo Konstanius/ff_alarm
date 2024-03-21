@@ -11,6 +11,7 @@ import 'package:ff_alarm/server/realtime.dart';
 import 'package:ff_alarm/ui/home/alarms_screen.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/home/units_screen.dart';
+import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 
@@ -43,7 +44,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver, Updates {
   late final TabController tabController;
 
   Timer? _timer;
@@ -87,9 +88,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       Globals.fastStartBypass = false;
     });
 
+    () async {
+      badgeSettings.value = await SettingsScreenState.getBadLifeCycle() + await SettingsScreenState.getBadNotificationsAmount();
+
+      if (!Globals.loggedIn || badgeSettings.value == 0) return;
+
+      showPermissionsPopup();
+    }();
+
     _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
       RealTimeListener.init();
     });
+
+    setupListener({UpdateType.ui});
 
     RealTimeListener.init();
 
@@ -146,31 +157,101 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             color: Theme.of(context).focusColor,
             child: TabBar(
               controller: tabController,
-              tabs: const <Tab>[
+              tabs: <Tab>[
                 Tab(
                   child: Column(children: <Widget>[
-                    SizedBox(height: 6),
-                    Icon(Icons.local_fire_department_outlined),
-                    Text('Alarmierungen', textScaler: TextScaler.linear(0.8)),
+                    const SizedBox(height: 6),
+                    ValueListenableBuilder(
+                        valueListenable: badgeAlarms,
+                        builder: (context, value, child) {
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.local_fire_department_outlined),
+                              if (value > 0) Text(' $value !', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                            ],
+                          );
+                        }),
+                    const Text('Alarmierungen', textScaler: TextScaler.linear(0.8)),
                   ]),
                 ),
                 Tab(
                   child: Column(children: <Widget>[
-                    SizedBox(height: 6),
-                    Icon(Icons.fire_truck_outlined),
-                    Text('Einheiten', textScaler: TextScaler.linear(0.8)),
+                    const SizedBox(height: 6),
+                    ValueListenableBuilder(
+                        valueListenable: badgeUnits,
+                        builder: (context, value, child) {
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.fire_truck_outlined),
+                              if (value > 0) Text(' $value !', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                            ],
+                          );
+                        }),
+                    const Text('Einheiten', textScaler: TextScaler.linear(0.8)),
                   ]),
                 ),
                 Tab(
                   child: Column(children: <Widget>[
-                    SizedBox(height: 6),
-                    Icon(Icons.settings_outlined),
-                    Text('Einstellungen', textScaler: TextScaler.linear(0.8)),
+                    const SizedBox(height: 6),
+                    ValueListenableBuilder(
+                        valueListenable: badgeSettings,
+                        builder: (context, value, child) {
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.settings_outlined),
+                              if (value > 0) Text(' $value !', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                            ],
+                          );
+                        }),
+                    const Text('Einstellungen', textScaler: TextScaler.linear(0.8)),
                   ]),
                 ),
               ],
             ),
           )),
+    );
+  }
+
+  @override
+  void onUpdate(UpdateInfo info) async {
+    if (info.type == UpdateType.ui) {
+      if (info.ids.contains(1)) {
+        badgeSettings.value = await SettingsScreenState.getBadLifeCycle() + await SettingsScreenState.getBadNotificationsAmount();
+      }
+
+      if (info.ids.contains(3)) {
+        int bad = await SettingsScreenState.getBadLifeCycle() + await SettingsScreenState.getBadNotificationsAmount();
+        badgeSettings.value = bad;
+        if (Globals.loggedIn && badgeSettings.value > 0) {
+          showPermissionsPopup();
+        }
+      }
+    }
+  }
+
+  void showPermissionsPopup() {
+    generalDialog(
+      color: Colors.red,
+      title: badgeSettings.value > 1 ? 'Aktionen erforderlich' : 'Aktion erforderlich',
+      content: const Text('Die Einstellungen und Berechtigungen der App auf deinem Handy sind nicht vollständig. Bitte überprüfe die Einstellungen.'),
+      actions: <Widget>[
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: const Text('Ignorieren'),
+        ),
+        TextButton(
+          onPressed: () {
+            Navigator.of(context).pop();
+            tabController.index = 2;
+          },
+          child: const Text('Einstellungen'),
+        ),
+      ],
     );
   }
 }

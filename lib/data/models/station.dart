@@ -45,7 +45,7 @@ class Station  {
 
   List<int> adminPersons;
 
-  DateTime updated;
+  int updated;
   
   Station({
     required this.id,
@@ -84,7 +84,7 @@ class Station  {
       coordinates: json[jsonShorts["coordinates"]],
       persons: List<int>.from(json[jsonShorts["persons"]]),
       adminPersons: List<int>.from(json[jsonShorts["adminPersons"]]),
-      updated: DateTime.fromMillisecondsSinceEpoch(json[jsonShorts["updated"]]),
+      updated: json[jsonShorts["updated"]],
     );
   }
 
@@ -99,21 +99,21 @@ class Station  {
       jsonShorts["coordinates"]!: coordinates,
       jsonShorts["persons"]!: persons,
       jsonShorts["adminPersons"]!: adminPersons,
-      jsonShorts["updated"]!: updated.millisecondsSinceEpoch,
+      jsonShorts["updated"]!: updated,
     };
   }
 
   static Future<List<Station>> getBatched({
     bool Function(Station)? filter,
     int? limit,
-    int startingId = 2 ^ 31,
+    int? startingId,
   }) async {
     var stations = <Station>[];
 
-    int lowestId = startingId;
+    int lowestId = startingId ?? double.maxFinite.toInt();
     const batchSize = 50;
     while (true) {
-      var newStations = await Globals.db.stationDao.getWithLowerIdThan(startingId, batchSize);
+      var newStations = await Globals.db.stationDao.getWithLowerIdThan(lowestId, batchSize);
       if (newStations.isEmpty) break;
 
       var toAdd = <Station>[];
@@ -138,7 +138,7 @@ class Station  {
   static Future<void> update(Station station, bool bc) async {
     var existing = await Globals.db.stationDao.getById(station.id);
     if (existing != null) {
-      if (existing.updated.isAfter(station.updated)) return;
+      if (existing.updated >= station.updated) return;
       await Globals.db.stationDao.updates(station);
     } else {
       await Globals.db.stationDao.inserts(station);

@@ -5,9 +5,7 @@ Bestätigungsaktion:
   - GPS aktivieren
 
 Alarmierungsbildschirm:
-  - Bei mehreren Wachen alarmiert, in denen man ist -> Auswahl der Wache vor Absetzen des Status
-  - Status drücken Knöpfe verbessern und Funktionalität hinzufügen
-  - Alarmierungsbildschirm mit Infos zur Alarmierung, nach Absetzen des Status
+  - Alarmierungsbildschirm verbessern mit allen Infos
   - Android öffnet Alarmierungsbildschirm mehrmals
 
 Alarmierungstöne:
@@ -16,7 +14,6 @@ Alarmierungstöne:
 
 iOS:
   - location permission funktioniert nicht
-  - Alert permission Anfrage läuft
   - GPS Push permission Anfrage ausstehend
   - Release Mode nicht funktionstüchtig aktuell (evtl. wegen Alert permission)
   - Swift Code für iOS NSE

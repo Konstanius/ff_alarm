@@ -145,7 +145,7 @@ class _$AlarmDao extends AlarmDao {
                   'units': _listIntConverter.encode(item.units),
                   'responses':
                       _mapIntAlarmResponseConverter.encode(item.responses),
-                  'updated': _dateTimeConverter.encode(item.updated)
+                  'updated': item.updated
                 }),
         _alarmUpdateAdapter = UpdateAdapter(
             database,
@@ -162,7 +162,7 @@ class _$AlarmDao extends AlarmDao {
                   'units': _listIntConverter.encode(item.units),
                   'responses':
                       _mapIntAlarmResponseConverter.encode(item.responses),
-                  'updated': _dateTimeConverter.encode(item.updated)
+                  'updated': item.updated
                 }),
         _alarmDeletionAdapter = DeletionAdapter(
             database,
@@ -179,7 +179,7 @@ class _$AlarmDao extends AlarmDao {
                   'units': _listIntConverter.encode(item.units),
                   'responses':
                       _mapIntAlarmResponseConverter.encode(item.responses),
-                  'updated': _dateTimeConverter.encode(item.updated)
+                  'updated': item.updated
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -208,7 +208,7 @@ class _$AlarmDao extends AlarmDao {
             units: _listIntConverter.decode(row['units'] as String),
             responses: _mapIntAlarmResponseConverter
                 .decode(row['responses'] as String),
-            updated: _dateTimeConverter.decode(row['updated'] as int)),
+            updated: row['updated'] as int),
         arguments: [id]);
   }
 
@@ -236,7 +236,7 @@ class _$AlarmDao extends AlarmDao {
             units: _listIntConverter.decode(row['units'] as String),
             responses: _mapIntAlarmResponseConverter
                 .decode(row['responses'] as String),
-            updated: _dateTimeConverter.decode(row['updated'] as int)),
+            updated: row['updated'] as int),
         arguments: [id, limit]);
   }
 
@@ -274,7 +274,7 @@ class _$StationDao extends StationDao {
                   'coordinates': item.coordinates,
                   'persons': _listIntConverter.encode(item.persons),
                   'adminPersons': _listIntConverter.encode(item.adminPersons),
-                  'updated': _dateTimeConverter.encode(item.updated)
+                  'updated': item.updated
                 }),
         _stationUpdateAdapter = UpdateAdapter(
             database,
@@ -290,7 +290,7 @@ class _$StationDao extends StationDao {
                   'coordinates': item.coordinates,
                   'persons': _listIntConverter.encode(item.persons),
                   'adminPersons': _listIntConverter.encode(item.adminPersons),
-                  'updated': _dateTimeConverter.encode(item.updated)
+                  'updated': item.updated
                 }),
         _stationDeletionAdapter = DeletionAdapter(
             database,
@@ -306,7 +306,7 @@ class _$StationDao extends StationDao {
                   'coordinates': item.coordinates,
                   'persons': _listIntConverter.encode(item.persons),
                   'adminPersons': _listIntConverter.encode(item.adminPersons),
-                  'updated': _dateTimeConverter.encode(item.updated)
+                  'updated': item.updated
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -332,7 +332,7 @@ class _$StationDao extends StationDao {
             stationNumber: row['stationNumber'] as int,
             address: row['address'] as String,
             coordinates: row['coordinates'] as String,
-            updated: _dateTimeConverter.decode(row['updated'] as int),
+            updated: row['updated'] as int,
             persons: _listIntConverter.decode(row['persons'] as String),
             adminPersons:
                 _listIntConverter.decode(row['adminPersons'] as String)),
@@ -360,7 +360,7 @@ class _$StationDao extends StationDao {
             stationNumber: row['stationNumber'] as int,
             address: row['address'] as String,
             coordinates: row['coordinates'] as String,
-            updated: _dateTimeConverter.decode(row['updated'] as int),
+            updated: row['updated'] as int,
             persons: _listIntConverter.decode(row['persons'] as String),
             adminPersons:
                 _listIntConverter.decode(row['adminPersons'] as String)),
@@ -401,7 +401,7 @@ class _$UnitDao extends UnitDao {
                   'positions':
                       _listUnitPositionConverter.encode(item.positions),
                   'capacity': item.capacity,
-                  'updated': _dateTimeConverter.encode(item.updated)
+                  'updated': item.updated
                 }),
         _unitUpdateAdapter = UpdateAdapter(
             database,
@@ -417,7 +417,7 @@ class _$UnitDao extends UnitDao {
                   'positions':
                       _listUnitPositionConverter.encode(item.positions),
                   'capacity': item.capacity,
-                  'updated': _dateTimeConverter.encode(item.updated)
+                  'updated': item.updated
                 }),
         _unitDeletionAdapter = DeletionAdapter(
             database,
@@ -433,7 +433,7 @@ class _$UnitDao extends UnitDao {
                   'positions':
                       _listUnitPositionConverter.encode(item.positions),
                   'capacity': item.capacity,
-                  'updated': _dateTimeConverter.encode(item.updated)
+                  'updated': item.updated
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -461,7 +461,7 @@ class _$UnitDao extends UnitDao {
             positions:
                 _listUnitPositionConverter.decode(row['positions'] as String),
             capacity: row['capacity'] as int,
-            updated: _dateTimeConverter.decode(row['updated'] as int)),
+            updated: row['updated'] as int),
         arguments: [id]);
   }
 
@@ -488,7 +488,7 @@ class _$UnitDao extends UnitDao {
             positions:
                 _listUnitPositionConverter.decode(row['positions'] as String),
             capacity: row['capacity'] as int,
-            updated: _dateTimeConverter.decode(row['updated'] as int)),
+            updated: row['updated'] as int),
         arguments: [id, limit]);
   }
 
@@ -523,7 +523,7 @@ class _$PersonDao extends PersonDao {
                   'allowedUnits': _listIntConverter.encode(item.allowedUnits),
                   'qualifications': item.qualifications,
                   'response': _alarmResponseConverter.encode(item.response),
-                  'updated': _dateTimeConverter.encode(item.updated)
+                  'updated': item.updated
                 }),
         _personUpdateAdapter = UpdateAdapter(
             database,
@@ -536,7 +536,7 @@ class _$PersonDao extends PersonDao {
                   'allowedUnits': _listIntConverter.encode(item.allowedUnits),
                   'qualifications': item.qualifications,
                   'response': _alarmResponseConverter.encode(item.response),
-                  'updated': _dateTimeConverter.encode(item.updated)
+                  'updated': item.updated
                 }),
         _personDeletionAdapter = DeletionAdapter(
             database,
@@ -549,7 +549,7 @@ class _$PersonDao extends PersonDao {
                   'allowedUnits': _listIntConverter.encode(item.allowedUnits),
                   'qualifications': item.qualifications,
                   'response': _alarmResponseConverter.encode(item.response),
-                  'updated': _dateTimeConverter.encode(item.updated)
+                  'updated': item.updated
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -576,7 +576,7 @@ class _$PersonDao extends PersonDao {
             qualifications: row['qualifications'] as String,
             response:
                 _alarmResponseConverter.decode(row['response'] as String?),
-            updated: _dateTimeConverter.decode(row['updated'] as int)),
+            updated: row['updated'] as int),
         arguments: [id]);
   }
 
@@ -602,7 +602,7 @@ class _$PersonDao extends PersonDao {
             qualifications: row['qualifications'] as String,
             response:
                 _alarmResponseConverter.decode(row['response'] as String?),
-            updated: _dateTimeConverter.decode(row['updated'] as int)),
+            updated: row['updated'] as int),
         arguments: [id, limit]);
   }
 
