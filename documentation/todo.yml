@@ -8,6 +8,7 @@ Alarmierungsbildschirm:
   - Bei mehreren Wachen alarmiert, in denen man ist -> Auswahl der Wache vor Absetzen des Status
   - Status drücken Knöpfe verbessern und Funktionalität hinzufügen
   - Alarmierungsbildschirm mit Infos zur Alarmierung, nach Absetzen des Status
+  - Android öffnet Alarmierungsbildschirm mehrmals
 
 Alarmierungstöne:
   - iOS nicht eingebaut

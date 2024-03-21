@@ -92,7 +92,8 @@ Future<void> initializeAwesomeNotifications() async {
 
 @pragma('vm:entry-point')
 Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
-  Logger.info('Received action: ${receivedAction.buttonKeyPressed}, payload: ${receivedAction.payload}');
+  Logger.info('Received action: ${receivedAction.buttonKeyPressed}');
+  Logger.info('Received payload: ${receivedAction.payload}');
 
   Globals.fastStartBypass = true;
 
@@ -100,7 +101,10 @@ Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
   Map<String, String?> payload = receivedAction.payload ?? {};
 
   String type = payload['type'] ?? '';
-  if (type.isEmpty) return;
+  if (type.isEmpty) {
+    Logger.error('Received action without type');
+    return;
+  }
 
   while (!Globals.appStarted) {
     await Future.delayed(const Duration(milliseconds: 10));
