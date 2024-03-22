@@ -6,14 +6,7 @@ Bestätigungsaktion:
 
 Alarmierungsbildschirm:
   - Alarmierungsbildschirm verbessern mit allen Infos
-  - Android öffnet Alarmierungsbildschirm mehrmals
+  - Alarmierungsbildschirm kann mehrmals geöffnet werden (stacked)
 
 Alarmierungstöne:
-  - iOS nicht eingebaut
-  - Android funktioniert nicht, Ton ändert sich nicht
-
-iOS:
-  - location permission funktioniert nicht
-  - GPS Push permission Anfrage ausstehend
-  - Release Mode nicht funktionstüchtig aktuell (evtl. wegen Alert permission)
-  - Swift Code für iOS NSE
+  - Android Ton ändert sich nicht (Channel cant be edited)

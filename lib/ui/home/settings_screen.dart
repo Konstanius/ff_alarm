@@ -1,12 +1,14 @@
 import 'dart:io';
 
 import 'package:assets_audio_player/assets_audio_player.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/notifications/awn_init.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:real_volume/real_volume.dart';
 
@@ -143,6 +145,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
             subtitle: Text(Globals.prefs.getString('alarm_sound') ?? 'Quattro 98 2'),
             onTap: () async {
               String selected = Globals.prefs.getString('alarm_sound') ?? 'Quattro 98 2';
+              String previousPath = Globals.prefs.getString('alarm_soundPath') ?? 'res_alarm_1';
 
               var player = AssetsAudioPlayer.newPlayer();
               String? playing;
@@ -213,11 +216,35 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
 
               if (result != null) {
                 String selectedPath = alarmSounds[result]!;
+                if (selectedPath == previousPath) return;
                 Globals.prefs.setString('alarm_sound', result);
                 Globals.prefs.setString('alarm_soundPath', selectedPath);
                 if (mounted) setState(() {});
 
-                initializeAwesomeNotifications();
+                await AwesomeNotifications().removeChannel('alarm');
+                await AwesomeNotifications().removeChannel('test');
+                if (Platform.isIOS) {
+                  initializeAwesomeNotifications();
+                } else if (Platform.isAndroid) {
+                  // tell the user to restart the app, also reset the DnD prefs setting
+                  Globals.prefs.remove('critical_alerts_test');
+                  Globals.prefs.remove('critical_alerts');
+                  generalDialog(
+                    color: Colors.blue,
+                    title: 'Neustart erforderlich',
+                    content: const Text('Die Änderungen werden erst nach einem Neustart der App übernommen.'),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('OK'),
+                      ),
+                    ],
+                  ).then((value) {
+                    SystemNavigator.pop();
+                  });
+                }
               }
             },
             trailing: const Icon(Icons.arrow_drop_down_circle_outlined),

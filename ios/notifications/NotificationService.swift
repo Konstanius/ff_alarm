@@ -51,7 +51,6 @@ class NotificationService: UNNotificationServiceExtension {
                 var alarmSoundPath = prefs!["alarm_soundPath"] as? String ?? "res_alarm_1"
                 alarmSoundPath = alarmSoundPath + ".mp3"
 
-                bestAttemptContent.sound = UNNotificationSound.criticalSoundNamed(UNNotificationSoundName(rawValue: alarmSoundPath), withAudioVolume: 1.0)
 
                 var channelKey = "alarm"
                 // starts with "Test" is test
@@ -62,23 +61,30 @@ class NotificationService: UNNotificationServiceExtension {
                 let alarmOption = alarm.getAlertOption()
                 switch alarmOption {
                 case .alert:
-                    // ignore
+                bestAttemptContent.sound = UNNotificationSound.criticalSoundNamed(UNNotificationSoundName(rawValue: alarmSoundPath), withAudioVolume: 1.0)
+                    if #available(iOSApplicationExtension 15.0, *) {
+                        bestAttemptContent.interruptionLevel = .timeSensitive
+                    }
                     break
                 case .silent:
                     channelKey += "_silent"
+                    bestAttemptContent.sound = nil
+                    if #available(iOSApplicationExtension 15.0, *) {
+                        bestAttemptContent.interruptionLevel = .passive
+                    }
                     break
                 case .none:
-                    // TODO ignore here
+                    channelKey += "_silent"
+                    bestAttemptContent.sound = nil
+                    if #available(iOSApplicationExtension 15.0, *) {
+                        bestAttemptContent.interruptionLevel = .passive
+                    }
                     break
                 }
                 bestAttemptContent.categoryIdentifier = channelKey
 
                 bestAttemptContent.title = alarm.type
                 bestAttemptContent.body = alarm.word
-
-                if #available(iOSApplicationExtension 15.0, *) {
-                    bestAttemptContent.interruptionLevel = .timeSensitive
-                }
 
                 // set the data
                 bestAttemptContent.userInfo["type"] = "alarm"

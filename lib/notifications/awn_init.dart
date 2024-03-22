@@ -36,7 +36,7 @@ Future<void> initializeAwesomeNotifications() async {
         defaultRingtoneType: DefaultRingtoneType.Ringtone,
         enableVibration: true,
         enableLights: true,
-        importance: NotificationImportance.Max,
+        importance: NotificationImportance.High,
         soundSource: 'resource://raw/$alarmSound',
       ),
       NotificationChannel(
@@ -64,7 +64,7 @@ Future<void> initializeAwesomeNotifications() async {
         defaultRingtoneType: DefaultRingtoneType.Ringtone,
         enableVibration: true,
         enableLights: true,
-        importance: NotificationImportance.Max,
+        importance: NotificationImportance.High,
         soundSource: 'resource://raw/$alarmSound',
       ),
       NotificationChannel(
@@ -115,7 +115,7 @@ Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
         {
           Alarm alarm = Alarm.fromJson(jsonDecode(payload['alarm']!));
           if (Globals.router.routeInformationProvider.value.uri.pathSegments.lastOrNull != 'alarm') {
-            Globals.router.push('/alarm', extra: alarm);
+            Globals.router.go('/alarm', extra: alarm);
           } else if (Globals.router.routeInformationProvider.value.uri.pathSegments.isNotEmpty) {}
           break;
         }
@@ -129,7 +129,7 @@ Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
         resetAndroidNotificationVolume();
         Alarm alarm = Alarm.fromJson(jsonDecode(payload['alarm']!));
         if (Globals.router.routeInformationProvider.value.uri.pathSegments.lastOrNull != 'alarm') {
-          Globals.router.push('/alarm', extra: alarm);
+          Globals.router.go('/alarm', extra: alarm);
         } else if (Globals.router.routeInformationProvider.value.uri.pathSegments.isNotEmpty) {}
         break;
       }
@@ -165,7 +165,7 @@ Future<bool> sendAlarm(Alarm alarm) async {
     AlarmOption option = alarm.getAlertOption();
 
     if (Globals.appStarted && option == AlarmOption.alert) {
-      Globals.router.push('/alarm', extra: alarm);
+      Globals.router.go('/alarm', extra: alarm);
     }
 
     String channelKey;

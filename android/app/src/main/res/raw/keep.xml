@@ -1,3 +1,3 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools"
-    tools:keep="@raw/res_alarm_1, @raw/res_alarm_2, @raw/res_alarm_3, @raw/res_alarm_4"  />
+    tools:keep="@raw/res_alarm_1,@raw/res_alarm_2,@raw/res_alarm_3,@raw/res_alarm_4"  />

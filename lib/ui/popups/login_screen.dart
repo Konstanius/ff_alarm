@@ -8,6 +8,7 @@ import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
+import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/interfaces/alarm_interface.dart';
@@ -124,6 +125,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 UnitInterface.fetchAll();
                 StationInterface.fetchAll();
                 AlarmInterface.fetchAll();
+
+                UpdateInfo(UpdateType.ui, {3});
               } catch (e) {
                 Logger.error('LoginScreen: $e');
                 errorToast('Ungültiger Code');

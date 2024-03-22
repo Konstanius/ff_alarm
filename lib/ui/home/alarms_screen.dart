@@ -1,5 +1,6 @@
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/notifications/awn_init.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
@@ -56,7 +57,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
               title: Text('${alarm.type} | ${alarm.word}'),
               subtitle: Text(alarm.date.toLocal().toString()),
               onTap: () {
-                Globals.router.push('/alarm', extra: alarm);
+                Globals.router.go('/alarm', extra: alarm);
               },
             ),
         ],
@@ -67,7 +68,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
   @override
   void onUpdate(UpdateInfo info) async {
     if (info.type == UpdateType.alarm) {
-      DateTime lowest = DateTime.now().subtract(const Duration(minutes: 20));
+      DateTime lowest = DateTime(2000);
       for (var alarm in this.alarms) {
         if (alarm.date.isBefore(lowest)) lowest = alarm.date;
       }
