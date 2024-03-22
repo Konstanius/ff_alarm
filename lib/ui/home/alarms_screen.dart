@@ -74,6 +74,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
 
       var alarms = <Alarm>[];
       var futures = <Future<Alarm?>>[];
+      Set<int> ids = {...info.ids};
       for (int id in info.ids) {
         futures.add(Globals.db.alarmDao.getById(id));
       }
@@ -83,6 +84,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
         if (value == null) continue;
         if (value.date.isBefore(lowest)) continue;
         alarms.add(value);
+        ids.remove(value.id);
       }
 
       for (var alarm in alarms) {
@@ -93,6 +95,8 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
           this.alarms.add(alarm);
         }
       }
+
+      this.alarms.removeWhere((element) => ids.contains(element.id));
 
       this.alarms.sort((a, b) => b.date.compareTo(a.date));
 

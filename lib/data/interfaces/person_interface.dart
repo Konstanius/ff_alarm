@@ -39,7 +39,7 @@ abstract class PersonInterface {
       }
 
       futures.add(Person.delete(id, false));
-      updatedIds.remove(id);
+      updatedIds.add(id);
     }
 
     await Future.wait(futures);

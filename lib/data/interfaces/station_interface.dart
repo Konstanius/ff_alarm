@@ -39,7 +39,7 @@ abstract class StationInterface {
       }
 
       futures.add(Station.delete(id, false));
-      updatedIds.remove(id);
+      updatedIds.add(id);
     }
 
     await Future.wait(futures);

@@ -39,7 +39,7 @@ abstract class UnitInterface {
       }
 
       futures.add(Unit.delete(id, false));
-      updatedIds.remove(id);
+      updatedIds.add(id);
     }
 
     await Future.wait(futures);

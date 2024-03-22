@@ -75,6 +75,7 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
   @override
   void onUpdate(UpdateInfo info) async {
     if (info.type == UpdateType.unit) {
+      Set<int> ids = {...info.ids};
       var futures = <Future<Unit?>>[];
       for (var id in info.ids) {
         futures.add(Globals.db.unitDao.getById(id));
@@ -86,10 +87,13 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
           if (unit != null) {
             units.removeWhere((u) => u.id == unit.id);
             units.add(unit);
+            ids.remove(unit.id);
           }
         }
+        units.removeWhere((u) => ids.contains(u.id));
       });
     } else if (info.type == UpdateType.station) {
+      Set<int> ids = {...info.ids};
       var futures = <Future<Station?>>[];
       for (var id in info.ids) {
         futures.add(Globals.db.stationDao.getById(id));
@@ -101,8 +105,10 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
           if (station != null) {
             stations.removeWhere((s) => s.id == station.id);
             stations.add(station);
+            ids.remove(station.id);
           }
         }
+        stations.removeWhere((s) => ids.contains(s.id));
       });
     } else if (info.type == UpdateType.ui && info.ids.contains(3)) {
       if (Globals.loggedIn) {

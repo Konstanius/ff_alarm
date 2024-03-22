@@ -26,7 +26,7 @@ class AlarmPage extends StatefulWidget {
   State<AlarmPage> createState() => _AlarmPageState();
 }
 
-class _AlarmPageState extends State<AlarmPage> with Updates {
+class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProviderStateMixin {
   ValueNotifier<int> clickDuration = ValueNotifier<int>(0);
   Set<AlarmResponseType> clickIndices = {};
 
@@ -42,12 +42,14 @@ class _AlarmPageState extends State<AlarmPage> with Updates {
   late Alarm alarm;
 
   ({Alarm alarm, List<Unit> units, List<Station> stations, List<Person> persons})? data;
+  TabController? tabController;
 
   @override
   void initState() {
     super.initState();
     AlarmPage.currentAlarmId = widget.alarm.id;
     alarm = widget.alarm;
+    tabController = TabController(length: 2, vsync: this);
 
     AlarmInterface.getDetails(alarm).then((value) {
       data = value;
@@ -169,7 +171,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates {
   Widget stationSelectionScreen() {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Station auswählen'),
+        title: const Text('Alarmierung'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(8),
@@ -482,42 +484,58 @@ class _AlarmPageState extends State<AlarmPage> with Updates {
   Widget alarmMonitorScreen() {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Alarmüberwachung'),
+        title: const Text('Alarm-Monitor'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            // reset response -> set station to null
-            ElevatedButton(
-              onPressed: () async {
-                if (mounted) {
-                  setState(() {
-                    selectedStation = null;
-                    newAnswer = true;
-                    if (stations.length == 1) {
-                      selectedStation = stations.first.id;
-                    }
-                  });
-                }
-              },
-              child: const Text('Zurücksetzen'),
+      body: Column(
+        children: [
+          TabBar(
+            controller: tabController,
+            tabs: const [
+              Tab(text: 'Informationen'),
+              Tab(text: 'Antworten'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: tabController,
+              children: [
+                /// Informationen:
+                /// - Zeit
+                /// - Typ + Wort
+                /// - Adresse
+                /// - Notizen
+                /// - Alarmierte Einheiten / Wachen (Darunter deren Antworten)
+                /// - Karte mit Position (Umschalten zwischen Karte und Satellit, zeigt Route von Wache bis Einsatzort)
+                const Text('Informationen'),
+                /// Antworten:
+                /// - Liste der Personen, die für die gleiche Wache geantwortet haben wie der lokale Nutzer
+                /// - Informationen zu den Qualifikationen der Personen (AGT, TF / GF / ZF, Ma)
+                /// - Anzeige der Antworten und ca. Zeit (Farblich markiert)
+                /// - Ansicht, nach wie viel Zeit wie viele da sind
+                /// - Karte mit live Position aller Personen, die positiv geantwortet haben
+                const Text('Antworten'),
+              ],
             ),
-            const SizedBox(height: 20),
-            Text('Alarm: ${alarm.type}'),
-            Text('Word: ${alarm.word}'),
-            Text('Date: ${alarm.date}'),
-            Text('Number: ${alarm.number}'),
-            Text('Address: ${alarm.address}'),
-            Text('Notes: ${alarm.notes}'),
-            Text('Units: ${alarm.units}'),
-            Text('Updated: ${alarm.updated}'),
-            Text('Responses: ${alarm.responses}'),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
+
+  // ElevatedButton(
+  //     onPressed: () async {
+  //       if (mounted) {
+  //         setState(() {
+  //           selectedStation = null;
+  //           newAnswer = true;
+  //           if (stations.length == 1) {
+  //             selectedStation = stations.first.id;
+  //           }
+  //         });
+  //       }
+  //     },
+  //     child: const Text('Zurücksetzen'),
+  //   );
 
   @override
   void onUpdate(UpdateInfo info) async {

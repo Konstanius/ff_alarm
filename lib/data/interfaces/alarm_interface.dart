@@ -44,7 +44,7 @@ abstract class AlarmInterface {
       }
 
       futures.add(Alarm.delete(id, false));
-      updatedIds.remove(id);
+      updatedIds.add(id);
     }
 
     await Future.wait(futures);
