@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:ff_alarm/data/interfaces/alarm_interface.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
+import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
@@ -40,11 +41,21 @@ class _AlarmPageState extends State<AlarmPage> with Updates {
   bool newAnswer = false;
   late Alarm alarm;
 
+  ({Alarm alarm, List<Unit> units, List<Station> stations, List<Person> persons})? data;
+
   @override
   void initState() {
     super.initState();
     AlarmPage.currentAlarmId = widget.alarm.id;
     alarm = widget.alarm;
+
+    AlarmInterface.getDetails(alarm).then((value) {
+      data = value;
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+      });
+    });
 
     setupListener({UpdateType.alarm, UpdateType.ui});
 
@@ -457,7 +468,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates {
                 upper,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                   fontSize: 20,
                 ),
               ),
@@ -522,6 +533,16 @@ class _AlarmPageState extends State<AlarmPage> with Updates {
     } else if (info.type == UpdateType.ui) {
       if (info.ids.contains(2)) {
         if (mounted) setState(() {});
+      }
+
+      if (info.ids.contains(0)) {
+        AlarmInterface.getDetails(alarm).then((value) {
+          data = value;
+          if (!mounted) return;
+          setState(() {
+            loading = false;
+          });
+        });
       }
     }
   }

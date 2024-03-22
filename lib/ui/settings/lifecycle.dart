@@ -301,6 +301,8 @@ class _LifeCycleSettingsState extends State<LifeCycleSettings> {
                   Globals.prefs.remove('backgroundActivity');
                   errorToast('Einstellung fehlgeschlagen!');
                 }
+
+                checkSettings();
               },
             ),
             // batteryUsage -> allow auto launch
@@ -367,6 +369,8 @@ class _LifeCycleSettingsState extends State<LifeCycleSettings> {
                   Globals.prefs.remove('allowAutoLaunch');
                   errorToast('Einstellung fehlgeschlagen!');
                 }
+
+                checkSettings();
               },
             ),
             const SettingsDivider(text: 'Optional'),

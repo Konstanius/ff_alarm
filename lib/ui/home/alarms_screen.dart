@@ -1,6 +1,5 @@
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/globals.dart';
-import 'package:ff_alarm/notifications/awn_init.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';

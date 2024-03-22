@@ -140,10 +140,18 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
           ),
           const SettingsDivider(text: 'Personalisierung'),
           ListTile(
+            enabled: Platform.isIOS,
             leading: const Icon(Icons.phone_callback_outlined),
             title: const Text('Alarmierungston'),
-            subtitle: Text(Globals.prefs.getString('alarm_sound') ?? 'Quattro 98 2'),
+            subtitle: () {
+              if (Platform.isAndroid) return const Text('Auf Android noch nicht verfügbar');
+              return Text(Globals.prefs.getString('alarm_sound') ?? 'Quattro 98 2');
+            }(),
             onTap: () async {
+              if (Platform.isAndroid) {
+                infoToast('Auf Android noch nicht verfügbar');
+                return;
+              }
               String selected = Globals.prefs.getString('alarm_sound') ?? 'Quattro 98 2';
               String previousPath = Globals.prefs.getString('alarm_soundPath') ?? 'res_alarm_1';
 
