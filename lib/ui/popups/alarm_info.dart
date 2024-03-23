@@ -10,10 +10,16 @@ import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/notifications/awn_init.dart';
 import 'package:ff_alarm/ui/utils/format.dart';
+import 'package:ff_alarm/ui/utils/map.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:intl/intl.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:map_launcher/map_launcher.dart';
 import 'package:pulsator/pulsator.dart';
+import 'package:share_plus/share_plus.dart';
 
 class AlarmPage extends StatefulWidget {
   const AlarmPage({super.key, required this.alarm});
@@ -44,6 +50,15 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
   ({Alarm alarm, List<Unit> units, List<Station> stations, List<Person> persons})? data;
   TabController? tabController;
 
+  LatLng? alarmPosition;
+  ValueNotifier<List<MapPos>> informationNotifier = ValueNotifier<List<MapPos>>([]);
+  MapController alarmMapController = MapController();
+
+  ValueNotifier<List<MapPos>> responsesNotifier = ValueNotifier<List<MapPos>>([]);
+  MapController responsesMapController = MapController();
+
+  bool alarmDetailsBusy = false;
+
   @override
   void initState() {
     super.initState();
@@ -51,13 +66,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
     alarm = widget.alarm;
     tabController = TabController(length: 2, vsync: this);
 
-    AlarmInterface.getDetails(alarm).then((value) {
-      data = value;
-      if (!mounted) return;
-      setState(() {
-        loading = false;
-      });
-    });
+    fetchAlarmDetails();
 
     setupListener({UpdateType.alarm, UpdateType.ui});
 
@@ -76,11 +85,27 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
             await AwesomeNotifications().cancelNotificationsByChannelKey('alarm');
             await AwesomeNotifications().cancelNotificationsByChannelKey('test');
 
+            int? stationIdCopy = selectedStation;
+            if (stationIdCopy == null) {
+              for (var station in stations) {
+                if (station.persons.contains(Globals.person!.id)) {
+                  stationIdCopy = station.id;
+                  break;
+                }
+              }
+            }
+
+            if (type == AlarmResponseType.notReady) {
+              stationIdCopy = null;
+            }
+
+            selectedStation = stationIdCopy;
+
             try {
               AlarmResponse response = AlarmResponse(
                 type: type,
                 note: null, // TODO
-                stationId: type == AlarmResponseType.notReady ? null : selectedStation,
+                stationId: stationIdCopy,
                 time: DateTime.now(),
               );
               await AlarmInterface.setResponse(alarm, response);
@@ -136,9 +161,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
       if (alarm.responses.containsKey(Globals.person!.id)) {
         selectedStation = alarm.responses[Globals.person!.id]!.stationId;
       }
-      if (stations.length == 1 && selectedStation == null) {
-        selectedStation = stations.first.id;
-      }
 
       stations.sort((a, b) => a.name.compareTo(b.name));
 
@@ -151,12 +173,65 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
       Logger.error('Error loading stations for alarm: $e, $s');
       Navigator.of(Globals.context!).pop();
     });
+
+    const double maxZoom = 19;
+    const double minZoom = 11;
+
+    // Gets the alarm LatLng
+    () async {
+      // listen to the map controllers and reset the rotation on all move events
+      alarmMapController.mapEventStream.listen((event) {
+        if (event is MapEventMove) {
+          alarmMapController.rotate(0);
+
+          if (alarmMapController.camera.zoom < minZoom) {
+            alarmMapController.move(alarmMapController.camera.center, minZoom);
+          } else if (alarmMapController.camera.zoom > maxZoom) {
+            alarmMapController.move(alarmMapController.camera.center, maxZoom);
+          }
+        }
+      });
+
+      responsesMapController.mapEventStream.listen((event) {
+        if (event is MapEventMove) {
+          responsesMapController.rotate(0);
+        }
+
+        if (responsesMapController.camera.zoom < minZoom) {
+          responsesMapController.move(responsesMapController.camera.center, minZoom);
+        } else if (responsesMapController.camera.zoom > maxZoom) {
+          responsesMapController.move(responsesMapController.camera.center, maxZoom);
+        }
+      });
+
+      while (true) {
+        if (!mounted) return;
+        try {
+          var position = await Formats.getCoordinates(alarm.address);
+          alarmPosition = position;
+          resetMapInfoNotifiers();
+          if (!mounted) return;
+          setState(() {});
+          break;
+        } catch (e, s) {
+          Logger.error('Error getting coordinates for alarm: $e\n$s');
+        }
+
+        await Future.delayed(const Duration(seconds: 1));
+      }
+    }();
   }
 
   @override
   void dispose() {
     AlarmPage.currentAlarmId = null;
     clickTimer?.cancel();
+    clickDuration.dispose();
+    tabController?.dispose();
+    informationNotifier.dispose();
+    responsesNotifier.dispose();
+    alarmMapController.dispose();
+    responsesMapController.dispose();
     super.dispose();
   }
 
@@ -481,10 +556,173 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
     );
   }
 
+  void resetMapInfoNotifiers() {
+    informationNotifier.value = [];
+    responsesNotifier.value = [];
+
+    if (alarmPosition != null) {
+      informationNotifier.value.add(MapPos(
+        id: 'alarm',
+        position: alarmPosition!,
+        name: 'Einsatzort',
+        widget: const PulseIcon(
+          pulseColor: Colors.red,
+          icon: Icons.local_fire_department,
+          pulseCount: 2,
+        ),
+      ));
+    }
+
+    if (Globals.lastPosition != null) {
+      informationNotifier.value.add(MapPos(
+        id: 'self',
+        position: Formats.positionToLatLng(Globals.lastPosition!),
+        name: 'Du',
+        widget: const PulseIcon(
+          pulseColor: Colors.green,
+          icon: Icons.person,
+          pulseCount: 2,
+        ),
+      ));
+    }
+
+    if (selectedStation != null) {
+      Station? station;
+      for (var s in stations) {
+        if (s.id == selectedStation) {
+          station = s;
+          break;
+        }
+      }
+      if (station != null && station.position != null) {
+        informationNotifier.value.add(MapPos(
+          id: 'station',
+          position: Formats.positionToLatLng(station.position!),
+          name: 'Wache',
+          widget: const PulseIcon(
+            pulseColor: Colors.blue,
+            icon: Icons.home,
+            pulseCount: 2,
+          ),
+        ));
+      }
+    }
+  }
+
   Widget alarmMonitorScreen() {
+    Station? station;
+    for (var s in stations) {
+      if (s.id == selectedStation) {
+        station = s;
+        break;
+      }
+    }
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Alarm-Monitor'),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(50.0 + kDefaultFontSize * 2),
+        child: GestureDetector(
+          onLongPress: () {
+            if (alarm.responses.containsKey(Globals.person!.id)) {
+              setState(() {
+                newAnswer = true;
+                selectedStation = null;
+              });
+
+              resetMapInfoNotifiers();
+            }
+          },
+          child: AppBar(
+            automaticallyImplyLeading: false,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: () {
+                Navigator.of(Globals.context!).pop();
+              },
+            ),
+            backgroundColor: alarm.responses.containsKey(Globals.person!.id) ? alarm.responses[Globals.person!.id]!.type.color : Colors.white,
+            title: const Text('Alarmierung', style: TextStyle(color: Colors.black)),
+            actions: [
+              // refresh button
+              AnimatedRotation(
+                duration: alarmDetailsBusy ? const Duration(milliseconds: 5000) : Duration.zero,
+                turns: alarmDetailsBusy ? 10 : 0,
+                curve: Curves.linear,
+                child: IconButton(
+                  tooltip: 'Aktualisieren',
+                  icon: const Icon(Icons.refresh, color: Colors.black),
+                  onPressed: () {
+                    fetchAlarmDetails();
+                  },
+                ),
+              ),
+              // share button
+              IconButton(
+                tooltip: 'Teilen',
+                icon: const Icon(Icons.share, color: Colors.black),
+                onPressed: () async {
+                  String shareString = 'Alarm: ${alarm.type}\n';
+                  shareString += 'Stichwort: ${alarm.word}\n';
+                  shareString += 'Datum: ${Formats.dateTime(alarm.date)}\n\n';
+
+                  shareString += 'Adresse: ${alarm.address}\n\n';
+
+                  shareString += 'Notizen: ${alarm.notes.join('\n')}\n\n';
+
+                  if (data != null) {
+                    shareString += 'Einheiten:\n';
+                    for (var unit in data!.units) {
+                      Station? station;
+                      for (var s in data!.stations) {
+                        if (s.id == unit.stationId) {
+                          station = s;
+                          break;
+                        }
+                      }
+                      if (station != null) {
+                        shareString += '  - ${unit.unitCallSign(station)}: ${unit.unitDescription}\n';
+                      }
+                    }
+                  }
+
+                  await Share.share(shareString);
+                },
+              ),
+              const SizedBox(width: 10),
+            ],
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(kDefaultFontSize * 2),
+              child: Column(
+                children: [
+                  // own response
+                  if (alarm.responses.containsKey(Globals.person!.id))
+                    Container(
+                      color: alarm.responses[Globals.person!.id]!.type.color,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                  'Deine Antwort: ${alarm.responses[Globals.person!.id]!.type.name}${() {
+                                    if (alarm.responses[Globals.person!.id]!.time != null) {
+                                      return ' (${DateFormat('HH:mm').format(alarm.responses[Globals.person!.id]!.time!)})';
+                                    } else {
+                                      return '';
+                                    }
+                                  }()}',
+                                  style: const TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                              const Text('Klicke hier lang, um deine Antwort zu ändern', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -506,7 +744,267 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 /// - Notizen
                 /// - Alarmierte Einheiten / Wachen (Darunter deren Antworten)
                 /// - Karte mit Position (Umschalten zwischen Karte und Satellit, zeigt Route von Wache bis Einsatzort)
-                const Text('Informationen'),
+                SafeArea(
+                  child: ListView(
+                    padding: const EdgeInsets.all(12),
+                    children: [
+                      // General information (time, type, word, address, notes)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.access_time),
+                          const SizedBox(width: 5),
+                          Text(Formats.dateTime(alarm.date)),
+                          const SizedBox(width: 15),
+                          () {
+                            DateTime now = DateTime.now();
+                            Duration difference = now.difference(alarm.date);
+
+                            if (difference.inMinutes < 1) {
+                              return const Text('(Jetzt)');
+                            } else if (difference.inMinutes < 60) {
+                              return Text('(vor ${difference.inMinutes} min)');
+                            } else if (difference.inHours < 3) {
+                              return Text('(vor ${difference.inHours} h, ${difference.inMinutes % 60} min)');
+                            } else if (difference.inHours < 24) {
+                              return Text('(vor ${difference.inHours} h)');
+                            } else {
+                              return Text('(vor ${difference.inDays} d)');
+                            }
+                          }(),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.info_outlined),
+                          const SizedBox(width: 5),
+                          Flexible(child: Text('${alarm.type} - ${alarm.word}')),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.location_on_outlined),
+                          const SizedBox(width: 5),
+                          Flexible(child: Text(alarm.address)),
+                        ],
+                      ),
+                      if (alarm.notes.isNotEmpty) const Divider(height: 20),
+                      if (alarm.notes.isNotEmpty)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.notes_outlined),
+                            const SizedBox(width: 5),
+                            Flexible(child: Text(alarm.notes.join('\n'))),
+                          ],
+                        ),
+                      if (alarm.notes.isNotEmpty) const Divider(height: 20),
+                      if (alarm.notes.isEmpty) const SizedBox(height: 8),
+                      if (alarm.responses.containsKey(Globals.person!.id))
+                        Column(
+                          // TODO correct info here (note, time, station, response)
+                          children: [
+                            if (station != null)
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  const Icon(Icons.home_outlined),
+                                  const SizedBox(width: 5),
+                                  Flexible(child: Text('Deine Zusage: Wache ${station.name}')),
+                                ],
+                              )
+                            else
+                              const Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Icon(Icons.cancel_outlined),
+                                  SizedBox(width: 5),
+                                  Flexible(child: Text('Du hast dich von dieser Alarmierung abgemeldet')),
+                                ],
+                              ),
+                          ],
+                        ),
+                      // Alarmed units / stations and responding amount of people
+                      if (data != null) const Divider(height: 20),
+                      if (data != null) const Placeholder(),
+                      // External map app controls
+                      if (data != null) const Divider(height: 20),
+                      if (station != null)
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+
+                          /// children: (placeholder functionality)
+                          /// - maps to station
+                          /// - maps to alarm
+                          children: [
+                            if (station.position != null)
+                              ElevatedButton(
+                                onPressed: () async {
+                                  var maps = await MapLauncher.installedMaps;
+                                  if (maps.isNotEmpty) {
+                                    await MapLauncher.showDirections(
+                                      mapType: MapType.google,
+                                      destination: Coords(station!.position!.latitude, station.position!.longitude),
+                                      destinationTitle: 'Wache ${station.name}',
+                                      origin: () {
+                                        if (Globals.lastPosition != null) {
+                                          return Coords(Globals.lastPosition!.latitude, Globals.lastPosition!.longitude);
+                                        }
+                                      }(),
+                                    );
+                                  } else {
+                                    errorToast('Keine Karten-App gefunden');
+                                  }
+                                },
+                                child: Column(
+                                  children: [
+                                    const Row(
+                                      children: <Widget>[
+                                        Text('Zur Wache', style: TextStyle(color: Colors.blue)),
+                                        SizedBox(width: 5),
+                                        Icon(Icons.home, size: 15, color: Colors.blue),
+                                      ],
+                                    ),
+                                    if (station.position != null && Globals.lastPosition != null)
+                                      Row(
+                                        children: [
+                                          Text(
+                                            "> ${Formats.distanceBetween(Globals.lastPosition!, station.position!)}",
+                                            style: const TextStyle(fontSize: 12, color: Colors.blue),
+                                          ),
+                                          const SizedBox(width: 5),
+                                          const Icon(Icons.route, size: 15, color: Colors.blue),
+                                        ],
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            const SizedBox(width: 10),
+                            ElevatedButton(
+                              onPressed: () async {
+                                var maps = await MapLauncher.installedMaps;
+                                if (maps.isNotEmpty) {
+                                  await MapLauncher.showDirections(
+                                    mapType: MapType.google,
+                                    destination: Coords(alarmPosition!.latitude, alarmPosition!.longitude),
+                                    destinationTitle: 'Einsatzort',
+                                    origin: () {
+                                      if (Globals.lastPosition != null) {
+                                        return Coords(Globals.lastPosition!.latitude, Globals.lastPosition!.longitude);
+                                      }
+                                    }(),
+                                  );
+                                } else {
+                                  errorToast('Keine Karten-App gefunden');
+                                }
+                              },
+                              child: Column(
+                                children: [
+                                  const Row(
+                                    children: <Widget>[
+                                      Text('Zum Einsatzort', style: TextStyle(color: Colors.red)),
+                                      SizedBox(width: 5),
+                                      Icon(Icons.local_fire_department, size: 15, color: Colors.red),
+                                    ],
+                                  ),
+                                  if (alarmPosition != null && Globals.lastPosition != null)
+                                    Row(
+                                      children: [
+                                        Text(
+                                          "> ${Formats.distanceBetween(Globals.lastPosition!, Formats.latLngToPosition(alarmPosition!))}",
+                                          style: const TextStyle(fontSize: 12, color: Colors.red),
+                                        ),
+                                        const SizedBox(width: 5),
+                                        const Icon(Icons.route, size: 15, color: Colors.red),
+                                      ],
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      const SizedBox(height: 8),
+                      // Map of the alarm
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Stack(
+                          children: [
+                            SizedBox(
+                              height: MediaQuery.of(context).size.height / 4,
+                              child: alarmPosition != null
+                                  ? MapPage(
+                                      controller: alarmMapController,
+                                      initialPosition: alarmPosition!,
+                                      positionsNotifier: informationNotifier,
+                                    )
+                                  : const Card(
+                                      color: Colors.grey,
+                                      child: Center(
+                                        child: Text('Karte wird geladen....', style: TextStyle(color: Colors.black)),
+                                      ),
+                                    ),
+                            ),
+                            Positioned.fill(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.of(context)
+                                      .push(
+                                    MaterialPageRoute(
+                                      builder: (context) => Scaffold(
+                                        appBar: AppBar(
+                                          title: const Text('Karte'),
+                                          actions: [
+                                            if (Globals.lastPosition != null)
+                                              IconButton(
+                                                icon: const Icon(Icons.person, color: Colors.green),
+                                                onPressed: () {
+                                                  alarmMapController.move(Formats.positionToLatLng(Globals.lastPosition!), 15.5);
+                                                },
+                                              ),
+                                            if (station != null && station.position != null)
+                                              IconButton(
+                                                icon: const Icon(Icons.home, color: Colors.blue),
+                                                onPressed: () {
+                                                  alarmMapController.move(Formats.positionToLatLng(station!.position!), 15.5);
+                                                },
+                                              ),
+                                            if (alarmPosition != null)
+                                              IconButton(
+                                                icon: const Icon(Icons.local_fire_department, color: Colors.red),
+                                                onPressed: () {
+                                                  alarmMapController.move(alarmPosition!, 15.5);
+                                                },
+                                              ),
+                                          ],
+                                        ),
+                                        body: MapPage(
+                                          controller: alarmMapController,
+                                          initialPosition: alarmPosition!,
+                                          positionsNotifier: informationNotifier,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                      .then((_) {
+                                    alarmMapController.move(alarmPosition!, 15.5);
+                                  });
+                                },
+                                child: Container(
+                                  color: Colors.transparent,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
                 /// Antworten:
                 /// - Liste der Personen, die für die gleiche Wache geantwortet haben wie der lokale Nutzer
                 /// - Informationen zu den Qualifikationen der Personen (AGT, TF / GF / ZF, Ma)
@@ -522,20 +1020,22 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
     );
   }
 
-  // ElevatedButton(
-  //     onPressed: () async {
-  //       if (mounted) {
-  //         setState(() {
-  //           selectedStation = null;
-  //           newAnswer = true;
-  //           if (stations.length == 1) {
-  //             selectedStation = stations.first.id;
-  //           }
-  //         });
-  //       }
-  //     },
-  //     child: const Text('Zurücksetzen'),
-  //   );
+  Future<void> fetchAlarmDetails() async {
+    if (alarmDetailsBusy) return;
+    alarmDetailsBusy = true;
+    if (mounted) setState(() {});
+    try {
+      data = await AlarmInterface.getDetails(alarm);
+      alarm = data!.alarm;
+      resetMapInfoNotifiers();
+    } catch (e, s) {
+      Logger.error('Error fetching alarm details: $e\n$s');
+    } finally {
+      await Future.delayed(const Duration(milliseconds: 500));
+      alarmDetailsBusy = false;
+      if (mounted) setState(() {});
+    }
+  }
 
   @override
   void onUpdate(UpdateInfo info) async {
@@ -549,7 +1049,47 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         setState(() {});
       }
     } else if (info.type == UpdateType.ui) {
-      if (info.ids.contains(2)) {
+      if (info.ids.contains(2) && Globals.lastPosition != null) {
+        // update pos in both maps
+        bool foundInInfo = false;
+        for (var pos in informationNotifier.value) {
+          if (pos.id == 'self') {
+            pos.position = Formats.positionToLatLng(Globals.lastPosition!);
+            foundInInfo = true;
+          }
+        }
+        if (!foundInInfo) {
+          informationNotifier.value.add(MapPos(
+            id: 'self',
+            position: Formats.positionToLatLng(Globals.lastPosition!),
+            name: 'Du',
+            widget: const PulseIcon(
+              pulseColor: Colors.green,
+              icon: Icons.person,
+              pulseCount: 2,
+            ),
+          ));
+        }
+
+        bool foundInResponses = false;
+        for (var pos in responsesNotifier.value) {
+          if (pos.id == 'self') {
+            pos.position = Formats.positionToLatLng(Globals.lastPosition!);
+            foundInResponses = true;
+          }
+        }
+        if (!foundInResponses) {
+          responsesNotifier.value.add(MapPos(
+            id: 'self',
+            position: Formats.positionToLatLng(Globals.lastPosition!),
+            name: 'Du',
+            widget: const PulseIcon(
+              pulseColor: Colors.green,
+              icon: Icons.person,
+              pulseCount: 2,
+            ),
+          ));
+        }
         if (mounted) setState(() {});
       }
 
