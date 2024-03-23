@@ -68,7 +68,6 @@
 		<array>
 			<string>fetch</string>
 			<string>location</string>
-			<string>processing</string>
 			<string>remote-notification</string>
 		</array>
 		<key>UILaunchStoryboardName</key>
@@ -81,7 +80,10 @@
 		</array>
 		<key>UISupportedInterfaceOrientations~ipad</key>
 		<array>
-			<string>UIInterfaceOrientationPortrait</string>
+            <string>UIInterfaceOrientationPortrait</string>
+            <string>UIInterfaceOrientationPortraitUpsideDown</string>
+            <string>UIInterfaceOrientationLandscapeLeft</string>
+            <string>UIInterfaceOrientationLandscapeRight</string>
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
