@@ -40,6 +40,8 @@
 		<string>This app needs location permission to share the live location of the user if requested</string>
 		<key>NSCameraUsageDescription</key>
         <string>This app needs camera access to scan QR codes</string>
+		<key>NSAppleMusicUsageDescription</key>
+		<string>This app uses Apple Music to play music</string>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true/>
 		<key>LSApplicationQueriesSchemes</key>
