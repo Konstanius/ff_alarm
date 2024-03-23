@@ -74,8 +74,8 @@
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		9258047B2BAC4BF8009A4240 /* Alarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Alarm.swift; sourceTree = "<group>"; };
-		925804822BAC5855009A4240 /* SQLite.swift-master */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "SQLite.swift-master"; path = "../../../Downloads/SQLite.swift-master"; sourceTree = "<group>"; };
-		925804832BAC5867009A4240 /* GzipSwift-main */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "GzipSwift-main"; path = "../../../Downloads/GzipSwift-main"; sourceTree = "<group>"; };
+		925804822BAC5855009A4240 /* SQLite.swift-master */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "SQLite.swift-master"; path = "./SQLite.swift-master"; sourceTree = "<group>"; };
+		925804832BAC5867009A4240 /* GzipSwift-main */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "GzipSwift-main"; path = "./GzipSwift-main"; sourceTree = "<group>"; };
 		92A5EF772BA7507500172B40 /* res_alarm_2.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = res_alarm_2.mp3; path = ../../android/app/src/main/res/raw/res_alarm_2.mp3; sourceTree = "<group>"; };
 		92A5EF782BA7507500172B40 /* res_alarm_3.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = res_alarm_3.mp3; path = ../../android/app/src/main/res/raw/res_alarm_3.mp3; sourceTree = "<group>"; };
 		92A5EF792BA7507600172B40 /* res_alarm_4.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = res_alarm_4.mp3; path = ../../android/app/src/main/res/raw/res_alarm_4.mp3; sourceTree = "<group>"; };
