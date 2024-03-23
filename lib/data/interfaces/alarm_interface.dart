@@ -2,7 +2,6 @@ import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/data/models/unit.dart';
-import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 
@@ -65,43 +64,38 @@ abstract class AlarmInterface {
   }
 
   static Future<({Alarm alarm, List<Unit> units, List<Station> stations, List<Person> persons})> getDetails(Alarm alarm) async {
-    var queryUnits = await Globals.db.database.query(
-      "Unit",
-      columns: ["id", "updated", "stationId"],
-      where: "id IN (${alarm.units.join(',')})",
-    );
-    List<String> unitInfo = [];
+    var existingUnits = await Unit.getBatched(filter: (unit) => alarm.units.contains(unit.id));
     Set<int> unitIds = {};
-    for (Map<String, dynamic> unit in queryUnits) {
-      unitInfo.add('${unit['id']}:${unit['updated']}');
-      unitIds.add(unit['id']);
+    for (var unit in existingUnits) {
+      unitIds.add(unit.id);
     }
 
     Set<int> stationIds = {};
-    for (Map<String, dynamic> unit in queryUnits) {
-      stationIds.add(unit['stationId']);
+    for (var unit in existingUnits) {
+      stationIds.add(unit.stationId);
     }
 
-    var queryStations = await Globals.db.database.query(
-      "Station",
-      columns: ["id", "updated"],
-      where: "id IN (${stationIds.join(',')})",
-    );
-    List<String> stationInfo = [];
-    for (Map<String, dynamic> station in queryStations) {
-      stationInfo.add('${station['id']}:${station['updated']}');
-    }
-
-    var queryPersons = await Globals.db.database.query(
-      "Person",
-      columns: ["id", "updated"],
-      where: "id IN (${alarm.responses.keys.join(',')})",
-    );
-    List<String> personInfo = [];
+    var existingStations = await Station.getBatched(filter: (station) => stationIds.contains(station.id));
     Set<int> personIds = {};
-    for (Map<String, dynamic> person in queryPersons) {
-      personInfo.add('${person['id']}:${person['updated']}');
-      personIds.add(person['id']);
+    for (var station in existingStations) {
+      personIds.addAll(station.persons);
+    }
+
+    var existingPersons = await Person.getBatched(filter: (person) => personIds.contains(person.id) && person.allowedUnits.any((unitId) => alarm.units.contains(unitId)));
+
+    Set<String> unitInfo = {};
+    for (var unit in existingUnits) {
+      unitInfo.add('${unit.id}:${unit.updated}');
+    }
+
+    Set<String> stationInfo = {};
+    for (var station in existingStations) {
+      stationInfo.add('${station.id}:${station.updated}');
+    }
+
+    Set<String> personInfo = {};
+    for (var person in existingPersons) {
+      personInfo.add('${person.id}:${person.updated}');
     }
 
     Map<String, dynamic> data = {
@@ -141,9 +135,12 @@ abstract class AlarmInterface {
         if (unitIds.contains(newUnit.id)) {
           futures.add(Unit.update(newUnit, false));
           updatedUnitIds.add(newUnit.id);
+          existingUnits.removeWhere((element) => element.id == newUnit.id);
         }
       }
     }
+
+    returnObject.units.addAll(existingUnits);
 
     if (response.ackData!['stations'] != null) {
       for (Map<String, dynamic> station in response.ackData!['stations']) {
@@ -153,9 +150,12 @@ abstract class AlarmInterface {
         if (stationIds.contains(newStation.id)) {
           futures.add(Station.update(newStation, false));
           updatedStationIds.add(newStation.id);
+          existingStations.removeWhere((element) => element.id == newStation.id);
         }
       }
     }
+
+    returnObject.stations.addAll(existingStations);
 
     if (response.ackData!['persons'] != null) {
       for (Map<String, dynamic> person in response.ackData!['persons']) {
@@ -165,9 +165,12 @@ abstract class AlarmInterface {
         if (personIds.contains(newPerson.id)) {
           futures.add(Person.update(newPerson, false));
           updatedPersonIds.add(newPerson.id);
+          existingPersons.removeWhere((element) => element.id == newPerson.id);
         }
       }
     }
+
+    returnObject.persons.addAll(existingPersons);
 
     Future.wait(futures).then((_) {
       if (updatedUnitIds.isNotEmpty) UpdateInfo(UpdateType.unit, updatedUnitIds);

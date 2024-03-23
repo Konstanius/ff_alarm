@@ -59,6 +59,8 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
 
   bool alarmDetailsBusy = false;
 
+  TextEditingController noteController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -104,11 +106,13 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
             try {
               AlarmResponse response = AlarmResponse(
                 type: type,
-                note: null, // TODO
+                note: null,
                 stationId: stationIdCopy,
                 time: DateTime.now(),
               );
               await AlarmInterface.setResponse(alarm, response);
+              noteController.text = '';
+              resetMapInfoNotifiers();
             } catch (e, s) {
               Logger.error('Error setting alarm response: $e\n$s');
               return;
@@ -130,6 +134,10 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         clickDuration.value = 0;
       }
     });
+
+    if (alarm.responses.containsKey(Globals.person!.id)) {
+      noteController.text = alarm.responses[Globals.person!.id]!.note ?? '';
+    }
 
     // Sets up the alarm
     () async {
@@ -232,6 +240,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
     responsesNotifier.dispose();
     alarmMapController.dispose();
     responsesMapController.dispose();
+    noteController.dispose();
     super.dispose();
   }
 
@@ -753,7 +762,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           const Icon(Icons.access_time),
-                          const SizedBox(width: 5),
+                          const SizedBox(width: 8),
                           Text(Formats.dateTime(alarm.date)),
                           const SizedBox(width: 15),
                           () {
@@ -779,7 +788,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           const Icon(Icons.info_outlined),
-                          const SizedBox(width: 5),
+                          const SizedBox(width: 8),
                           Flexible(child: Text('${alarm.type} - ${alarm.word}')),
                         ],
                       ),
@@ -788,7 +797,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                         mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           const Icon(Icons.location_on_outlined),
-                          const SizedBox(width: 5),
+                          const SizedBox(width: 8),
                           Flexible(child: Text(alarm.address)),
                         ],
                       ),
@@ -798,7 +807,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
                             const Icon(Icons.notes_outlined),
-                            const SizedBox(width: 5),
+                            const SizedBox(width: 8),
                             Flexible(child: Text(alarm.notes.join('\n'))),
                           ],
                         ),
@@ -806,15 +815,14 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                       if (alarm.notes.isEmpty) const SizedBox(height: 8),
                       if (alarm.responses.containsKey(Globals.person!.id))
                         Column(
-                          // TODO correct info here (note, time, station, response)
                           children: [
                             if (station != null)
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   const Icon(Icons.home_outlined),
-                                  const SizedBox(width: 5),
-                                  Flexible(child: Text('Deine Zusage: Wache ${station.name}')),
+                                  const SizedBox(width: 8),
+                                  Flexible(child: Text('Deine Wachenzusage: ${station.name}, um ${DateFormat('HH:mm').format(alarm.responses[Globals.person!.id]!.time!)}')),
                                 ],
                               )
                             else
@@ -822,24 +830,212 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   Icon(Icons.cancel_outlined),
-                                  SizedBox(width: 5),
+                                  SizedBox(width: 8),
                                   Flexible(child: Text('Du hast dich von dieser Alarmierung abgemeldet')),
                                 ],
                               ),
+                            const SizedBox(height: 8),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    decoration: InputDecoration(
+                                      labelText: 'Deine Notiz',
+                                      hintText: 'Deine Notiz',
+                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    controller: noteController,
+                                    expands: false,
+                                    onEditingComplete: () async {
+                                      if (alarm.responses.containsKey(Globals.person!.id)) {
+                                        if (noteController.text == (alarm.responses[Globals.person!.id]!.note ?? '')) return;
+                                        try {
+                                          FocusScope.of(context).unfocus();
+                                          await AlarmInterface.setResponse(
+                                            alarm,
+                                            AlarmResponse(
+                                              type: alarm.responses[Globals.person!.id]!.type,
+                                              note: noteController.text,
+                                              stationId: alarm.responses[Globals.person!.id]!.stationId,
+                                              time: alarm.responses[Globals.person!.id]!.time,
+                                            ),
+                                          );
+                                          successToast('Notiz gespeichert');
+                                        } catch (e, s) {
+                                          errorToast('Fehler beim Speichern der Notiz: $e');
+                                          Logger.error('Error saving note: $e\n$s');
+                                        }
+                                      }
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                IconButton(
+                                  icon: const Icon(Icons.send_outlined, size: 30),
+                                  onPressed: () async {
+                                    if (alarm.responses.containsKey(Globals.person!.id)) {
+                                      if (noteController.text == (alarm.responses[Globals.person!.id]!.note ?? '')) return;
+                                      try {
+                                        FocusScope.of(context).unfocus();
+                                        await AlarmInterface.setResponse(
+                                          alarm,
+                                          AlarmResponse(
+                                            type: alarm.responses[Globals.person!.id]!.type,
+                                            note: noteController.text,
+                                            stationId: alarm.responses[Globals.person!.id]!.stationId,
+                                            time: alarm.responses[Globals.person!.id]!.time,
+                                          ),
+                                        );
+                                        successToast('Notiz gespeichert');
+                                      } catch (e, s) {
+                                        errorToast('Fehler beim Speichern der Notiz: $e');
+                                        Logger.error('Error saving note: $e\n$s');
+                                      }
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       // Alarmed units / stations and responding amount of people
-                      if (data != null) const Divider(height: 20),
-                      if (data != null) const Placeholder(),
+                      if (data != null && alarm.units.isNotEmpty) const Divider(height: 20),
+                      if (data != null && alarm.units.isNotEmpty) Text('Alarmierte Einheiten:', style: Theme.of(context).textTheme.titleMedium),
+                      if (data != null && alarm.units.isNotEmpty)
+                        () {
+                          List<({Station station, List<Unit> units, List<Person> persons})> stationUnits = [];
+                          for (var station in data!.stations) {
+                            print('Station: ${station.name}');
+                            List<Unit> dispatchedUnits = [];
+                            for (var unit in data!.units) {
+                              if (unit.stationId == station.id) dispatchedUnits.add(unit);
+                            }
+                            units.sort((a, b) => a.unitCallSign(station).compareTo(b.unitCallSign(station)));
+
+                            List<Person> persons = [];
+                            for (var person in data!.persons) {
+                              // continue if not answered or answered for another station or notReady
+                              if (!alarm.responses.containsKey(person.id) ||
+                                  alarm.responses[person.id]!.stationId != station.id ||
+                                  alarm.responses[person.id]!.type == AlarmResponseType.notReady) continue;
+                              persons.add(person);
+                            }
+
+                            stationUnits.add((station: station, units: dispatchedUnits, persons: persons));
+                          }
+
+                          stationUnits.sort((a, b) => a.station.name.compareTo(b.station.name));
+
+                          return Column(
+                            children: [
+                              for (var element in stationUnits)
+                                Card(
+                                  color: Theme.of(context).cardColor,
+                                  clipBehavior: Clip.antiAliasWithSaveLayer,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  margin: const EdgeInsets.all(8),
+                                  elevation: 5,
+                                  child: Column(
+                                    children: [
+                                      Text('${element.station.name} (${element.station.prefix} ${element.station.area} ${element.station.stationNumber})',
+                                          style: Theme.of(context).textTheme.titleMedium),
+                                      const SizedBox(height: 5),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(Icons.groups_outlined),
+                                          const SizedBox(width: 5),
+                                          () {
+                                            int zf = 0;
+                                            int gf = 0;
+                                            int agt = 0;
+                                            int ma = 0;
+                                            int other = 0;
+
+                                            for (var person in element.persons) {
+                                              var qualification = person.qualificationSet;
+                                              if (qualification.contains("zf")) {
+                                                zf++;
+                                              } else if (qualification.contains("gf")) {
+                                                gf++;
+                                              } else {
+                                                other++;
+                                              }
+                                              if (qualification.contains("agt")) agt++;
+                                              if (qualification.contains("ma")) ma++;
+                                            }
+
+                                            return Text('$zf / $gf / $other / ${element.persons.length} (AGT: $agt, Ma: $ma)');
+                                          }(),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 5),
+                                      for (var unit in element.units)
+                                        Card(
+                                          color: Theme.of(context).focusColor,
+                                          clipBehavior: Clip.antiAliasWithSaveLayer,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          margin: const EdgeInsets.all(8),
+                                          elevation: 5,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              mainAxisAlignment: MainAxisAlignment.start,
+                                              children: [
+                                                () {
+                                                  int zf = 0;
+                                                  int gf = 0;
+                                                  int other = unit.capacity;
+                                                  int total = unit.capacity;
+
+                                                  for (var position in unit.positions) {
+                                                    if (position == UnitPosition.zf) {
+                                                      zf++;
+                                                      other--;
+                                                    }
+                                                    if (position == UnitPosition.gf) {
+                                                      gf++;
+                                                      other--;
+                                                    }
+                                                  }
+
+                                                  if (gf == 0 && zf == 0 && unit.positions.contains(UnitPosition.atf)) {
+                                                    other--;
+                                                    gf++;
+                                                  }
+
+                                                  String text = '$gf / $other / $total';
+                                                  if (zf > 0) text = '$zf / $text';
+
+                                                  return Row(
+                                                    children: [
+                                                      Text("${unit.unitCallSign(element.station)} ($text)"),
+                                                    ],
+                                                  );
+                                                }(),
+                                                const SizedBox(height: 5),
+                                                Text(unit.unitDescription),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          );
+                        }(),
                       // External map app controls
-                      if (data != null) const Divider(height: 20),
+                      if (data != null && alarm.units.isNotEmpty) const Divider(height: 20),
                       if (station != null)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-
-                          /// children: (placeholder functionality)
-                          /// - maps to station
-                          /// - maps to alarm
                           children: [
                             if (station.position != null)
                               ElevatedButton(
@@ -962,21 +1158,21 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                               IconButton(
                                                 icon: const Icon(Icons.person, color: Colors.green),
                                                 onPressed: () {
-                                                  alarmMapController.move(Formats.positionToLatLng(Globals.lastPosition!), 15.5);
+                                                  alarmMapController.smoothMove(Formats.positionToLatLng(Globals.lastPosition!), 15.5);
                                                 },
                                               ),
                                             if (station != null && station.position != null)
                                               IconButton(
                                                 icon: const Icon(Icons.home, color: Colors.blue),
                                                 onPressed: () {
-                                                  alarmMapController.move(Formats.positionToLatLng(station!.position!), 15.5);
+                                                  alarmMapController.smoothMove(Formats.positionToLatLng(station!.position!), 15.5);
                                                 },
                                               ),
                                             if (alarmPosition != null)
                                               IconButton(
                                                 icon: const Icon(Icons.local_fire_department, color: Colors.red),
                                                 onPressed: () {
-                                                  alarmMapController.move(alarmPosition!, 15.5);
+                                                  alarmMapController.smoothMove(alarmPosition!, 15.5);
                                                 },
                                               ),
                                           ],
@@ -990,7 +1186,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                     ),
                                   )
                                       .then((_) {
-                                    alarmMapController.move(alarmPosition!, 15.5);
+                                    alarmMapController.smoothMove(alarmPosition!, 15.5);
                                   });
                                 },
                                 child: Container(

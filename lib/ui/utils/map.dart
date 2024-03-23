@@ -63,3 +63,32 @@ class MapPos {
 
   MapPos({required this.id, required this.position, required this.name, required this.widget});
 }
+
+extension SmoothMapController on MapController {
+  Future<void> smoothMove(LatLng position, double zoom) async {
+    double startX = camera.center.latitude;
+    double startY = camera.center.longitude;
+    double startZoom = zoom;
+
+    double dx = position.latitude - startX;
+    double dy = position.longitude - startY;
+    double dz = zoom - startZoom;
+
+    const minStepSize = 0.001;
+    const maxSteps = 100;
+
+    int steps = (dx.abs() / minStepSize).ceil();
+    steps = steps > maxSteps ? maxSteps : steps;
+
+    double stepX = dx / steps;
+    double stepY = dy / steps;
+    double stepZ = dz / steps;
+
+    for (int i = 1; i <= steps; i++) {
+      await Future.delayed(const Duration(milliseconds: 17));
+      move(LatLng(startX + stepX * i, startY + stepY * i), startZoom + stepZ * i);
+    }
+
+    move(position, zoom);
+  }
+}

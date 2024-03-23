@@ -31,6 +31,7 @@ class Person {
   /// - ce (CE-Führerschein)
   /// - bo (Bootsführerschein)
   String qualifications;
+  Set<String> get qualificationSet => qualifications.split(",").toSet();
 
   AlarmResponse? response;
 
