@@ -257,6 +257,38 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
             },
             trailing: const Icon(Icons.arrow_drop_down_circle_outlined),
           ),
+          ListTile(
+            leading: const Icon(Icons.warning_amber_outlined),
+            title: const Text('Alarme stummschalten'),
+            onTap: () {
+              bool muted = Globals.prefs.getBool('alarms_muted') ?? false;
+              Globals.prefs.setBool('alarms_muted', !muted);
+              if (mounted) setState(() {});
+            },
+            trailing: Switch(
+              value: Globals.prefs.getBool('alarms_muted') ?? false,
+              onChanged: (value) {
+                Globals.prefs.setBool('alarms_muted', value);
+                if (mounted) setState(() {});
+              },
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.assignment_turned_in_outlined),
+            title: const Text('Tests stummschalten'),
+            onTap: () {
+              bool muted = Globals.prefs.getBool('alarms_testsMuted') ?? false;
+              Globals.prefs.setBool('alarms_testsMuted', !muted);
+              if (mounted) setState(() {});
+            },
+            trailing: Switch(
+              value: Globals.prefs.getBool('alarms_testsMuted') ?? false,
+              onChanged: (value) {
+                Globals.prefs.setBool('alarms_testsMuted', value);
+                if (mounted) setState(() {});
+              },
+            ),
+          ),
         ],
       ),
     );

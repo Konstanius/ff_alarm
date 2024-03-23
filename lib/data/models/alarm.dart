@@ -30,6 +30,8 @@ class Alarm {
 
   int updated;
 
+  bool get responseTimeExpired => date.isBefore(DateTime.now().subtract(const Duration(minutes: 20)));
+
   Alarm({
     required this.id,
     required this.type,
@@ -110,7 +112,16 @@ class Alarm {
 
   AlarmOption getAlertOption() {
     DateTime now = DateTime.now();
-    if (date.isAfter(now.subtract(const Duration(minutes: 15)))) return AlarmOption.alert;
+    if (date.isAfter(now.subtract(const Duration(minutes: 15)))) {
+      if (type.startsWith('Test')) {
+        bool? muted = Globals.prefs.getBool('alarms_testsMuted');
+        if (muted == true) return AlarmOption.silent;
+      } else {
+        bool? muted = Globals.prefs.getBool('alarms_muted');
+        if (muted == true) return AlarmOption.silent;
+      }
+      return AlarmOption.alert;
+    }
     if (date.isAfter(now.subtract(const Duration(hours: 24)))) return AlarmOption.silent;
     return AlarmOption.none;
   }

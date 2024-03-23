@@ -306,7 +306,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
           if (Platform.isAndroid)
             // criticalAlertsTest
             ListTile(
-              leading: const Icon(Icons.warning_outlined),
+              leading: const Icon(Icons.assignment_turned_in_outlined),
               title: const Text('Kritische Alarme (Tests)'),
               subtitle: const Text('Erlaubt der App, den "Nicht-Stören"-Modus für Test-Alarmierungen zu umgehen'),
               trailing: criticalAlertsTests ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),

@@ -85,8 +85,12 @@ extension SmoothMapController on MapController {
     double stepZ = dz / steps;
 
     for (int i = 1; i <= steps; i++) {
-      await Future.delayed(const Duration(milliseconds: 17));
-      move(LatLng(startX + stepX * i, startY + stepY * i), startZoom + stepZ * i);
+      try {
+        await Future.delayed(const Duration(milliseconds: 17));
+        move(LatLng(startX + stepX * i, startY + stepY * i), startZoom + stepZ * i);
+      } catch (_) {
+        return;
+      }
     }
 
     move(position, zoom);

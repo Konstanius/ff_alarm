@@ -58,7 +58,7 @@ class NotificationService: UNNotificationServiceExtension {
                     channelKey = "test"
                 }
 
-                let alarmOption = alarm.getAlertOption()
+                let alarmOption = alarm.getAlertOption(prefs: prefs!)
                 switch alarmOption {
                 case .alert:
                 bestAttemptContent.sound = UNNotificationSound.criticalSoundNamed(UNNotificationSoundName(rawValue: alarmSoundPath), withAudioVolume: 1.0)

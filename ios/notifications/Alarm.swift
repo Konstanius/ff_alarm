@@ -98,9 +98,18 @@ class Alarm {
         return alarm
     }
 
-    func getAlertOption() -> AlarmOption {
+    func getAlertOption(prefs: [String: Any]) -> AlarmOption {
         let now = Date()
         if date > now.addingTimeInterval(-15 * 60) {
+            if word.starts(with: "Test") {
+                if prefs["alarms_testsMuted"] as? Bool == true {
+                    return .silent
+                }
+            } else {
+                if prefs["alarms_muted"] as? Bool == true {
+                    return .silent
+                }
+            }
             return .alert
         }
         if date > now.addingTimeInterval(-24 * 60 * 60) {

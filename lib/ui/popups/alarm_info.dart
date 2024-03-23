@@ -247,8 +247,8 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
   @override
   Widget build(BuildContext context) {
     if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    if (stations.length > 1 && selectedStation == null) return stationSelectionScreen();
-    if (!alarm.responses.containsKey(Globals.person!.id) || newAnswer) return responseSelectionScreen();
+    if (selectedStation == null && stations.length > 1 && (!alarm.responseTimeExpired || newAnswer)) return stationSelectionScreen();
+    if ((!alarm.responses.containsKey(Globals.person!.id) && !alarm.responseTimeExpired) || newAnswer) return responseSelectionScreen();
     return alarmMonitorScreen();
   }
 
@@ -474,8 +474,8 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         ),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: ListView(
+          padding: const EdgeInsets.all(8),
           children: <Widget>[
             const SizedBox(height: 20),
             Row(
@@ -504,15 +504,8 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 clickField(AlarmResponseType.notReady),
               ],
             ),
-            Text('Alarm: ${alarm.type}'),
-            Text('Word: ${alarm.word}'),
-            Text('Date: ${alarm.date}'),
-            Text('Number: ${alarm.number}'),
-            Text('Address: ${alarm.address}'),
-            Text('Notes: ${alarm.notes}'),
-            Text('Units: ${alarm.units}'),
-            Text('Updated: ${alarm.updated}'),
-            Text('Responses: ${alarm.responses}'),
+            const SizedBox(height: 28),
+            ...genericAlarmInfo(),
           ],
         ),
       ),
@@ -631,14 +624,12 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         preferredSize: const Size.fromHeight(50.0 + kDefaultFontSize * 2),
         child: GestureDetector(
           onLongPress: () {
-            if (alarm.responses.containsKey(Globals.person!.id)) {
-              setState(() {
-                newAnswer = true;
-                selectedStation = null;
-              });
+            setState(() {
+              newAnswer = true;
+              selectedStation = null;
+            });
 
-              resetMapInfoNotifiers();
-            }
+            resetMapInfoNotifiers();
           },
           child: AppBar(
             automaticallyImplyLeading: false,
@@ -704,28 +695,38 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 children: [
                   // own response
                   if (alarm.responses.containsKey(Globals.person!.id))
-                    Container(
-                      color: alarm.responses[Globals.person!.id]!.type.color,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Text(
-                                  'Deine Antwort: ${alarm.responses[Globals.person!.id]!.type.name}${() {
-                                    if (alarm.responses[Globals.person!.id]!.time != null) {
-                                      return ' (${DateFormat('HH:mm').format(alarm.responses[Globals.person!.id]!.time!)})';
-                                    } else {
-                                      return '';
-                                    }
-                                  }()}',
-                                  style: const TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
-                              const Text('Klicke hier lang, um deine Antwort zu ändern', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
-                            ],
-                          ),
-                        ],
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                                'Deine Antwort: ${alarm.responses[Globals.person!.id]!.type.name}${() {
+                                  if (alarm.responses[Globals.person!.id]!.time != null) {
+                                    return ' (${DateFormat('HH:mm').format(alarm.responses[Globals.person!.id]!.time!)})';
+                                  } else {
+                                    return '';
+                                  }
+                                }()}',
+                                style: const TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                            const Text('Klicke hier lang, um deine Antwort zu ändern', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                          ],
+                        ),
+                      ],
+                    )
+                  else
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text('Du hast noch nicht geantwortet', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                            Text('Klicke hier lang, um deine Antwort zu setzen', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                          ],
+                        ),
+                      ],
                     ),
                 ],
               ),
@@ -758,59 +759,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                     padding: const EdgeInsets.all(12),
                     children: [
                       // General information (time, type, word, address, notes)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.access_time),
-                          const SizedBox(width: 8),
-                          Text(Formats.dateTime(alarm.date)),
-                          const SizedBox(width: 15),
-                          () {
-                            DateTime now = DateTime.now();
-                            Duration difference = now.difference(alarm.date);
-
-                            if (difference.inMinutes < 1) {
-                              return const Text('(Jetzt)');
-                            } else if (difference.inMinutes < 60) {
-                              return Text('(vor ${difference.inMinutes} min)');
-                            } else if (difference.inHours < 3) {
-                              return Text('(vor ${difference.inHours} h, ${difference.inMinutes % 60} min)');
-                            } else if (difference.inHours < 24) {
-                              return Text('(vor ${difference.inHours} h)');
-                            } else {
-                              return Text('(vor ${difference.inDays} d)');
-                            }
-                          }(),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.info_outlined),
-                          const SizedBox(width: 8),
-                          Flexible(child: Text('${alarm.type} - ${alarm.word}')),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.location_on_outlined),
-                          const SizedBox(width: 8),
-                          Flexible(child: Text(alarm.address)),
-                        ],
-                      ),
-                      if (alarm.notes.isNotEmpty) const Divider(height: 20),
-                      if (alarm.notes.isNotEmpty)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            const Icon(Icons.notes_outlined),
-                            const SizedBox(width: 8),
-                            Flexible(child: Text(alarm.notes.join('\n'))),
-                          ],
-                        ),
+                      ...genericAlarmInfo(),
                       if (alarm.notes.isNotEmpty) const Divider(height: 20),
                       if (alarm.notes.isEmpty) const SizedBox(height: 8),
                       if (alarm.responses.containsKey(Globals.person!.id))
@@ -845,7 +794,11 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                       hintText: 'Deine Notiz',
                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                     ),
+                                    keyboardType: TextInputType.text,
+                                    maxLines: 1,
+                                    maxLength: 200,
                                     controller: noteController,
+                                    textCapitalization: TextCapitalization.sentences,
                                     expands: false,
                                     onEditingComplete: () async {
                                       if (alarm.responses.containsKey(Globals.person!.id)) {
@@ -906,7 +859,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                         () {
                           List<({Station station, List<Unit> units, List<Person> persons})> stationUnits = [];
                           for (var station in data!.stations) {
-                            print('Station: ${station.name}');
                             List<Unit> dispatchedUnits = [];
                             for (var unit in data!.units) {
                               if (unit.stationId == station.id) dispatchedUnits.add(unit);
@@ -915,10 +867,11 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
 
                             List<Person> persons = [];
                             for (var person in data!.persons) {
-                              // continue if not answered or answered for another station or notReady
+                              // continue if not answered or answered for another station or notReady or onCall
                               if (!alarm.responses.containsKey(person.id) ||
                                   alarm.responses[person.id]!.stationId != station.id ||
-                                  alarm.responses[person.id]!.type == AlarmResponseType.notReady) continue;
+                                  alarm.responses[person.id]!.type == AlarmResponseType.notReady ||
+                                  alarm.responses[person.id]!.type == AlarmResponseType.onCall) continue;
                               persons.add(person);
                             }
 
@@ -1299,6 +1252,64 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         });
       }
     }
+  }
+
+  List<Widget> genericAlarmInfo() {
+    return [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          const Icon(Icons.access_time),
+          const SizedBox(width: 8),
+          Text(Formats.dateTime(alarm.date)),
+          const SizedBox(width: 15),
+          () {
+            DateTime now = DateTime.now();
+            Duration difference = now.difference(alarm.date);
+
+            if (difference.inMinutes < 1) {
+              return const Text('(Jetzt)');
+            } else if (difference.inMinutes < 60) {
+              return Text('(vor ${difference.inMinutes} min)');
+            } else if (difference.inHours < 3) {
+              return Text('(vor ${difference.inHours} h, ${difference.inMinutes % 60} min)');
+            } else if (difference.inHours < 24) {
+              return Text('(vor ${difference.inHours} h)');
+            } else {
+              return Text('(vor ${difference.inDays} d)');
+            }
+          }(),
+        ],
+      ),
+      const SizedBox(height: 8),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outlined),
+          const SizedBox(width: 8),
+          Flexible(child: Text('${alarm.type} - ${alarm.word}')),
+        ],
+      ),
+      const SizedBox(height: 8),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          const Icon(Icons.location_on_outlined),
+          const SizedBox(width: 8),
+          Flexible(child: Text(alarm.address)),
+        ],
+      ),
+      if (alarm.notes.isNotEmpty) const Divider(height: 20),
+      if (alarm.notes.isNotEmpty)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            const Icon(Icons.notes_outlined),
+            const SizedBox(width: 8),
+            Flexible(child: Text(alarm.notes.join('\n'))),
+          ],
+        ),
+    ];
   }
 }
 

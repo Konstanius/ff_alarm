@@ -42,8 +42,8 @@ Future<void> initializeAwesomeNotifications() async {
       NotificationChannel(
         channelKey: 'test_silent',
         channelGroupKey: 'test',
-        channelName: 'Test Alarmierungen (verpasst)',
-        channelDescription: 'Benachrichtigungskanal für regelmäßige, verpasste, Testalarmierungen',
+        channelName: 'Test Alarmierungen (stumm)',
+        channelDescription: 'Benachrichtigungskanal für regelmäßige, stumme, Testalarmierungen',
         channelShowBadge: true,
         criticalAlerts: false,
         defaultPrivacy: NotificationPrivacy.Public,
@@ -70,8 +70,8 @@ Future<void> initializeAwesomeNotifications() async {
       NotificationChannel(
         channelKey: 'alarm_silent',
         channelGroupKey: 'alarm',
-        channelName: 'Alarmierungen (verpasst)',
-        channelDescription: 'Benachrichtigungskanal für verpasste Alarmierungen',
+        channelName: 'Alarmierungen (stumm)',
+        channelDescription: 'Benachrichtigungskanal für stumme Alarmierungen',
         channelShowBadge: true,
         criticalAlerts: false,
         defaultPrivacy: NotificationPrivacy.Public,
@@ -175,7 +175,7 @@ Future<bool> sendAlarm(Alarm alarm) async {
       channelKey = option == AlarmOption.alert ? 'alarm' : 'alarm_silent';
     }
 
-    if (Platform.isAndroid) {
+    if (Platform.isAndroid && option == AlarmOption.alert) {
       try {
         try {
           double? volume = await RealVolume.getCurrentVol(StreamType.NOTIFICATION);
@@ -221,17 +221,16 @@ Future<bool> sendAlarm(Alarm alarm) async {
         },
       ),
       actionButtons: [
-        if (option == AlarmOption.alert)
-          NotificationActionButton(
-            key: 'alarm_click',
-            label: 'Alarmierung ansehen',
-            enabled: true,
-            actionType: ActionType.Default,
-            isAuthenticationRequired: false,
-            showInCompactView: true,
-            autoDismissible: true,
-            color: Colors.blue,
-          ),
+        NotificationActionButton(
+          key: 'alarm_click',
+          label: 'Alarmierung ansehen',
+          enabled: true,
+          actionType: ActionType.Default,
+          isAuthenticationRequired: false,
+          showInCompactView: true,
+          autoDismissible: true,
+          color: Colors.blue,
+        ),
       ],
     );
   } catch (e) {

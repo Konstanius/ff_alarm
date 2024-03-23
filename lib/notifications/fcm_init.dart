@@ -30,7 +30,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) async {
   Logger.fcm('FCM message received: ${message.data}');
-  // TODO UI update streams have to fire here if the app is open
+  // TODO UI update streams have to fire here if the app is open for iOS
   if (Platform.isIOS) return; // handled by the app extension
   WidgetsFlutterBinding.ensureInitialized();
   await Globals.initialize();
@@ -49,14 +49,6 @@ Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) as
           return;
         }
         await Alarm.update(alarm, true);
-        alarm.address = "Jena";
-        alarm.notes = [];
-
-        int lastAlarmTime = Globals.prefs.getInt('last_alarm_time') ?? 0;
-        if (alarm.date.millisecondsSinceEpoch > lastAlarmTime) {
-          Globals.prefs.setInt('last_alarm_id', alarm.id);
-          Globals.prefs.setInt('last_alarm_time', alarm.date.millisecondsSinceEpoch);
-        }
 
         await sendAlarm(alarm);
         break;
