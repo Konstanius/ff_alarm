@@ -145,14 +145,14 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
             title: const Text('Alarmierungston'),
             subtitle: () {
               if (Platform.isAndroid) return const Text('Auf Android noch nicht verfügbar');
-              return Text(Globals.prefs.getString('alarm_sound') ?? 'Quattro 98 2');
+              return Text(Globals.prefs.getString('alarm_sound') ?? 'ABCABCAB');
             }(),
             onTap: () async {
               if (Platform.isAndroid) {
                 infoToast('Auf Android noch nicht verfügbar');
                 return;
               }
-              String selected = Globals.prefs.getString('alarm_sound') ?? 'Quattro 98 2';
+              String selected = Globals.prefs.getString('alarm_sound') ?? 'ABCABCAB';
               String previousPath = Globals.prefs.getString('alarm_soundPath') ?? 'res_alarm_1';
 
               var player = AssetsAudioPlayer.newPlayer();
@@ -295,10 +295,10 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
   }
 
   static const Map<String, String> alarmSounds = {
-    'Quattro 98 2': 'res_alarm_1',
-    'Quattro Q96': 'res_alarm_2',
-    'Einsatzton': 'res_alarm_3',
-    'Quattro XLSi': 'res_alarm_4',
+    'ABCABCAB': 'res_alarm_1',
+    'AAAABBBB': 'res_alarm_2',
+    'A-A-BB--': 'res_alarm_3',
+    'BABACACA': 'res_alarm_4',
   };
 
   @override
