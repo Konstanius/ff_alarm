@@ -94,6 +94,7 @@ PODS:
   - GoogleUtilitiesComponents (1.1.0):
     - GoogleUtilities/Logger
   - GTMSessionFetcher/Core (2.3.0)
+  - GzipSwift (5.1.1)
   - IosAwnCore (0.9.3)
   - map_launcher (0.0.1):
     - Flutter
@@ -141,6 +142,9 @@ PODS:
   - sqflite (0.0.3):
     - Flutter
     - FlutterMacOS
+  - SQLite.swift (0.14.1):
+    - SQLite.swift/standard (= 0.14.1)
+  - SQLite.swift/standard (0.14.1)
 
 DEPENDENCIES:
   - app_group_directory (from `.symlinks/plugins/app_group_directory/ios`)
@@ -153,6 +157,7 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - flutter_native_splash (from `.symlinks/plugins/flutter_native_splash/ios`)
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
+  - GzipSwift
   - map_launcher (from `.symlinks/plugins/map_launcher/ios`)
   - mobile_scanner (from `.symlinks/plugins/mobile_scanner/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
@@ -161,6 +166,7 @@ DEPENDENCIES:
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqflite (from `.symlinks/plugins/sqflite/darwin`)
+  - SQLite.swift (~> 0.14.1)
 
 SPEC REPOS:
   trunk:
@@ -175,6 +181,7 @@ SPEC REPOS:
     - GoogleUtilities
     - GoogleUtilitiesComponents
     - GTMSessionFetcher
+    - GzipSwift
     - IosAwnCore
     - MLImage
     - MLKitBarcodeScanning
@@ -183,6 +190,7 @@ SPEC REPOS:
     - Mute
     - nanopb
     - PromisesObjC
+    - SQLite.swift
 
 EXTERNAL SOURCES:
   app_group_directory:
@@ -241,6 +249,7 @@ SPEC CHECKSUMS:
   GoogleUtilities: d053d902a8edaa9904e1bd00c37535385b8ed152
   GoogleUtilitiesComponents: 679b2c881db3b615a2777504623df6122dd20afe
   GTMSessionFetcher: 3a63d75eecd6aa32c2fc79f578064e1214dfdec2
+  GzipSwift: 893f3e48e597a1a4f62fafcb6514220fcf8287fa
   IosAwnCore: b8601fbb37f7b3560f31b84ebf55a72f65812e05
   map_launcher: e325db1261d029ff33e08e03baccffe09593ffea
   MLImage: 7bb7c4264164ade9bf64f679b40fb29c8f33ee9b
@@ -257,7 +266,8 @@ SPEC CHECKSUMS:
   share_plus: c3fef564749587fc939ef86ffb283ceac0baf9f5
   shared_preferences_foundation: b4c3b4cddf1c21f02770737f147a3f5da9d39695
   sqflite: 673a0e54cc04b7d6dba8d24fb8095b31c3a99eec
+  SQLite.swift: 2992550ebf3c5b268bf4352603e3df87d2a4ed72
 
-PODFILE CHECKSUM: f1189352995a5887b7837c747ff88f88bb9da476
+PODFILE CHECKSUM: e051e35f981718e6b40ea0d245d1064691b7555d
 
 COCOAPODS: 1.15.2
