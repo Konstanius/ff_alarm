@@ -114,7 +114,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
               noteController.text = '';
               resetMapInfoNotifiers();
             } catch (e, s) {
-              Logger.error('Error setting alarm response: $e\n$s');
+              exceptionToast(e, s);
               return;
             }
 
@@ -624,6 +624,11 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         preferredSize: const Size.fromHeight(50.0 + kDefaultFontSize * 2),
         child: GestureDetector(
           onLongPress: () {
+            if (alarm.responseTimeExpired) {
+              errorToast('Die Antwortzeit ist abgelaufen.');
+              return;
+            }
+
             setState(() {
               newAnswer = true;
               selectedStation = null;
@@ -710,20 +715,25 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                   }
                                 }()}',
                                 style: const TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
-                            const Text('Klicke hier lang, um deine Antwort zu ändern', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                            if (!alarm.responseTimeExpired)
+                              const Text('Klicke hier lang, um deine Antwort zu ändern', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                            if (alarm.responseTimeExpired) const Text('Die Antwortzeit ist abgelaufen', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
                           ],
                         ),
                       ],
                     )
                   else
-                    const Row(
+                    Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text('Du hast noch nicht geantwortet', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
-                            Text('Klicke hier lang, um deine Antwort zu setzen', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                            if (!alarm.responseTimeExpired) const Text('Du hast noch nicht geantwortet -', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                            if (!alarm.responseTimeExpired)
+                              const Text('Klicke hier lang, um deine Antwort zu setzen', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                            if (alarm.responseTimeExpired) const Text('Du hast nicht geantwortet -', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                            if (alarm.responseTimeExpired) const Text('Die Antwortzeit ist abgelaufen', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
                           ],
                         ),
                       ],
@@ -800,6 +810,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                     controller: noteController,
                                     textCapitalization: TextCapitalization.sentences,
                                     expands: false,
+                                    readOnly: alarm.date.isBefore(DateTime.now().subtract(const Duration(hours: 1))),
                                     onEditingComplete: () async {
                                       if (alarm.responses.containsKey(Globals.person!.id)) {
                                         if (noteController.text == (alarm.responses[Globals.person!.id]!.note ?? '')) return;
@@ -816,8 +827,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                           );
                                           successToast('Notiz gespeichert');
                                         } catch (e, s) {
-                                          errorToast('Fehler beim Speichern der Notiz: $e');
-                                          Logger.error('Error saving note: $e\n$s');
+                                          exceptionToast(e, s);
                                         }
                                       }
                                     },
@@ -842,8 +852,12 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                         );
                                         successToast('Notiz gespeichert');
                                       } catch (e, s) {
-                                        errorToast('Fehler beim Speichern der Notiz: $e');
-                                        Logger.error('Error saving note: $e\n$s');
+                                        exceptionToast(e, s);
+                                        AlarmInterface.getDetails(alarm).then((value) {
+                                          data = value;
+                                          noteController.text = alarm.responses[Globals.person!.id]!.note ?? '';
+                                          if (mounted) setState(() {});
+                                        });
                                       }
                                     }
                                   },
@@ -909,16 +923,15 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                             int other = 0;
 
                                             for (var person in element.persons) {
-                                              var qualification = person.qualificationSet;
-                                              if (qualification.contains("zf")) {
+                                              if (person.hasQualification("zf", alarm.date)) {
                                                 zf++;
-                                              } else if (qualification.contains("gf")) {
+                                              } else if (person.hasQualification("gf", alarm.date)) {
                                                 gf++;
                                               } else {
                                                 other++;
                                               }
-                                              if (qualification.contains("agt")) agt++;
-                                              if (qualification.contains("ma")) ma++;
+                                              if (person.hasQualification("agt", alarm.date)) agt++;
+                                              if (person.hasQualification("ma", alarm.date)) ma++;
                                             }
 
                                             return Text('$zf / $gf / $other / ${element.persons.length} (AGT: $agt, Ma: $ma)');
@@ -1178,7 +1191,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
       alarm = data!.alarm;
       resetMapInfoNotifiers();
     } catch (e, s) {
-      Logger.error('Error fetching alarm details: $e\n$s');
+      exceptionToast(e, s);
     } finally {
       await Future.delayed(const Duration(milliseconds: 500));
       alarmDetailsBusy = false;
@@ -1245,6 +1258,11 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
       if (info.ids.contains(0)) {
         AlarmInterface.getDetails(alarm).then((value) {
           data = value;
+          if (!mounted) return;
+          setState(() {
+            loading = false;
+          });
+        }).catchError((e, s) {
           if (!mounted) return;
           setState(() {
             loading = false;

@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:ff_alarm/data/converters.dart';
-import 'package:ff_alarm/data/daos/alarm_dao.dart';
-import 'package:ff_alarm/data/daos/person_dao.dart';
-import 'package:ff_alarm/data/daos/station_dao.dart';
-import 'package:ff_alarm/data/daos/unit_dao.dart';
+import 'package:ff_alarm/data/database/alarm_dao.dart';
+import 'package:ff_alarm/data/database/person_dao.dart';
+import 'package:ff_alarm/data/database/station_dao.dart';
+import 'package:ff_alarm/data/database/unit_dao.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/models/station.dart';
@@ -24,6 +24,7 @@ part 'database.g.dart';
   MapIntAlarmResponseConverter,
   AlarmResponseConverter,
   ListUnitPositionConverter,
+  ListQualificationConverter,
 ])
 @Database(
   version: 1,

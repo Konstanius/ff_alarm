@@ -2,6 +2,8 @@ import 'dart:math';
 
 import 'package:another_flushbar/flushbar.dart';
 import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/log/logger.dart';
+import 'package:ff_alarm/server/request.dart';
 import 'package:flutter/material.dart';
 
 List<MapEntry<int, Flushbar>> _toastList = [];
@@ -70,4 +72,13 @@ void infoToast(String text) {
     message: text,
     color: Colors.blue[700]!,
   );
+}
+
+void exceptionToast(e, s) {
+  if (e is AckError) {
+    errorToast(e.errorMessage);
+  } else {
+    Logger.error("$e\n$s");
+    errorToast('Ein unbekannter Fehler ist aufgetreten');
+  }
 }

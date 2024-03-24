@@ -17,9 +17,8 @@ class Person {
   List<int> allowedUnits;
 
   /// Qualifications Format:
-  /// comma separated, no spaces
+  /// "quali":"startMillis/null":"endMillis/null",...
   /// Supported:
-  /// - tm (Truppmann)
   /// - tf (Truppführer)
   /// - agt (Atemschutzgeräteträger)
   /// - gf (Gruppenführer)
@@ -30,8 +29,19 @@ class Person {
   /// - c (C-Führerschein)
   /// - ce (CE-Führerschein)
   /// - bo (Bootsführerschein)
-  String qualifications;
-  Set<String> get qualificationSet => qualifications.split(",").toSet();
+  List<Qualification> qualifications;
+  
+  bool hasQualification(String type, DateTime checkDate) {
+    for (var qualification in qualifications) {
+      if (qualification.type != type) continue;
+      if (qualification.start == null && qualification.end == null) return false;
+      if (qualification.start == null && qualification.end != null) return qualification.end!.isAfter(checkDate);
+      if (qualification.start != null && qualification.end == null) return qualification.start!.isBefore(checkDate);
+      return qualification.start!.isBefore(checkDate) && qualification.end!.isAfter(checkDate);
+    }
+    
+    return false;
+  }
 
   AlarmResponse? response;
 
@@ -63,7 +73,7 @@ class Person {
       firstName: json[jsonShorts["firstName"]],
       lastName: json[jsonShorts["lastName"]],
       allowedUnits: List<int>.from(json[jsonShorts["allowedUnits"]]),
-      qualifications: json[jsonShorts["qualifications"]],
+      qualifications: (json[jsonShorts["qualifications"]] as List).map((e) => Qualification.fromString(e)).toList(),
       response: AlarmResponse.fromJson(json[jsonShorts["response"]]),
       updated: json[jsonShorts["updated"]],
     );
@@ -75,7 +85,7 @@ class Person {
       jsonShorts["firstName"]!: firstName,
       jsonShorts["lastName"]!: lastName,
       jsonShorts["allowedUnits"]!: allowedUnits,
-      jsonShorts["qualifications"]!: qualifications,
+      jsonShorts["qualifications"]!: qualifications.map((e) => e.toString()).toList(),
       jsonShorts["response"]!: response?.toJson(),
       jsonShorts["updated"]!: updated,
     };
@@ -133,5 +143,26 @@ class Person {
 
     if (!bc) return;
     UpdateInfo(UpdateType.person, {personId});
+  }
+}
+
+class Qualification {
+  final String type;
+  final DateTime? start;
+  final DateTime? end;
+
+  Qualification(this.type, this.start, this.end);
+
+  factory Qualification.fromString(String str) {
+    var parts = str.split(':');
+    String type = parts[0];
+    DateTime? start = parts[1] == "0" ? null : DateTime.fromMillisecondsSinceEpoch(int.parse(parts[1]));
+    DateTime? end = parts[2] == "0" ? null : DateTime.fromMillisecondsSinceEpoch(int.parse(parts[2]));
+    return Qualification(type, start, end);
+  }
+
+  @override
+  String toString() {
+    return "$type:${start?.millisecondsSinceEpoch ?? 0}:${end?.millisecondsSinceEpoch ?? 0}";
   }
 }

@@ -30,7 +30,7 @@ class Alarm {
 
   int updated;
 
-  bool get responseTimeExpired => date.isBefore(DateTime.now().subtract(const Duration(minutes: 20)));
+  bool get responseTimeExpired => date.isBefore(DateTime.now().subtract(const Duration(hours: 1)));
 
   Alarm({
     required this.id,

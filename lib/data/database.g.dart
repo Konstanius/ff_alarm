@@ -521,7 +521,8 @@ class _$PersonDao extends PersonDao {
                   'firstName': item.firstName,
                   'lastName': item.lastName,
                   'allowedUnits': _listIntConverter.encode(item.allowedUnits),
-                  'qualifications': item.qualifications,
+                  'qualifications':
+                      _listQualificationConverter.encode(item.qualifications),
                   'response': _alarmResponseConverter.encode(item.response),
                   'updated': item.updated
                 }),
@@ -534,7 +535,8 @@ class _$PersonDao extends PersonDao {
                   'firstName': item.firstName,
                   'lastName': item.lastName,
                   'allowedUnits': _listIntConverter.encode(item.allowedUnits),
-                  'qualifications': item.qualifications,
+                  'qualifications':
+                      _listQualificationConverter.encode(item.qualifications),
                   'response': _alarmResponseConverter.encode(item.response),
                   'updated': item.updated
                 }),
@@ -547,7 +549,8 @@ class _$PersonDao extends PersonDao {
                   'firstName': item.firstName,
                   'lastName': item.lastName,
                   'allowedUnits': _listIntConverter.encode(item.allowedUnits),
-                  'qualifications': item.qualifications,
+                  'qualifications':
+                      _listQualificationConverter.encode(item.qualifications),
                   'response': _alarmResponseConverter.encode(item.response),
                   'updated': item.updated
                 });
@@ -573,7 +576,8 @@ class _$PersonDao extends PersonDao {
             lastName: row['lastName'] as String,
             allowedUnits:
                 _listIntConverter.decode(row['allowedUnits'] as String),
-            qualifications: row['qualifications'] as String,
+            qualifications: _listQualificationConverter
+                .decode(row['qualifications'] as String),
             response:
                 _alarmResponseConverter.decode(row['response'] as String?),
             updated: row['updated'] as int),
@@ -599,7 +603,8 @@ class _$PersonDao extends PersonDao {
             lastName: row['lastName'] as String,
             allowedUnits:
                 _listIntConverter.decode(row['allowedUnits'] as String),
-            qualifications: row['qualifications'] as String,
+            qualifications: _listQualificationConverter
+                .decode(row['qualifications'] as String),
             response:
                 _alarmResponseConverter.decode(row['response'] as String?),
             updated: row['updated'] as int),
@@ -630,3 +635,4 @@ final _nullableListIntConverter = NullableListIntConverter();
 final _mapIntAlarmResponseConverter = MapIntAlarmResponseConverter();
 final _alarmResponseConverter = AlarmResponseConverter();
 final _listUnitPositionConverter = ListUnitPositionConverter();
+final _listQualificationConverter = ListQualificationConverter();

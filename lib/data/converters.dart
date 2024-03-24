@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:ff_alarm/data/models/alarm.dart';
+import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/models/unit.dart';
+import 'package:ff_alarm/log/logger.dart';
 import 'package:floor/floor.dart';
 
 class ListStringConverter extends TypeConverter<List<String>, String> {
@@ -119,5 +121,27 @@ class ListUnitPositionConverter extends TypeConverter<List<UnitPosition>, String
   @override
   String encode(List<UnitPosition> value) {
     return jsonEncode(value.map((e) => e.index).toList());
+  }
+}
+
+class ListQualificationConverter extends TypeConverter<List<Qualification>, String> {
+  @override
+  List<Qualification> decode(String databaseValue) {
+    List<String> splits = databaseValue.split(',');
+    splits.removeWhere((element) => element.isEmpty);
+    List<Qualification> result = [];
+    for (var split in splits) {
+      try {
+        result.add(Qualification.fromString(split));
+      } catch (e) {
+        Logger.error('Failed to parse qualification: $split');
+      }
+    }
+    return result;
+  }
+
+  @override
+  String encode(List<Qualification> value) {
+    return value.map((e) => e.toString()).join(',');
   }
 }

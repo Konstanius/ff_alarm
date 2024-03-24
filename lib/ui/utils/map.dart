@@ -26,7 +26,8 @@ class _MapPageState extends State<MapPage> {
         TileLayer(
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
           subdomains: const ['a', 'b', 'c'],
-          keepBuffer: 30,
+          keepBuffer: 10,
+          panBuffer: 2,
         ),
         ValueListenableBuilder(
           valueListenable: widget.positionsNotifier,
