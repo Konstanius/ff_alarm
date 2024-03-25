@@ -30,7 +30,7 @@ class Person {
   /// - ce (CE-Führerschein)
   /// - bo (Bootsführerschein)
   List<Qualification> qualifications;
-  
+
   bool hasQualification(String type, DateTime checkDate) {
     for (var qualification in qualifications) {
       if (qualification.type != type) continue;
@@ -39,7 +39,7 @@ class Person {
       if (qualification.start != null && qualification.end == null) return qualification.start!.isBefore(checkDate);
       return qualification.start!.isBefore(checkDate) && qualification.end!.isAfter(checkDate);
     }
-    
+
     return false;
   }
 

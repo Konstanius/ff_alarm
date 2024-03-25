@@ -37,7 +37,7 @@ enum UpdateType {
 }
 
 mixin Updates<T extends StatefulWidget> on State<T> {
-Set<UpdateType> _listensTo = {};
+  Set<UpdateType> _listensTo = {};
 
   void onUpdate(UpdateInfo info);
 

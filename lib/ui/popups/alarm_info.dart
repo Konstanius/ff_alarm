@@ -715,8 +715,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                   }
                                 }()}',
                                 style: const TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
-                            if (!alarm.responseTimeExpired)
-                              const Text('Klicke hier lang, um deine Antwort zu ändern', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                            if (!alarm.responseTimeExpired) const Text('Klicke hier lang, um deine Antwort zu ändern', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
                             if (alarm.responseTimeExpired) const Text('Die Antwortzeit ist abgelaufen', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
                           ],
                         ),
@@ -730,8 +729,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             if (!alarm.responseTimeExpired) const Text('Du hast noch nicht geantwortet -', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
-                            if (!alarm.responseTimeExpired)
-                              const Text('Klicke hier lang, um deine Antwort zu setzen', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
+                            if (!alarm.responseTimeExpired) const Text('Klicke hier lang, um deine Antwort zu setzen', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
                             if (alarm.responseTimeExpired) const Text('Du hast nicht geantwortet -', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
                             if (alarm.responseTimeExpired) const Text('Die Antwortzeit ist abgelaufen', style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize)),
                           ],

@@ -4,7 +4,7 @@ import 'package:floor/floor.dart';
 import 'package:geolocator/geolocator.dart';
 
 @entity
-class Station  {
+class Station {
   @primaryKey
   final int id;
 
@@ -46,7 +46,7 @@ class Station  {
   List<int> adminPersons;
 
   int updated;
-  
+
   Station({
     required this.id,
     required this.name,

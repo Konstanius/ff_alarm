@@ -246,8 +246,8 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                   title: 'Kritische Alarme',
                   content: const Text(
                     'Diese Einstellung ermöglicht es der App, den "Nich stören"-Modus zu umgehen und Alarmierungen auch bei komplett stummgeschaltetem Gerät zu empfangen und laut zu signalisieren.\n\n'
-                        'Bitte aktiviere dazu in der folgenden Seite unten die Einstellung "Nicht-Stören"-Erlaubnis (oder Ähnlich).\n\n'
-                        'Dies gilt NICHT für Test-Alarmierungen!',
+                    'Bitte aktiviere dazu in der folgenden Seite unten die Einstellung "Nicht-Stören"-Erlaubnis (oder Ähnlich).\n\n'
+                    'Dies gilt NICHT für Test-Alarmierungen!',
                   ),
                   actions: [
                     TextButton(
@@ -316,8 +316,8 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                   title: 'Kritische Alarme (Tests)',
                   content: const Text(
                     'Diese Einstellung ermöglicht es der App, den "Nich stören"-Modus zu umgehen und Test-Alarmierungen auch bei komplett stummgeschaltetem Gerät zu empfangen und laut zu signalisieren.\n\n'
-                        'Bitte aktiviere dazu in der folgenden Seite unten die Einstellung "Nicht-Stören"-Erlaubnis (oder Ähnlich).\n\n'
-                        'Dies gilt NUR für Test-Alarmierungen!',
+                    'Bitte aktiviere dazu in der folgenden Seite unten die Einstellung "Nicht-Stören"-Erlaubnis (oder Ähnlich).\n\n'
+                    'Dies gilt NUR für Test-Alarmierungen!',
                   ),
                   actions: [
                     TextButton(
