@@ -33,7 +33,7 @@ abstract class Globals {
   static late final String filesPath;
   static late final String cachePath;
   static late final Prefs prefs;
-  static late final AppDatabase db;
+  static late AppDatabase db;
 
   static Future<void> initialize() async {
     if (initialized) {
