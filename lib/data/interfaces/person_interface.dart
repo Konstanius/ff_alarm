@@ -46,10 +46,4 @@ abstract class PersonInterface {
 
     UpdateInfo(UpdateType.person, updatedIds);
   }
-
-  static Future<Person> checkAuthentication({required int personId, required String authKey}) async {
-    Request response = await Request('personCheckAuth', {'id': personId, 'authKey': authKey}).emit(true, guest: true);
-    Person person = Person.fromJson(response.ackData!);
-    return person;
-  }
 }

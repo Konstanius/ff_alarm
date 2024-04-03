@@ -1,12 +1,5 @@
-Bestätigungsaktion:
-  - "Wenn Alarmierung bestätigt / abgesagt wird, bestimmte Aktionen ausführen"
-  - Navigation auf Maps
-  - Andere App öffnen
-  - GPS aktivieren
-
 Alarmierungsbildschirm:
   - Alarmierungsbildschirm verbessern mit allen Infos
-  - Alarmierungsbildschirm kann mehrmals geöffnet werden (stacked)
 
 Alarmierungstöne:
   - Android Ton ändert sich nicht (Channel cant be edited)
@@ -14,3 +7,8 @@ Alarmierungstöne:
 Distanzen:
   - Distance Matrix API
   - https://openrouteservice.org/dev/#/signup possible
+
+Allgemein:
+  - bessere Authentifizierung server-side
+  - externe TETRA API Anbindung
+  - Web Admin Panel

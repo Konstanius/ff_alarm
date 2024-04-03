@@ -76,6 +76,7 @@ void infoToast(String text) {
 
 void exceptionToast(e, s) {
   if (e is AckError) {
+    Logger.warn(e.errorMessage);
     errorToast(e.errorMessage);
   } else {
     Logger.error("$e\n$s");

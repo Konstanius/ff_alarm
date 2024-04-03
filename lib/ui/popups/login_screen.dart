@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:ff_alarm/data/database.dart';
+import 'package:ff_alarm/data/interfaces/guest_interface.dart';
 import 'package:ff_alarm/data/interfaces/person_interface.dart';
 import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/globals.dart';
@@ -85,9 +86,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 // fetch the person from the server
                 Globals.connectionAddress = domain;
 
-                Person person;
+                ({String token, int sessionId, Person person}) result;
                 try {
-                  person = await PersonInterface.checkAuthentication(personId: personId, authKey: authKey);
+                  result = await GuestInterface.login(personId: personId, key: authKey);
                 } catch (e, s) {
                   Logger.error('LoginScreen: $e, $s');
                   if (e is AckError) {
@@ -112,11 +113,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   }
                 }
 
-                await Person.update(person, false);
+                await Person.update(result.person, false);
                 Globals.loggedIn = true;
-                Globals.person = person;
-                Globals.prefs.setInt('auth_user', person.id);
-                Globals.prefs.setString('auth_token', authKey);
+                Globals.person = result.person;
+                Globals.prefs.setInt('auth_user', result.sessionId);
+                Globals.prefs.setString('auth_token', result.token);
                 Globals.prefs.setString('connection_address', domain);
 
                 Navigator.pop(Globals.context!);
