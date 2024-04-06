@@ -13,6 +13,7 @@ import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/map.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
@@ -88,7 +89,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
             await AwesomeNotifications().cancelNotificationsByChannelKey('test');
 
             int? stationIdCopy = selectedStation;
-            if (stationIdCopy == null) {
+            if (stationIdCopy == null && type != AlarmResponseType.notReady) {
               for (var station in stations) {
                 if (station.persons.contains(Globals.person!.id)) {
                   stationIdCopy = station.id;
@@ -114,6 +115,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
               noteController.text = '';
               resetMapInfoNotifiers();
             } catch (e, s) {
+              fetchAlarmDetails();
               exceptionToast(e, s);
               return;
             }
@@ -123,6 +125,8 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
             successToast('Alarm bestätigt: ${type.name}');
 
             clickDuration.value = 0;
+
+            fetchAlarmDetails();
           } catch (e) {
             errorToast('Fehler beim Bestätigen des Alarms: $e');
           } finally {
@@ -247,20 +251,69 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
   @override
   Widget build(BuildContext context) {
     if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    if (selectedStation == null && stations.length > 1 && (!alarm.responseTimeExpired || newAnswer)) return stationSelectionScreen();
-    if ((!alarm.responses.containsKey(Globals.person!.id) && !alarm.responseTimeExpired) || newAnswer) return responseSelectionScreen();
+    bool showAnswerScreen = (!alarm.responses.containsKey(Globals.person!.id) && !alarm.responseTimeExpired) || newAnswer;
+    if (selectedStation == null && stations.length > 1 && showAnswerScreen) return stationSelectionScreen();
+    if (showAnswerScreen) return responseSelectionScreen();
     return alarmMonitorScreen();
   }
 
   Widget stationSelectionScreen() {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Alarmierung'),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(50.0),
+        child: Stack(
+          children: [
+            ValueListenableBuilder<int>(
+              valueListenable: clickDuration,
+              builder: (BuildContext context, int value, Widget? child) {
+                return Positioned.fill(
+                  child: LinearProgressIndicator(
+                    value: value / 1000,
+                    backgroundColor: Colors.transparent,
+                    valueColor: clickIndices.length == 1 ? AlwaysStoppedAnimation<Color>(clickIndices.first.color) : const AlwaysStoppedAnimation<Color>(Colors.transparent),
+                  ),
+                );
+              },
+            ),
+            AppBar(
+              backgroundColor: Colors.transparent,
+              title: const Text('Alarmierung'),
+            ),
+          ],
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(8),
         children: <Widget>[
-          // TODO a button to set response to no, without selecting a station
+          // direct large no button
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTapDown: (TapDownDetails details) {
+                    clickIndices.add(AlarmResponseType.notReady);
+                  },
+                  onTapUp: (TapUpDetails details) {
+                    clickIndices.remove(AlarmResponseType.notReady);
+                  },
+                  onTapCancel: () {
+                    clickIndices.remove(AlarmResponseType.notReady);
+                  },
+                  child: Card(
+                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                    color: Colors.red,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text('Nicht bereit', style: Theme.of(context).textTheme.headlineLarge),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
           for (var station in stations)
             // required to display:
             // name
@@ -298,16 +351,41 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                     0, // notReady
                     0, // notResponded
                   ];
-                  for (var person in station.persons) {
-                    if (alarm.responses.containsKey(person)) {
-                      var response = alarm.responses[person]!;
-                      if (response.stationId == station.id) {
-                        responses[response.type.index]++;
+                  if (data == null || alarm.units.isEmpty) {
+                    for (var person in station.persons) {
+                      if (alarm.responses.containsKey(person)) {
+                        var response = alarm.responses[person]!;
+                        if (response.stationId == station.id) {
+                          responses[response.type.index]++;
+                        } else {
+                          responses[5]++;
+                        }
                       } else {
-                        responses[5]++;
+                        responses[6]++;
                       }
-                    } else {
-                      responses[6]++;
+                    }
+                  } else {
+                    for (var person in data!.persons) {
+                      // check intersection for units
+                      bool hasUnit = false;
+                      for (var unit in dispatchedUnits) {
+                        if (person.allowedUnits.contains(unit.id)) {
+                          hasUnit = true;
+                          break;
+                        }
+                      }
+                      if (!hasUnit) continue;
+
+                      if (alarm.responses.containsKey(person.id)) {
+                        var response = alarm.responses[person.id]!;
+                        if (response.stationId == station.id) {
+                          responses[response.type.index]++;
+                        } else {
+                          responses[5]++;
+                        }
+                      } else {
+                        responses[6]++;
+                      }
                     }
                   }
 
@@ -558,59 +636,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
     );
   }
 
-  void resetMapInfoNotifiers() {
-    informationNotifier.value = [];
-    responsesNotifier.value = [];
-
-    if (alarmPosition != null) {
-      informationNotifier.value.add(MapPos(
-        id: 'alarm',
-        position: alarmPosition!,
-        name: 'Einsatzort',
-        widget: const PulseIcon(
-          pulseColor: Colors.red,
-          icon: Icons.local_fire_department,
-          pulseCount: 2,
-        ),
-      ));
-    }
-
-    if (Globals.lastPosition != null) {
-      informationNotifier.value.add(MapPos(
-        id: 'self',
-        position: Formats.positionToLatLng(Globals.lastPosition!),
-        name: 'Du',
-        widget: const PulseIcon(
-          pulseColor: Colors.green,
-          icon: Icons.person,
-          pulseCount: 2,
-        ),
-      ));
-    }
-
-    if (selectedStation != null) {
-      Station? station;
-      for (var s in stations) {
-        if (s.id == selectedStation) {
-          station = s;
-          break;
-        }
-      }
-      if (station != null && station.position != null) {
-        informationNotifier.value.add(MapPos(
-          id: 'station',
-          position: Formats.positionToLatLng(station.position!),
-          name: 'Wache',
-          widget: const PulseIcon(
-            pulseColor: Colors.blue,
-            icon: Icons.home,
-            pulseCount: 2,
-          ),
-        ));
-      }
-    }
-  }
-
   Widget alarmMonitorScreen() {
     Station? station;
     for (var s in stations) {
@@ -791,25 +816,51 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                   Flexible(child: Text('Du hast dich von dieser Alarmierung abgemeldet')),
                                 ],
                               ),
-                            const SizedBox(height: 8),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    decoration: InputDecoration(
-                                      labelText: 'Deine Notiz',
-                                      hintText: 'Deine Notiz',
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                            if (alarm.units.isNotEmpty) const SizedBox(height: 8),
+                            if (alarm.units.isNotEmpty)
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      decoration: InputDecoration(
+                                        labelText: 'Deine Notiz',
+                                        hintText: 'Deine Notiz',
+                                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      keyboardType: TextInputType.text,
+                                      maxLines: 1,
+                                      maxLength: 200,
+                                      controller: noteController,
+                                      textCapitalization: TextCapitalization.sentences,
+                                      expands: false,
+                                      readOnly: alarm.date.isBefore(DateTime.now().subtract(const Duration(hours: 1))),
+                                      onEditingComplete: () async {
+                                        if (alarm.responses.containsKey(Globals.person!.id)) {
+                                          if (noteController.text == (alarm.responses[Globals.person!.id]!.note ?? '')) return;
+                                          try {
+                                            FocusScope.of(context).unfocus();
+                                            await AlarmInterface.setResponse(
+                                              alarm,
+                                              AlarmResponse(
+                                                type: alarm.responses[Globals.person!.id]!.type,
+                                                note: noteController.text,
+                                                stationId: alarm.responses[Globals.person!.id]!.stationId,
+                                                time: alarm.responses[Globals.person!.id]!.time,
+                                              ),
+                                            );
+                                            successToast('Notiz gespeichert');
+                                          } catch (e, s) {
+                                            exceptionToast(e, s);
+                                          }
+                                        }
+                                      },
                                     ),
-                                    keyboardType: TextInputType.text,
-                                    maxLines: 1,
-                                    maxLength: 200,
-                                    controller: noteController,
-                                    textCapitalization: TextCapitalization.sentences,
-                                    expands: false,
-                                    readOnly: alarm.date.isBefore(DateTime.now().subtract(const Duration(hours: 1))),
-                                    onEditingComplete: () async {
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.send_outlined, size: 30),
+                                    onPressed: () async {
                                       if (alarm.responses.containsKey(Globals.person!.id)) {
                                         if (noteController.text == (alarm.responses[Globals.person!.id]!.note ?? '')) return;
                                         try {
@@ -826,42 +877,17 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                           successToast('Notiz gespeichert');
                                         } catch (e, s) {
                                           exceptionToast(e, s);
+                                          AlarmInterface.getDetails(alarm).then((value) {
+                                            data = value;
+                                            noteController.text = alarm.responses[Globals.person!.id]!.note ?? '';
+                                            if (mounted) setState(() {});
+                                          });
                                         }
                                       }
                                     },
                                   ),
-                                ),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: const Icon(Icons.send_outlined, size: 30),
-                                  onPressed: () async {
-                                    if (alarm.responses.containsKey(Globals.person!.id)) {
-                                      if (noteController.text == (alarm.responses[Globals.person!.id]!.note ?? '')) return;
-                                      try {
-                                        FocusScope.of(context).unfocus();
-                                        await AlarmInterface.setResponse(
-                                          alarm,
-                                          AlarmResponse(
-                                            type: alarm.responses[Globals.person!.id]!.type,
-                                            note: noteController.text,
-                                            stationId: alarm.responses[Globals.person!.id]!.stationId,
-                                            time: alarm.responses[Globals.person!.id]!.time,
-                                          ),
-                                        );
-                                        successToast('Notiz gespeichert');
-                                      } catch (e, s) {
-                                        exceptionToast(e, s);
-                                        AlarmInterface.getDetails(alarm).then((value) {
-                                          data = value;
-                                          noteController.text = alarm.responses[Globals.person!.id]!.note ?? '';
-                                          if (mounted) setState(() {});
-                                        });
-                                      }
-                                    }
-                                  },
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
                           ],
                         ),
                       // Alarmed units / stations and responding amount of people
@@ -1111,6 +1137,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                             Positioned.fill(
                               child: GestureDetector(
                                 onTap: () {
+                                  if (alarmPosition == null) return;
                                   Navigator.of(context)
                                       .push(
                                     MaterialPageRoute(
@@ -1132,13 +1159,12 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                                   alarmMapController.smoothMove(Formats.positionToLatLng(station!.position!), 15.5);
                                                 },
                                               ),
-                                            if (alarmPosition != null)
-                                              IconButton(
-                                                icon: const Icon(Icons.local_fire_department, color: Colors.red),
-                                                onPressed: () {
-                                                  alarmMapController.smoothMove(alarmPosition!, 15.5);
-                                                },
-                                              ),
+                                            IconButton(
+                                              icon: const Icon(Icons.local_fire_department, color: Colors.red),
+                                              onPressed: () {
+                                                alarmMapController.smoothMove(alarmPosition!, 15.5);
+                                              },
+                                            ),
                                           ],
                                         ),
                                         body: MapPage(
@@ -1178,6 +1204,59 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         ],
       ),
     );
+  }
+
+  void resetMapInfoNotifiers() {
+    informationNotifier.value = [];
+    responsesNotifier.value = [];
+
+    if (alarmPosition != null) {
+      informationNotifier.value.add(MapPos(
+        id: 'alarm',
+        position: alarmPosition!,
+        name: 'Einsatzort',
+        widget: const PulseIcon(
+          pulseColor: Colors.red,
+          icon: Icons.local_fire_department,
+          pulseCount: 2,
+        ),
+      ));
+    }
+
+    if (Globals.lastPosition != null) {
+      informationNotifier.value.add(MapPos(
+        id: 'self',
+        position: Formats.positionToLatLng(Globals.lastPosition!),
+        name: 'Du',
+        widget: const PulseIcon(
+          pulseColor: Colors.green,
+          icon: Icons.person,
+          pulseCount: 2,
+        ),
+      ));
+    }
+
+    if (selectedStation != null) {
+      Station? station;
+      for (var s in stations) {
+        if (s.id == selectedStation) {
+          station = s;
+          break;
+        }
+      }
+      if (station != null && station.position != null) {
+        informationNotifier.value.add(MapPos(
+          id: 'station',
+          position: Formats.positionToLatLng(station.position!),
+          name: 'Wache',
+          widget: const PulseIcon(
+            pulseColor: Colors.blue,
+            icon: Icons.home,
+            pulseCount: 2,
+          ),
+        ));
+      }
+    }
   }
 
   Future<void> fetchAlarmDetails() async {

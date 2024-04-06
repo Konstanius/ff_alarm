@@ -3,6 +3,7 @@ import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class AlarmsScreen extends StatefulWidget {
   const AlarmsScreen({super.key, required this.badge});
@@ -54,7 +55,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
           for (Alarm alarm in alarms)
             ListTile(
               title: Text('${alarm.type} | ${alarm.word}'),
-              subtitle: Text(alarm.date.toLocal().toString()),
+              subtitle: Text(DateFormat('dd.MM.yyyy HH:mm').format(alarm.date)),
               onTap: () {
                 Globals.router.go('/alarm', extra: alarm);
               },
