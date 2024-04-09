@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:ff_alarm/data/models/alarm.dart';
+import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/popups/alarm_info.dart';
@@ -23,12 +24,9 @@ class AlarmsFilter {
   AlarmResponseType? responseType;
   bool responseNotSet = false;
   String? search;
+  String? station;
 
-  // TODO Filter by station
-
-  AlarmsFilter({this.date, this.testsMode, this.responseType});
-
-  bool get noFilters => date == null && testsMode == null && responseType == null && search == null && !responseNotSet;
+  bool get noFilters => date == null && testsMode == null && responseType == null && search == null && !responseNotSet && station == null;
 
   bool filter(Alarm alarm) {
     if (date != null && (alarm.date.year != date!.year || alarm.date.month != date!.month || alarm.date.day != date!.day)) return false;
@@ -43,6 +41,7 @@ class AlarmsFilter {
         !alarm.address.toLowerCase().contains(search!) &&
         !alarm.notes.any((element) => element.toLowerCase().contains(search!)) &&
         !alarm.type.toLowerCase().contains(search!)) return false;
+    if (station != null && station != "${alarm.server} ${alarm.ownResponse?.stationId}") return false;
     return true;
   }
 }
@@ -87,10 +86,13 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.filter_alt_outlined, color: filter.noFilters ? null : Colors.blue),
-            onPressed: () {
+            onPressed: () async {
               searchController.text = filter.search ?? '';
+
+              var stations = await Station.getAll();
+
               showDialog(
-                context: context,
+                context: Globals.context!,
                 builder: (BuildContext context) {
                   return StatefulBuilder(
                     builder: (BuildContext context, StateSetter sbSetState) {
@@ -193,6 +195,32 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                                           value: -1,
                                           child: Text('Keine'),
                                         ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text('Station'),
+                                    DropdownButton<String?>(
+                                      value: filter.station,
+                                      onChanged: (String? value) {
+                                        sbSetState(() {
+                                          filter.station = value;
+                                        });
+                                        setState(() {});
+                                      },
+                                      items: [
+                                        const DropdownMenuItem<String>(
+                                          value: null,
+                                          child: Text('Alle'),
+                                        ),
+                                        for (var station in stations)
+                                          DropdownMenuItem<String>(
+                                            value: station.id,
+                                            child: Text(station.name),
+                                          ),
                                       ],
                                     ),
                                   ],

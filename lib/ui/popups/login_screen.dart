@@ -73,6 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
             onPressed: () async {
               try {
                 // regenerate FCM token to prevent old servers from sending notifications to the outdated token
+                // TODO possibly do this in another way
                 try {
                   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
                   await FirebaseMessaging.instance.deleteToken();
