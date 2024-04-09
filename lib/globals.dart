@@ -156,5 +156,5 @@ abstract class Globals {
     ],
   );
 
-  static String connectionAddress = '://192.168.178.89:443';
+  static String connectionAddress = 'localhost';
 }

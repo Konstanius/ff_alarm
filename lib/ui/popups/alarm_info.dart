@@ -126,8 +126,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
             successToast('Alarm bestätigt: ${type.name}');
 
             clickDuration.value = 0;
-
-            fetchAlarmDetails();
           } catch (e) {
             errorToast('Fehler beim Bestätigen des Alarms: $e');
           } finally {
@@ -1348,6 +1346,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
   @override
   void onUpdate(UpdateInfo info) async {
     if (info.type == UpdateType.alarm && info.ids.contains(widget.alarm.id)) {
+      Set<int> oldResponses = alarm.responses.keys.toSet();
       var a = await Globals.db.alarmDao.getById(widget.alarm.id);
       if (!mounted) return;
       if (a == null) {
@@ -1355,6 +1354,11 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
       } else {
         alarm = a;
         setState(() {});
+
+        Set<int> newResponses = alarm.responses.keys.toSet();
+        if (oldResponses.length != newResponses.length) {
+          fetchAlarmDetails();
+        }
       }
     } else if (info.type == UpdateType.ui) {
       if (info.ids.contains(2) && Globals.lastPosition != null) {

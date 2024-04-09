@@ -56,15 +56,34 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
         itemBuilder: (BuildContext context, int index) {
           var station = stations[index];
           var stationUnits = units.where((u) => u.stationId == station.id).toList();
-          return ExpansionTile(
-            title: Text(station.name),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              for (var unit in stationUnits)
-                ListTile(
-                  title: Text(unit.unitCallSign(station)),
-                  subtitle: Text(unit.unitDescription),
-                  onTap: () {},
+              Padding(
+                padding: const EdgeInsets.all(8),
+                child: Text(
+                  station.name,
+                  style: const TextStyle(fontSize: 20),
                 ),
+              ),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: stationUnits.length,
+                itemBuilder: (BuildContext context, int index) {
+                  var unit = stationUnits[index];
+                  return Card(
+                    child: ListTile(
+                      title: Text(unit.unitCallSign(station)),
+                      subtitle: Text(unit.unitDescription),
+                      trailing: () {
+                        var status = UnitStatus.fromInt(unit.status);
+                        return Icon(status.icon, color: status.color);
+                      }(),
+                    ),
+                  );
+                },
+              ),
             ],
           );
         },

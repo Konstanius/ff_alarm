@@ -79,7 +79,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
         title: const Text('Alarmierungen'),
         actions: <Widget>[
           IconButton(
-            icon: const Icon(Icons.filter_alt_outlined),
+            icon: Icon(Icons.filter_alt_outlined, color: filter.noFilters ? null : Colors.blue),
             onPressed: () {
               searchController.text = filter.search ?? '';
               showDialog(
@@ -88,7 +88,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                   return StatefulBuilder(
                     builder: (BuildContext context, StateSetter sbSetState) {
                       return AlertDialog(
-                        title: const Text('Filter'),
+                        title: const Text('Alarmierungen filtern'),
                         content: LimitedBox(
                           maxHeight: MediaQuery.of(context).size.height * 0.8,
                           child: SingleChildScrollView(
@@ -102,11 +102,15 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                                     const Text('Datum'),
                                     TextButton(
                                       onPressed: () async {
+                                        DateTime lowest = DateTime.now();
+                                        for (var alarm in alarms) {
+                                          if (alarm.date.isBefore(lowest)) lowest = alarm.date;
+                                        }
                                         DateTime? date = await showDatePicker(
                                           context: context,
                                           initialDate: filter.date ?? DateTime.now(),
-                                          firstDate: DateTime(2000),
-                                          lastDate: DateTime(2100),
+                                          firstDate: lowest,
+                                          lastDate: DateTime.now(),
                                         );
                                         if (date == null) return;
                                         sbSetState(() {
@@ -258,22 +262,33 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                 children: <Widget>[
                   if (dateDivider) ...[
                     const SizedBox(height: 8),
-                    Text(DateFormat('dd.MM.yyyy').format(alarm.date), style: const TextStyle(fontSize: 20)),
-                    const Divider(),
+                    Text(DateFormat('EEEE, dd.MM.yyyy').format(alarm.date), style: const TextStyle(fontSize: 20, color: Colors.blue)),
+                    const Divider(color: Colors.blue),
                   ],
-                  Card(
-                    color: (){
-                      var response = alarm.responses[Globals.person!.id];
-                      if (response == null) return Colors.transparent;
-                      return response.type.color.withOpacity(0.5);
-                    }(),
-                    child: ListTile(
-                      title: Text(alarm.word),
-                      subtitle: Text(alarm.address),
-                      trailing: Text(DateFormat('HH:mm').format(alarm.date)),
-                      onTap: () {
-                        Globals.router.go('/alarm', extra: alarm);
-                      },
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.transparent,
+                              alarm.responses[Globals.person!.id]?.type.color.withOpacity(0.5) ?? Colors.white.withOpacity(0.5),
+                            ],
+                          ),
+                        ),
+                        child: ListTile(
+                          title: Text(alarm.word),
+                          subtitle: Text(alarm.address),
+                          trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
+                          onTap: () {
+                            Globals.router.go('/alarm', extra: alarm);
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 ],

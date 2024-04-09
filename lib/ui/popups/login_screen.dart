@@ -10,11 +10,14 @@ import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 
 import '../../data/interfaces/alarm_interface.dart';
 import '../../data/interfaces/station_interface.dart';
 import '../../data/interfaces/unit_interface.dart';
+import '../../firebase_options.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -71,6 +74,22 @@ class _LoginScreenState extends State<LoginScreen> {
             onPressed: () async {
               String lastDomain = Globals.connectionAddress;
               try {
+                // regenerate FCM token to prevent old servers from sending notifications to the outdated token
+                try {
+                  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+                  await FirebaseMessaging.instance.deleteToken();
+                  String? token = await FirebaseMessaging.instance.getToken();
+                  if (token != null) {
+                    Globals.prefs.setString('fcm_token', token);
+                  } else {
+                    Globals.prefs.remove('fcm_token');
+                  }
+                } catch (e, s) {
+                  Logger.error('LoginScreen: $e, $s');
+                  errorToast('Google-Server konnten nicht kontaktiert werden');
+                  return;
+                }
+
                 String code = codeController.text;
                 var json = jsonDecode(utf8.decode(gzip.decode(base64.decode(code))));
 
