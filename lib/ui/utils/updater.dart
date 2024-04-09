@@ -8,7 +8,7 @@ import 'package:flutter/foundation.dart';
 
 class UpdateInfo {
   UpdateType type;
-  Set<int> ids = {};
+  Set<String> ids = {};
 
   UpdateInfo(this.type, [this.ids = const {}]) {
     if (kDebugMode) {

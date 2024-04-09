@@ -2,13 +2,26 @@ import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 
+import '../../globals.dart';
+
 abstract class StationInterface {
   static Future<void> fetchAll() async {
     var allStations = await Station.getAll();
 
+    var servers = Globals.registeredServers;
+    var futures = <Future>[];
+    for (var server in servers) {
+      List<Station> serverStations = allStations.where((station) => station.server == server).toList();
+      futures.add(fetchAllForServer(server, serverStations));
+    }
+
+    await Future.wait(futures);
+  }
+
+  static Future<void> fetchAllForServer(String server, List<Station> serverStations) async {
     StringBuffer sb = StringBuffer();
-    for (Station station in allStations) {
-      sb.write(station.id);
+    for (Station station in serverStations) {
+      sb.write(station.idNumber);
       sb.write(':');
       sb.write(station.updated);
       sb.write(',');
@@ -16,10 +29,10 @@ abstract class StationInterface {
 
     Map<String, dynamic> stations = {'data': sb.toString()};
 
-    Request response = await Request('stationGetAll', stations).emit(true);
+    Request response = await Request('stationGetAll', stations, server).emit(true);
     if (response.ackData!.isEmpty) return;
 
-    Set<int> updatedIds = {};
+    Set<String> updatedIds = {};
     var futures = <Future>[];
     for (Map<String, dynamic> station in response.ackData!['updated']) {
       if (futures.length > 25) {
@@ -38,8 +51,10 @@ abstract class StationInterface {
         futures.clear();
       }
 
-      futures.add(Station.delete(id, false));
-      updatedIds.add(id);
+      String idString = "$server $id";
+
+      futures.add(Station.delete(idString, false));
+      updatedIds.add(idString);
     }
 
     await Future.wait(futures);

@@ -11,7 +11,9 @@ import '../../ui/popups/alarm_info.dart';
 @entity
 class Alarm {
   @primaryKey
-  final int id;
+  final String id;
+  String get server => id.split(' ')[0];
+  int get idNumber => int.parse(id.split(' ')[1]);
 
   String type;
 
@@ -51,8 +53,20 @@ class Alarm {
   List<String> notes;
 
   List<int> units;
+  List<String> get unitProperIds => units.map((e) => "$server $e").toList();
 
   Map<int, AlarmResponse> responses;
+  AlarmResponse? get ownResponse {
+    AlarmResponse? response;
+    for (var entry in responses.entries) {
+      String personId = "$server ${entry.key}";
+      if (Globals.localPersons.containsKey(personId)) {
+        response = entry.value;
+        break;
+      }
+    }
+    return response;
+  }
 
   int updated;
 
@@ -72,6 +86,7 @@ class Alarm {
   });
 
   static const Map<String, String> jsonShorts = {
+    "server": "s",
     "id": "i",
     "type": "t",
     "word": "w",
@@ -86,7 +101,7 @@ class Alarm {
 
   factory Alarm.fromJson(Map<String, dynamic> json) {
     return Alarm(
-      id: json[jsonShorts["id"]],
+      id: "${json[jsonShorts["server"]]} ${json[jsonShorts["id"]]}",
       type: json[jsonShorts["type"]],
       word: json[jsonShorts["word"]],
       date: DateTime.fromMillisecondsSinceEpoch(json[jsonShorts["date"]]),
@@ -109,7 +124,8 @@ class Alarm {
 
   Map<String, dynamic> toJson() {
     return {
-      jsonShorts["id"]!: id,
+      jsonShorts["server"]!: server,
+      jsonShorts["id"]!: idNumber,
       jsonShorts["type"]!: type,
       jsonShorts["word"]!: word,
       jsonShorts["date"]!: date.millisecondsSinceEpoch,
@@ -155,11 +171,11 @@ class Alarm {
   static Future<List<Alarm>> getBatched({
     bool Function(Alarm)? filter,
     int? limit,
-    int? startingId,
+    String? startingId,
   }) async {
     var alarms = <Alarm>[];
 
-    int lowestId = startingId ?? double.maxFinite.toInt();
+    String lowestId = startingId ?? "\u{10FFFF}";
     const batchSize = 50;
     while (true) {
       var newAlarms = await Globals.db.alarmDao.getWithLowerIdThan(lowestId, batchSize);
@@ -168,7 +184,7 @@ class Alarm {
       var toAdd = <Alarm>[];
       for (var alarm in newAlarms) {
         if (filter == null || filter(alarm)) toAdd.add(alarm);
-        if (alarm.id < lowestId) lowestId = alarm.id;
+        if (alarm.id.compareTo(lowestId) < 0) lowestId = alarm.id;
 
         if (limit != null && toAdd.length + alarms.length >= limit) break;
       }
@@ -185,14 +201,14 @@ class Alarm {
   static Future<List<Alarm>> getAll({bool Function(Alarm)? filter}) => getBatched(filter: filter);
 
   static Stream<List<Alarm>> getAllStreamed({int delay = 100}) async* {
-    int lowestId = double.maxFinite.toInt();
+    String lowestId = "\u{10FFFF}";
     const batchSize = 25;
     while (true) {
       var newAlarms = await Globals.db.alarmDao.getWithLowerIdThan(lowestId, batchSize);
       if (newAlarms.isEmpty) break;
 
       for (var alarm in newAlarms) {
-        if (alarm.id < lowestId) lowestId = alarm.id;
+        if (alarm.id.compareTo(lowestId) < 0) lowestId = alarm.id;
       }
 
       newAlarms.sort((a, b) => b.date.compareTo(a.date));
@@ -216,7 +232,7 @@ class Alarm {
     UpdateInfo(UpdateType.alarm, {alarm.id});
   }
 
-  static Future<void> delete(int alarmId, bool bc) async {
+  static Future<void> delete(String alarmId, bool bc) async {
     await Globals.db.alarmDao.deleteById(alarmId);
 
     if (!bc) return;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:app_group_directory/app_group_directory.dart';
@@ -7,6 +8,7 @@ import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/prefs.dart';
 import 'package:ff_alarm/log/logger.dart';
+import 'package:ff_alarm/main.dart';
 import 'package:ff_alarm/ui/home.dart';
 import 'package:ff_alarm/ui/popups/alarm_info.dart';
 import 'package:ff_alarm/ui/popups/login_screen.dart';
@@ -33,7 +35,7 @@ abstract class Globals {
   static late final String filesPath;
   static late final String cachePath;
   static late final Prefs prefs;
-  static late AppDatabase db;
+  static late final AppDatabase db;
 
   static Future<void> initialize() async {
     if (initialized) {
@@ -71,14 +73,14 @@ abstract class Globals {
       positionSubscription = Geolocator.getPositionStream().listen((Position position) {
         lastPosition = position;
         lastPositionTime = DateTime.now();
-        UpdateInfo(UpdateType.ui, {2});
+        UpdateInfo(UpdateType.ui, {"2"});
       });
 
       // get initial position
       Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 5)).then((Position? position) {
         lastPosition = position;
         lastPositionTime = DateTime.now();
-        UpdateInfo(UpdateType.ui, {2});
+        UpdateInfo(UpdateType.ui, {"2"});
       }).catchError((e, s) {
         Logger.warn('Failed to get initial position: $e\n$s');
       });
@@ -88,24 +90,42 @@ abstract class Globals {
       }
     }
 
-    int? userId = Globals.prefs.getInt('auth_user');
-    String? token = Globals.prefs.getString('auth_token');
-    String? connectionAddress = Globals.prefs.getString('connection_address');
-    if (userId != null && token != null && connectionAddress != null) {
-      Person? person = await Globals.db.personDao.getById(userId);
-      if (person != null) {
-        Globals.loggedIn = true;
-        Globals.person = person;
-        Globals.connectionAddress = connectionAddress;
-      } else {
-        Globals.loggedIn = false;
-        Globals.prefs.remove('auth_user');
-        Globals.prefs.remove('auth_token');
+    String registeredUsers = prefs.getString('registered_users') ?? '[]';
+    List<String> users;
+    try {
+      users = jsonDecode(registeredUsers).cast<String>();
+    } catch (e) {
+      users = [];
+    }
+
+    Set<String> toRemove = {};
+    if (users.isNotEmpty) {
+      for (var user in users) {
+        Person? person = await db.personDao.getById(user);
+        if (person != null) {
+          localPersons[user] = person;
+        } else {
+          Logger.error('Person "$user" not found in database');
+          toRemove.add(user);
+        }
       }
-    } else {
-      Globals.loggedIn = false;
-      Globals.prefs.remove('auth_user');
-      Globals.prefs.remove('auth_token');
+    }
+
+    if (toRemove.isNotEmpty) {
+      for (var user in toRemove) {
+        await logout(user.split(' ')[0]);
+      }
+    }
+
+    if (localPersons.isEmpty) {
+      while (true) {
+        try {
+          Globals.router.go('/login');
+          break;
+        } catch (_) {
+          await Future.delayed(const Duration(milliseconds: 10));
+        }
+      }
     }
   }
 
@@ -113,9 +133,34 @@ abstract class Globals {
   static bool appStarted = false;
   static bool fastStartBypass = false;
   static bool foreground = false;
-  static bool loggedIn = false;
 
-  static Person? person;
+  static List<String> get registeredServers {
+    String registeredUsers = Globals.prefs.getString('registered_users') ?? '[]';
+    List<String> users;
+    try {
+      users = jsonDecode(registeredUsers).cast<String>();
+    } catch (e) {
+      users = [];
+    }
+
+    List<String> servers = [];
+    for (String user in users) {
+      String server = user.split(' ')[0];
+      if (!servers.contains(server)) servers.add(server);
+    }
+
+    return servers;
+  }
+
+  static Map<String, Person> localPersons = {};
+  static String? localPersonForServer(String server) {
+    for (var person in localPersons.values) {
+      if (person.server == server) {
+        return person.id;
+      }
+    }
+    return null;
+  }
 
   static Position? lastPosition;
   static DateTime? lastPositionTime;
@@ -147,7 +192,7 @@ abstract class Globals {
           GoRoute(
             path: 'login',
             onExit: (BuildContext context) {
-              return Globals.loggedIn;
+              return Globals.localPersons.isNotEmpty;
             },
             builder: (BuildContext context, GoRouterState state) => const LoginScreen(),
           ),
@@ -155,6 +200,4 @@ abstract class Globals {
       ),
     ],
   );
-
-  static String connectionAddress = 'localhost';
 }

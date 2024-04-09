@@ -7,9 +7,12 @@ import 'package:flutter/material.dart';
 @entity
 class Unit {
   @primaryKey
-  final int id;
+  final String id;
+  String get server => id.split(' ')[0];
+  int get idNumber => int.parse(id.split(' ')[1]);
 
   int stationId;
+  String get stationProperId => "$server $stationId";
 
   int unitType;
 
@@ -38,6 +41,7 @@ class Unit {
   });
 
   static const Map<String, String> jsonShorts = {
+    "server": "s",
     "id": "i",
     "stationId": "si",
     "unitType": "ut",
@@ -51,7 +55,7 @@ class Unit {
 
   factory Unit.fromJson(Map<String, dynamic> json) {
     return Unit(
-      id: json[jsonShorts["id"]],
+      id: "${json[jsonShorts["server"]]!} ${json[jsonShorts["id"]]!}",
       stationId: json[jsonShorts["stationId"]],
       unitType: json[jsonShorts["unitType"]],
       unitIdentifier: json[jsonShorts["unitIdentifier"]],
@@ -63,20 +67,6 @@ class Unit {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      jsonShorts["id"]!: id,
-      jsonShorts["stationId"]!: stationId,
-      jsonShorts["unitType"]!: unitType,
-      jsonShorts["unitIdentifier"]!: unitIdentifier,
-      jsonShorts["unitDescription"]!: unitDescription,
-      jsonShorts["status"]!: status,
-      jsonShorts["positions"]!: positions.map((e) => e.index).toList(),
-      jsonShorts["capacity"]!: capacity,
-      jsonShorts["updated"]!: updated,
-    };
-  }
-
   String unitCallSign(Station station) {
     return "${station.prefix} ${station.area} ${station.stationNumber}-$unitType-$unitIdentifier";
   }
@@ -84,11 +74,11 @@ class Unit {
   static Future<List<Unit>> getBatched({
     bool Function(Unit)? filter,
     int? limit,
-    int? startingId,
+    String? startingId,
   }) async {
     var units = <Unit>[];
 
-    int lowestId = startingId ?? double.maxFinite.toInt();
+    String lowestId = startingId ?? "\u{10FFFF}";
     const batchSize = 50;
     while (true) {
       var newUnits = await Globals.db.unitDao.getWithLowerIdThan(lowestId, batchSize);
@@ -97,7 +87,7 @@ class Unit {
       var toAdd = <Unit>[];
       for (var unit in newUnits) {
         if (filter == null || filter(unit)) toAdd.add(unit);
-        if (unit.id < lowestId) lowestId = unit.id;
+        if (unit.id.compareTo(lowestId) < 0) lowestId = unit.id;
 
         if (limit != null && toAdd.length + units.length >= limit) break;
       }
@@ -107,12 +97,12 @@ class Unit {
     }
 
     var stations = Station.getAll();
-    Map<int, Station> stationMap = {};
+    Map<String, Station> stationMap = {};
     for (var station in await stations) {
       stationMap[station.id] = station;
     }
 
-    units.sort((a, b) => a.unitCallSign(stationMap[a.stationId]!).compareTo(b.unitCallSign(stationMap[b.stationId]!)));
+    units.sort((a, b) => a.unitCallSign(stationMap[a.stationProperId]!).compareTo(b.unitCallSign(stationMap[a.stationProperId]!)));
 
     return units;
   }
@@ -132,7 +122,7 @@ class Unit {
     UpdateInfo(UpdateType.unit, {unit.id});
   }
 
-  static Future<void> delete(int unitId, bool bc) async {
+  static Future<void> delete(String unitId, bool bc) async {
     await Globals.db.unitDao.deleteById(unitId);
 
     if (!bc) return;

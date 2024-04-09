@@ -201,7 +201,7 @@ Future<bool> sendAlarm(Alarm alarm) async {
 
     return await AwesomeNotifications().createNotification(
       content: NotificationContent(
-        id: alarm.id,
+        id: alarm.idNumber,
         channelKey: channelKey,
         title: alarm.type,
         body: alarm.word,

@@ -4,7 +4,7 @@ import 'package:floor/floor.dart';
 @dao
 abstract class UnitDao {
   @Query('SELECT * FROM Unit WHERE id = :id')
-  Future<Unit?> getById(int id);
+  Future<Unit?> getById(String id);
 
   @update
   Future<void> updates(Unit unit);
@@ -16,8 +16,11 @@ abstract class UnitDao {
   Future<void> deletes(Unit unit);
 
   @Query('DELETE FROM Unit WHERE id = :id')
-  Future<void> deleteById(int id);
+  Future<void> deleteById(String id);
 
   @Query('SELECT * FROM Unit WHERE id < :id ORDER BY id DESC LIMIT :limit')
-  Future<List<Unit>> getWithLowerIdThan(int id, int limit);
+  Future<List<Unit>> getWithLowerIdThan(String id, int limit);
+
+  @Query('DELETE FROM Unit WHERE id LIKE :id||" %"')
+  Future<void> deleteByPrefix(String id);
 }

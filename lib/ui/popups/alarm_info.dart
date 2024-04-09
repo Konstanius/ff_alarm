@@ -27,13 +27,13 @@ class AlarmPage extends StatefulWidget {
 
   final Alarm alarm;
 
-  static int? currentAlarmId;
-
   @override
   State<AlarmPage> createState() => _AlarmPageState();
 }
 
 class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProviderStateMixin {
+  late Person relevantLocalPerson;
+
   ValueNotifier<int> clickDuration = ValueNotifier<int>(0);
   Set<AlarmResponseType> clickIndices = {};
 
@@ -44,7 +44,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
 
   List<Unit> units = [];
   List<Station> stations = [];
-  int? selectedStation;
+  String? selectedStation;
   bool newAnswer = false;
   late Alarm alarm;
 
@@ -66,9 +66,21 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
   @override
   void initState() {
     super.initState();
-    AlarmPage.currentAlarmId = widget.alarm.id;
     alarm = widget.alarm;
     tabController = TabController(length: 2, vsync: this);
+
+    Person? tempRelevantLocalPerson;
+    for (var person in Globals.localPersons.keys) {
+      if (person.startsWith(alarm.server)) {
+        tempRelevantLocalPerson = Globals.localPersons[person];
+        break;
+      }
+    }
+    if (tempRelevantLocalPerson == null) {
+      // TODO this A) shouldnt happen and B) be dealt with properly
+      return;
+    }
+    relevantLocalPerson = tempRelevantLocalPerson;
 
     fetchAlarmDetails();
 
@@ -89,10 +101,10 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
             await AwesomeNotifications().cancelNotificationsByChannelKey('alarm');
             await AwesomeNotifications().cancelNotificationsByChannelKey('test');
 
-            int? stationIdCopy = selectedStation;
+            String? stationIdCopy = selectedStation;
             if (stationIdCopy == null && type != AlarmResponseType.notReady) {
               for (var station in stations) {
-                if (station.persons.contains(Globals.person!.id)) {
+                if (station.personProperIds.contains(relevantLocalPerson.id)) {
                   stationIdCopy = station.id;
                   break;
                 }
@@ -109,7 +121,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
               AlarmResponse response = AlarmResponse(
                 type: type,
                 note: null,
-                stationId: stationIdCopy,
+                stationId: stationIdCopy == null ? null : int.parse(stationIdCopy.split(' ')[1]),
                 time: DateTime.now(),
               );
               await AlarmInterface.setResponse(alarm, response);
@@ -140,20 +152,20 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
       }
     });
 
-    if (alarm.responses.containsKey(Globals.person!.id)) {
-      noteController.text = alarm.responses[Globals.person!.id]!.note ?? '';
+    if (alarm.responses.containsKey(relevantLocalPerson.idNumber)) {
+      noteController.text = alarm.responses[relevantLocalPerson.idNumber]!.note ?? '';
     }
 
     // Sets up the alarm
     () async {
       var unitFutures = <Future<Unit?>>[];
       if (alarm.units.isNotEmpty) {
-        for (int id in alarm.units) {
-          if (!Globals.person!.allowedUnits.contains(id)) continue;
+        for (String id in alarm.unitProperIds) {
+          if (!relevantLocalPerson.allowedUnitProperIds.contains(id)) continue;
           unitFutures.add(Globals.db.unitDao.getById(id));
         }
       } else {
-        for (int id in Globals.person!.allowedUnits) {
+        for (String id in relevantLocalPerson.allowedUnitProperIds) {
           unitFutures.add(Globals.db.unitDao.getById(id));
         }
       }
@@ -163,7 +175,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
       }
 
       var stationFutures = <Future<Station?>>[];
-      for (int id in units.map((e) => e.stationId).toSet()) {
+      for (String id in units.map((e) => e.stationProperId).toSet()) {
         stationFutures.add(Globals.db.stationDao.getById(id));
       }
       var stationValues = await Future.wait(stationFutures);
@@ -171,8 +183,8 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         if (value != null) stations.add(value);
       }
 
-      if (alarm.responses.containsKey(Globals.person!.id)) {
-        selectedStation = alarm.responses[Globals.person!.id]!.stationId;
+      if (alarm.responses.containsKey(relevantLocalPerson.idNumber)) {
+        selectedStation = "${alarm.server} ${alarm.responses[relevantLocalPerson.idNumber]!.stationId}";
       }
 
       stations.sort((a, b) => a.name.compareTo(b.name));
@@ -245,7 +257,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
 
   @override
   void dispose() {
-    AlarmPage.currentAlarmId = null;
     clickTimer?.cancel();
     clickDuration.dispose();
     tabController?.dispose();
@@ -261,7 +272,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
   @override
   Widget build(BuildContext context) {
     if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    bool showAnswerScreen = (!alarm.responses.containsKey(Globals.person!.id) && !alarm.responseTimeExpired) || newAnswer;
+    bool showAnswerScreen = (!alarm.responses.containsKey(relevantLocalPerson.idNumber) && !alarm.responseTimeExpired) || newAnswer;
     if (selectedStation == null && stations.length > 1 && showAnswerScreen) return stationSelectionScreen();
     if (showAnswerScreen) return responseSelectionScreen();
     return alarmMonitorScreen();
@@ -345,7 +356,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
 
                   var dispatchedUnits = <Unit>[];
                   for (var unit in units) {
-                    if (unit.stationId == station.id) dispatchedUnits.add(unit);
+                    if (unit.stationProperId == station.id) dispatchedUnits.add(unit);
                   }
 
                   dispatchedUnits.sort((a, b) => a.unitCallSign(station).compareTo(b.unitCallSign(station)));
@@ -363,7 +374,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                     for (var person in station.persons) {
                       if (alarm.responses.containsKey(person)) {
                         var response = alarm.responses[person]!;
-                        if (response.stationId == station.id) {
+                        if (response.stationId == station.idNumber) {
                           responses[response.type.index]++;
                         } else {
                           responses[5]++;
@@ -377,16 +388,16 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                       // check intersection for units
                       bool hasUnit = false;
                       for (var unit in dispatchedUnits) {
-                        if (person.allowedUnits.contains(unit.id)) {
+                        if (person.allowedUnitProperIds.contains(unit.id)) {
                           hasUnit = true;
                           break;
                         }
                       }
                       if (!hasUnit) continue;
 
-                      if (alarm.responses.containsKey(person.id)) {
-                        var response = alarm.responses[person.id]!;
-                        if (response.stationId == station.id) {
+                      if (alarm.responses.containsKey(person.idNumber)) {
+                        var response = alarm.responses[person.idNumber]!;
+                        if (response.stationId == station.idNumber) {
                           responses[response.type.index]++;
                         } else {
                           responses[5]++;
@@ -678,7 +689,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 Navigator.of(Globals.context!).pop();
               },
             ),
-            backgroundColor: alarm.responses.containsKey(Globals.person!.id) ? alarm.responses[Globals.person!.id]!.type.color : Colors.white,
+            backgroundColor: alarm.responses[relevantLocalPerson.idNumber]?.type.color ?? Colors.white,
             title: const Text('Alarmierung', style: TextStyle(color: Colors.black)),
             actions: [
               // refresh button
@@ -717,7 +728,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                     for (var unit in data!.units) {
                       Station? station;
                       for (var s in data!.stations) {
-                        if (s.id == unit.stationId) {
+                        if (s.idNumber == unit.stationId) {
                           station = s;
                           break;
                         }
@@ -738,7 +749,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
               child: Column(
                 children: [
                   // own response
-                  if (alarm.responses.containsKey(Globals.person!.id))
+                  if (alarm.responses.containsKey(relevantLocalPerson.idNumber))
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -746,9 +757,9 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
-                                'Deine Antwort: ${alarm.responses[Globals.person!.id]!.type.name}${() {
-                                  if (alarm.responses[Globals.person!.id]!.time != null) {
-                                    return ' (${DateFormat('HH:mm').format(alarm.responses[Globals.person!.id]!.time!)})';
+                                'Deine Antwort: ${alarm.responses[relevantLocalPerson.idNumber]!.type.name}${() {
+                                  if (alarm.responses[relevantLocalPerson.idNumber]!.time != null) {
+                                    return ' (${DateFormat('HH:mm').format(alarm.responses[relevantLocalPerson.idNumber]!.time!)})';
                                   } else {
                                     return '';
                                   }
@@ -807,8 +818,8 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                     children: [
                       // General information (time, type, word, address, notes)
                       ...genericAlarmInfo(),
-                      if (alarm.responses.containsKey(Globals.person!.id)) const Divider(height: 20),
-                      if (alarm.responses.containsKey(Globals.person!.id))
+                      if (alarm.responses.containsKey(relevantLocalPerson.idNumber)) const Divider(height: 20),
+                      if (alarm.responses.containsKey(relevantLocalPerson.idNumber))
                         Column(
                           children: [
                             if (station != null)
@@ -817,7 +828,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                 children: [
                                   const Icon(Icons.home_outlined),
                                   const SizedBox(width: 8),
-                                  Flexible(child: Text('Deine Wachenzusage: ${station.name}, um ${DateFormat('HH:mm').format(alarm.responses[Globals.person!.id]!.time!)}')),
+                                  Flexible(child: Text('Deine Wachenzusage: ${station.name}, um ${DateFormat('HH:mm').format(alarm.responses[relevantLocalPerson.idNumber]!.time!)}')),
                                 ],
                               )
                             else
@@ -850,17 +861,17 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                       expands: false,
                                       readOnly: alarm.date.isBefore(DateTime.now().subtract(const Duration(hours: 1))),
                                       onEditingComplete: () async {
-                                        if (alarm.responses.containsKey(Globals.person!.id)) {
-                                          if (noteController.text == (alarm.responses[Globals.person!.id]!.note ?? '')) return;
+                                        if (alarm.responses.containsKey(relevantLocalPerson.idNumber)) {
+                                          if (noteController.text == (alarm.responses[relevantLocalPerson.idNumber]!.note ?? '')) return;
                                           try {
                                             noteFocusNode.unfocus();
                                             await AlarmInterface.setResponse(
                                               alarm,
                                               AlarmResponse(
-                                                type: alarm.responses[Globals.person!.id]!.type,
+                                                type: alarm.responses[relevantLocalPerson.idNumber]!.type,
                                                 note: noteController.text,
-                                                stationId: alarm.responses[Globals.person!.id]!.stationId,
-                                                time: alarm.responses[Globals.person!.id]!.time,
+                                                stationId: alarm.responses[relevantLocalPerson.idNumber]!.stationId,
+                                                time: alarm.responses[relevantLocalPerson.idNumber]!.time,
                                               ),
                                             );
                                             successToast('Notiz gespeichert');
@@ -875,17 +886,17 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                   IconButton(
                                     icon: const Icon(Icons.send_outlined, size: 30),
                                     onPressed: () async {
-                                      if (alarm.responses.containsKey(Globals.person!.id)) {
-                                        if (noteController.text == (alarm.responses[Globals.person!.id]!.note ?? '')) return;
+                                      if (alarm.responses.containsKey(relevantLocalPerson.idNumber)) {
+                                        if (noteController.text == (alarm.responses[relevantLocalPerson.idNumber]!.note ?? '')) return;
                                         try {
                                           noteFocusNode.unfocus();
                                           await AlarmInterface.setResponse(
                                             alarm,
                                             AlarmResponse(
-                                              type: alarm.responses[Globals.person!.id]!.type,
+                                              type: alarm.responses[relevantLocalPerson.idNumber]!.type,
                                               note: noteController.text,
-                                              stationId: alarm.responses[Globals.person!.id]!.stationId,
-                                              time: alarm.responses[Globals.person!.id]!.time,
+                                              stationId: alarm.responses[relevantLocalPerson.idNumber]!.stationId,
+                                              time: alarm.responses[relevantLocalPerson.idNumber]!.time,
                                             ),
                                           );
                                           successToast('Notiz gespeichert');
@@ -893,7 +904,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                           exceptionToast(e, s);
                                           AlarmInterface.getDetails(alarm).then((value) {
                                             data = value;
-                                            noteController.text = alarm.responses[Globals.person!.id]!.note ?? '';
+                                            noteController.text = alarm.responses[relevantLocalPerson.idNumber]!.note ?? '';
                                             if (mounted) setState(() {});
                                           });
                                         }
@@ -913,17 +924,17 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                           for (var station in data!.stations) {
                             List<Unit> dispatchedUnits = [];
                             for (var unit in data!.units) {
-                              if (unit.stationId == station.id) dispatchedUnits.add(unit);
+                              if (unit.stationId == station.idNumber) dispatchedUnits.add(unit);
                             }
                             units.sort((a, b) => a.unitCallSign(station).compareTo(b.unitCallSign(station)));
 
                             List<Person> persons = [];
                             for (var person in data!.persons) {
                               // continue if not answered or answered for another station or notReady or onCall
-                              if (!alarm.responses.containsKey(person.id) ||
-                                  alarm.responses[person.id]!.stationId != station.id ||
-                                  alarm.responses[person.id]!.type == AlarmResponseType.notReady ||
-                                  alarm.responses[person.id]!.type == AlarmResponseType.onCall) continue;
+                              if (!alarm.responses.containsKey(person.idNumber) ||
+                                  alarm.responses[person.idNumber]!.stationId != station.idNumber ||
+                                  alarm.responses[person.idNumber]!.type == AlarmResponseType.notReady ||
+                                  alarm.responses[person.idNumber]!.type == AlarmResponseType.onCall) continue;
                               persons.add(person);
                             }
 
@@ -1217,8 +1228,8 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
 
                     List<MapEntry<Person, AlarmResponse>> responsesForSelectedStation = [];
                     for (var person in data!.persons) {
-                      if (alarm.responses.containsKey(person.id) && alarm.responses[person.id]!.stationId == selectedStation) {
-                        responsesForSelectedStation.add(MapEntry(person, alarm.responses[person.id]!));
+                      if (alarm.responses.containsKey(person.idNumber) && "${alarm.server} ${alarm.responses[person.idNumber]!.stationId}" == selectedStation) {
+                        responsesForSelectedStation.add(MapEntry(person, alarm.responses[person.idNumber]!));
                       }
                     }
 
@@ -1248,7 +1259,9 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(entry.value.type.name, style: const TextStyle(color: Colors.black)),
-                                  if (entry.value.type.timeAmount >= 0) Text('Ankunft bis ${DateFormat('HH:mm').format(entry.value.time!.add(Duration(minutes: entry.value.type.timeAmount)))}', style: const TextStyle(color: Colors.black)),
+                                  if (entry.value.type.timeAmount >= 0)
+                                    Text('Ankunft bis ${DateFormat('HH:mm').format(entry.value.time!.add(Duration(minutes: entry.value.type.timeAmount)))}',
+                                        style: const TextStyle(color: Colors.black)),
                                 ],
                               ),
                               trailing: () {
@@ -1361,7 +1374,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         }
       }
     } else if (info.type == UpdateType.ui) {
-      if (info.ids.contains(2) && Globals.lastPosition != null) {
+      if (info.ids.contains("2") && Globals.lastPosition != null) {
         // update pos in both maps
         bool foundInInfo = false;
         for (var pos in informationNotifier.value) {
@@ -1405,7 +1418,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         if (mounted) setState(() {});
       }
 
-      if (info.ids.contains(0)) {
+      if (info.ids.contains("0")) {
         AlarmInterface.getDetails(alarm).then((value) {
           data = value;
           if (!mounted) return;

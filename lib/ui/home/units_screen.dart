@@ -25,9 +25,18 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
     super.initState();
     setupListener({UpdateType.unit, UpdateType.station, UpdateType.ui});
 
-    if (!Globals.loggedIn) return;
+    if (Globals.localPersons.isEmpty) return;
 
-    Station.getAll(filter: (station) => station.persons.contains(Globals.person!.id)).then((List<Station> value) {
+    Station.getAll(
+      filter: (station) {
+        for (var person in station.personProperIds) {
+          if (Globals.localPersons.keys.any((element) => element == person)) {
+            return true;
+          }
+        }
+        return false;
+      },
+    ).then((List<Station> value) {
       if (!mounted) return;
       setState(() {
         stations = value;
@@ -55,7 +64,7 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
         itemCount: stations.length,
         itemBuilder: (BuildContext context, int index) {
           var station = stations[index];
-          var stationUnits = units.where((u) => u.stationId == station.id).toList();
+          var stationUnits = units.where((u) => u.stationProperId == station.id).toList();
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
@@ -94,7 +103,7 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
   @override
   void onUpdate(UpdateInfo info) async {
     if (info.type == UpdateType.unit) {
-      Set<int> ids = {...info.ids};
+      Set<String> ids = {...info.ids};
       var futures = <Future<Unit?>>[];
       for (var id in info.ids) {
         futures.add(Globals.db.unitDao.getById(id));
@@ -112,7 +121,7 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
         units.removeWhere((u) => ids.contains(u.id));
       });
     } else if (info.type == UpdateType.station) {
-      Set<int> ids = {...info.ids};
+      Set<String> ids = {...info.ids};
       var futures = <Future<Station?>>[];
       for (var id in info.ids) {
         futures.add(Globals.db.stationDao.getById(id));
@@ -129,11 +138,20 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
         }
         stations.removeWhere((s) => ids.contains(s.id));
       });
-    } else if (info.type == UpdateType.ui && info.ids.contains(3)) {
-      if (Globals.loggedIn) {
+    } else if (info.type == UpdateType.ui && info.ids.contains("3")) {
+      if (Globals.localPersons.isNotEmpty) {
         stations.clear();
         units.clear();
-        Station.getAll(filter: (station) => station.persons.contains(Globals.person!.id)).then((List<Station> value) {
+        Station.getAll(
+          filter: (station) {
+            for (var person in station.personProperIds) {
+              if (Globals.localPersons.keys.any((element) => element == person)) {
+                return true;
+              }
+            }
+            return false;
+          },
+        ).then((List<Station> value) {
           if (!mounted) return;
           setState(() {
             stations = value;

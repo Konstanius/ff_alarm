@@ -4,7 +4,7 @@ import 'package:floor/floor.dart';
 @dao
 abstract class AlarmDao {
   @Query('SELECT * FROM Alarm WHERE id = :id')
-  Future<Alarm?> getById(int id);
+  Future<Alarm?> getById(String id);
 
   @update
   Future<void> updates(Alarm alarm);
@@ -16,8 +16,11 @@ abstract class AlarmDao {
   Future<void> deletes(Alarm alarm);
 
   @Query('DELETE FROM Alarm WHERE id = :id')
-  Future<void> deleteById(int id);
+  Future<void> deleteById(String id);
 
   @Query('SELECT * FROM Alarm WHERE id < :id ORDER BY id DESC LIMIT :limit')
-  Future<List<Alarm>> getWithLowerIdThan(int id, int limit);
+  Future<List<Alarm>> getWithLowerIdThan(String id, int limit);
+
+  @Query('DELETE FROM Alarm WHERE id LIKE :id||" %"')
+  Future<void> deleteByPrefix(String id);
 }

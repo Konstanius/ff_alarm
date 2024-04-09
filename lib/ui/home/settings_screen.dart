@@ -303,7 +303,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
 
   @override
   void onUpdate(UpdateInfo info) {
-    if (!mounted || !info.ids.contains(1)) return;
+    if (!mounted || !info.ids.contains("1")) return;
     checkSettings();
   }
 }

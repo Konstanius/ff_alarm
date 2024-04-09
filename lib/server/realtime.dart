@@ -12,12 +12,39 @@ import 'package:ff_alarm/server/request.dart';
 
 // Constant WebSocket listener to realtime updates on the server
 class RealTimeListener {
-  static HttpClient client = HttpClient()..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
-  static WebSocket? socket;
-  static int lastPing = 0;
+  static Map<String, RealTimeListener> listeners = {};
 
-  static Future<void> init() async {
-    if (!Globals.loggedIn || !Globals.foreground) {
+  final String server;
+
+  RealTimeListener(this.server);
+
+  HttpClient client = HttpClient()..badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  WebSocket? socket;
+  int lastPing = 0;
+
+  static Future<void> initAll() async {
+    String registeredUsers = Globals.prefs.getString('registered_users') ?? '[]';
+    List<String> users;
+    try {
+      users = jsonDecode(registeredUsers).cast<String>();
+    } catch (e) {
+      users = [];
+    }
+
+    for (String user in users) {
+      String server = user.split(' ')[0];
+      if (listeners.containsKey(server)) {
+        await listeners[server]!.init();
+        continue;
+      }
+      RealTimeListener listener = RealTimeListener(server);
+      listeners[server] = listener;
+      await listener.init();
+    }
+  }
+
+  Future<void> init() async {
+    if (!Globals.foreground) {
       return;
     } else if (socket != null && socket!.readyState == WebSocket.open) {
       if (DateTime.now().millisecondsSinceEpoch ~/ 1000 - lastPing > 10) {
@@ -29,7 +56,7 @@ class RealTimeListener {
         lastPing = DateTime.now().millisecondsSinceEpoch ~/ 1000 + 5;
       } else {
         const List<int> pingBytes = [123, 34, 116, 34, 58, 34, 112, 105, 110, 103, 34, 125]; // {"t":"ping"}
-        RealTimeListener.socket?.addUtf8Text(pingBytes);
+        socket?.addUtf8Text(pingBytes);
       }
       return;
     } else if (socket != null) {
@@ -39,7 +66,7 @@ class RealTimeListener {
     }
 
     try {
-      socket = await WebSocket.connect('ws${Globals.connectionAddress}/realtime/', customClient: client, headers: Request.getAuthData());
+      socket = await WebSocket.connect('ws$server/realtime/', customClient: client, headers: Request.getAuthData(server));
     } catch (e, s) {
       Logger.warn('RealTimeListener: $e\n$s');
       return;
@@ -66,7 +93,7 @@ class RealTimeListener {
           return;
         }
 
-        await method(data);
+        await method(data, server);
       } catch (e) {
         Logger.error('RealTimeListener: $e');
       }
@@ -76,37 +103,37 @@ class RealTimeListener {
   }
 }
 
-Map<String, Future<void> Function(Map<String, dynamic> data)> packetTypes = {
-  "alarm": (Map<String, dynamic> data) async {
+Map<String, Future<void> Function(Map<String, dynamic> data, String server)> packetTypes = {
+  "alarm": (Map<String, dynamic> data, String server) async {
     Alarm alarm = Alarm.fromJson(data);
     await Alarm.update(alarm, true);
   },
-  "alarm_delete": (Map<String, dynamic> data) async {
+  "alarm_delete": (Map<String, dynamic> data, String server) async {
     int alarmId = data['id'];
-    await Alarm.delete(alarmId, true);
+    await Alarm.delete("$server $alarmId", true);
   },
-  "person": (Map<String, dynamic> data) async {
+  "person": (Map<String, dynamic> data, String server) async {
     Person person = Person.fromJson(data);
     await Person.update(person, true);
   },
-  "person_delete": (Map<String, dynamic> data) async {
+  "person_delete": (Map<String, dynamic> data, String server) async {
     int personId = data['id'];
-    await Person.delete(personId, true);
+    await Person.delete("$server $personId", true);
   },
-  "station": (Map<String, dynamic> data) async {
+  "station": (Map<String, dynamic> data, String server) async {
     Station station = Station.fromJson(data);
     await Station.update(station, true);
   },
-  "station_delete": (Map<String, dynamic> data) async {
+  "station_delete": (Map<String, dynamic> data, String server) async {
     int stationId = data['id'];
-    await Station.delete(stationId, true);
+    await Station.delete("$server $stationId", true);
   },
-  "unit": (Map<String, dynamic> data) async {
+  "unit": (Map<String, dynamic> data, String server) async {
     Unit unit = Unit.fromJson(data);
     await Unit.update(unit, true);
   },
-  "unit_delete": (Map<String, dynamic> data) async {
+  "unit_delete": (Map<String, dynamic> data, String server) async {
     int unitId = data['id'];
-    await Unit.delete(unitId, true);
+    await Unit.delete("$server $unitId", true);
   },
 };

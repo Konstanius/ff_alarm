@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/server/request.dart';
@@ -22,6 +24,8 @@ class AlarmsFilter {
   bool responseNotSet = false;
   String? search;
 
+  // TODO Filter by station
+
   AlarmsFilter({this.date, this.testsMode, this.responseType});
 
   bool get noFilters => date == null && testsMode == null && responseType == null && search == null && !responseNotSet;
@@ -29,8 +33,11 @@ class AlarmsFilter {
   bool filter(Alarm alarm) {
     if (date != null && (alarm.date.year != date!.year || alarm.date.month != date!.month || alarm.date.day != date!.day)) return false;
     if (testsMode != null && alarm.type.startsWith('Test') != testsMode) return false;
-    if (responseNotSet && alarm.responses.containsKey(Globals.person!.id)) return false;
-    if (responseType != null && alarm.responses[Globals.person!.id]?.type != responseType) return false;
+
+    AlarmResponse? ownResponse = alarm.ownResponse;
+
+    if (responseNotSet && ownResponse != null) return false;
+    if (responseType != null && ownResponse?.type != responseType) return false;
     if (search != null &&
         !alarm.word.toLowerCase().contains(search!) &&
         !alarm.address.toLowerCase().contains(search!) &&
@@ -54,7 +61,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
     super.initState();
     setupListener({UpdateType.alarm, UpdateType.ui});
 
-    if (!Globals.loggedIn) return;
+    if (Globals.localPersons.isEmpty) return;
 
     Alarm.getAllStreamed().listen((List<Alarm> value) {
       if (!mounted) return;
@@ -250,7 +257,45 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
         children: <Widget>[
           ElevatedButton(
             onPressed: () async {
-              await Request('test', {}).emit(true);
+              String registeredUsers = Globals.prefs.getString('registered_users') ?? '[]';
+              List<String> users;
+              try {
+                users = jsonDecode(registeredUsers).cast<String>();
+              } catch (e) {
+                users = [];
+              }
+
+              List<String> servers = [];
+              for (String user in users) {
+                servers.add(user.split(' ')[0]);
+              }
+
+              // dialog to select server
+              String? server = await showDialog<String>(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Server auswählen'),
+                    content: SingleChildScrollView(
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: [
+                          for (String server in servers)
+                            ListTile(
+                              title: Text(server),
+                              onTap: () {
+                                Navigator.of(context).pop(server);
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+              if (server == null) return;
+
+              await Request('test', {}, server).emit(true);
             },
             child: const Text('Test Alarmierung'),
           ),
@@ -258,6 +303,9 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
             () {
               Alarm alarm = alarmsList[i];
               bool dateDivider = i == 0 || alarm.date.day != alarmsList[i - 1].date.day || alarm.date.month != alarmsList[i - 1].date.month || alarm.date.year != alarmsList[i - 1].date.year;
+
+              AlarmResponse? ownResponse = alarm.ownResponse;
+
               return Column(
                 children: <Widget>[
                   if (dateDivider) ...[
@@ -276,7 +324,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                             end: Alignment.bottomRight,
                             colors: [
                               Colors.transparent,
-                              alarm.responses[Globals.person!.id]?.type.color.withOpacity(0.5) ?? Colors.white.withOpacity(0.5),
+                              ownResponse?.type.color.withOpacity(0.5) ?? Colors.white.withOpacity(0.5),
                             ],
                           ),
                         ),
@@ -309,8 +357,8 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
 
       var alarms = <Alarm>[];
       var futures = <Future<Alarm?>>[];
-      Set<int> ids = {...info.ids};
-      for (int id in info.ids) {
+      Set<String> ids = {...info.ids};
+      for (String id in info.ids) {
         futures.add(Globals.db.alarmDao.getById(id));
       }
 
@@ -337,7 +385,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
 
       if (!mounted) return;
       setState(() {});
-    } else if (info.type == UpdateType.ui && info.ids.contains(3)) {
+    } else if (info.type == UpdateType.ui && info.ids.contains("3")) {
       alarms.clear();
       Alarm.getBatched(limit: 25).then((List<Alarm> value) {
         if (!mounted) return;

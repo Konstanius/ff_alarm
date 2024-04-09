@@ -49,7 +49,7 @@ class _LifeCycleSettingsState extends State<LifeCycleSettings> {
       allowAutoLaunch = Globals.prefs.getBool('allowAutoLaunch') ?? false;
     }
 
-    UpdateInfo(UpdateType.ui, {1});
+    UpdateInfo(UpdateType.ui, {"1"});
 
     if (mounted) setState(() {});
   }
@@ -430,14 +430,14 @@ class _LifeCycleSettingsState extends State<LifeCycleSettings> {
                   Globals.positionSubscription = Geolocator.getPositionStream().listen((Position position) async {
                     Globals.lastPosition = position;
                     Globals.lastPositionTime = DateTime.now();
-                    UpdateInfo(UpdateType.ui, {2});
+                    UpdateInfo(UpdateType.ui, {"2"});
                   });
 
                   // get initial position
                   Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 5)).then((Position? position) {
                     Globals.lastPosition = position;
                     Globals.lastPositionTime = DateTime.now();
-                    UpdateInfo(UpdateType.ui, {2});
+                    UpdateInfo(UpdateType.ui, {"2"});
                   }).catchError((e, s) {
                     Logger.warn('Failed to get initial position: $e\n$s');
                   });

@@ -6,7 +6,9 @@ import 'package:geolocator/geolocator.dart';
 @entity
 class Station {
   @primaryKey
-  final int id;
+  final String id;
+  String get server => id.split(' ')[0];
+  int get idNumber => int.parse(id.split(' ')[1]);
 
   String name;
 
@@ -42,8 +44,10 @@ class Station {
   }
 
   List<int> persons;
+  List<String> get personProperIds => persons.map((e) => "$server $e").toList();
 
   List<int> adminPersons;
+  List<String> get adminPersonProperIds => adminPersons.map((e) => "$server $e").toList();
 
   int updated;
 
@@ -61,11 +65,12 @@ class Station {
   });
 
   static const Map<String, String> jsonShorts = {
+    "server": "s",
     "id": "i",
     "name": "n",
     "area": "a",
     "prefix": "p",
-    "stationNumber": "s",
+    "stationNumber": "sn",
     "address": "ad",
     "coordinates": "c",
     "persons": "pe",
@@ -75,7 +80,7 @@ class Station {
 
   factory Station.fromJson(Map<String, dynamic> json) {
     return Station(
-      id: json[jsonShorts["id"]],
+      id: "${json[jsonShorts["server"]]} ${json[jsonShorts["id"]]}",
       name: json[jsonShorts["name"]],
       area: json[jsonShorts["area"]],
       prefix: json[jsonShorts["prefix"]],
@@ -88,29 +93,14 @@ class Station {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      jsonShorts["id"]!: id,
-      jsonShorts["name"]!: name,
-      jsonShorts["area"]!: area,
-      jsonShorts["prefix"]!: prefix,
-      jsonShorts["stationNumber"]!: stationNumber,
-      jsonShorts["address"]!: address,
-      jsonShorts["coordinates"]!: coordinates,
-      jsonShorts["persons"]!: persons,
-      jsonShorts["adminPersons"]!: adminPersons,
-      jsonShorts["updated"]!: updated,
-    };
-  }
-
   static Future<List<Station>> getBatched({
     bool Function(Station)? filter,
     int? limit,
-    int? startingId,
+    String? startingId,
   }) async {
     var stations = <Station>[];
 
-    int lowestId = startingId ?? double.maxFinite.toInt();
+    String lowestId = startingId ?? "\u{10FFFF}";
     const batchSize = 50;
     while (true) {
       var newStations = await Globals.db.stationDao.getWithLowerIdThan(lowestId, batchSize);
@@ -119,7 +109,7 @@ class Station {
       var toAdd = <Station>[];
       for (var station in newStations) {
         if (filter == null || filter(station)) toAdd.add(station);
-        if (station.id < lowestId) lowestId = station.id;
+        if (station.id.compareTo(lowestId) < 0) lowestId = station.id;
 
         if (limit != null && toAdd.length + stations.length >= limit) break;
       }
@@ -148,7 +138,7 @@ class Station {
     UpdateInfo(UpdateType.station, {station.id});
   }
 
-  static Future<void> delete(int stationId, bool bc) async {
+  static Future<void> delete(String stationId, bool bc) async {
     await Globals.db.stationDao.deleteById(stationId);
 
     if (!bc) return;

@@ -2,13 +2,26 @@ import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 
+import '../../globals.dart';
+
 abstract class PersonInterface {
   static Future<void> fetchAll() async {
-    var allPersons = await Person.getAll();
+    List<Person> allPersons = await Person.getAll();
 
+    var servers = Globals.registeredServers;
+    var futures = <Future>[];
+    for (var server in servers) {
+      List<Person> serverPersons = allPersons.where((person) => person.server == server).toList();
+      futures.add(fetchAllForServer(server, serverPersons));
+    }
+
+    await Future.wait(futures);
+  }
+
+  static Future<void> fetchAllForServer(String server, List<Person> serverPersons) async {
     StringBuffer sb = StringBuffer();
-    for (Person person in allPersons) {
-      sb.write(person.id);
+    for (Person person in serverPersons) {
+      sb.write(person.idNumber);
       sb.write(':');
       sb.write(person.updated);
       sb.write(',');
@@ -16,10 +29,10 @@ abstract class PersonInterface {
 
     Map<String, dynamic> persons = {'data': sb.toString()};
 
-    Request response = await Request('personGetAll', persons).emit(true);
+    Request response = await Request('personGetAll', persons, server).emit(true);
     if (response.ackData!.isEmpty) return;
 
-    Set<int> updatedIds = {};
+    Set<String> updatedIds = {};
     var futures = <Future>[];
     for (Map<String, dynamic> person in response.ackData!['updated']) {
       if (futures.length > 25) {
@@ -38,8 +51,10 @@ abstract class PersonInterface {
         futures.clear();
       }
 
-      futures.add(Person.delete(id, false));
-      updatedIds.add(id);
+      String idString = "$server $id";
+
+      futures.add(Person.delete(idString, false));
+      updatedIds.add(idString);
     }
 
     await Future.wait(futures);

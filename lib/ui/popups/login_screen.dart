@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:ff_alarm/data/database.dart';
 import 'package:ff_alarm/data/interfaces/guest_interface.dart';
 import 'package:ff_alarm/data/interfaces/person_interface.dart';
 import 'package:ff_alarm/data/models/person.dart';
@@ -72,7 +71,6 @@ class _LoginScreenState extends State<LoginScreen> {
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: () async {
-              String lastDomain = Globals.connectionAddress;
               try {
                 // regenerate FCM token to prevent old servers from sending notifications to the outdated token
                 try {
@@ -94,20 +92,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 var json = jsonDecode(utf8.decode(gzip.decode(base64.decode(code))));
 
                 String? authKey = json['a'];
-                String? domain = json['d'];
+                String? server = json['d'];
                 int? personId = json['p'];
 
-                if (authKey == null || domain == null || personId == null) {
+                if (authKey == null || server == null || personId == null) {
                   errorToast('Ungültiger Code');
                   return;
                 }
 
-                // fetch the person from the server
-                Globals.connectionAddress = domain;
-
                 ({String token, int sessionId, Person person}) result;
                 try {
-                  result = await GuestInterface.login(personId: personId, key: authKey);
+                  result = await GuestInterface.login(personId: personId, key: authKey, server: server);
                 } catch (e, s) {
                   Logger.error('LoginScreen: $e, $s');
                   if (e is AckError) {
@@ -118,27 +113,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   return;
                 }
 
-                // if domain changed, delete all data
-                if (lastDomain != domain) {
-                  String path = await getDatabasePath('database.db');
-                  try {
-                    try {
-                      await Globals.db.close();
-                    } catch (_) {}
-                    File(path).deleteSync();
-                    Globals.db = await $FloorAppDatabase.databaseBuilder('database.db').buildBetterPath();
-                  } catch (e) {
-                    Logger.error('Failed to delete database: $e');
-                  }
-                }
-
                 await Person.update(result.person, false);
-                Globals.loggedIn = true;
-                Globals.person = result.person;
-                Globals.prefs.setInt('auth_user', result.person.id);
-                Globals.prefs.setInt('auth_session', result.sessionId);
-                Globals.prefs.setString('auth_token', result.token);
-                Globals.prefs.setString('connection_address', domain);
+                Globals.localPersons[result.person.id] = result.person;
+                Globals.prefs.setInt('auth_user_$server', result.person.idNumber);
+                Globals.prefs.setInt('auth_session_$server', result.sessionId);
+                Globals.prefs.setString('auth_token_$server', result.token);
+
+                String registeredUsers = Globals.prefs.getString('registered_users') ?? '[]';
+                List<String> users;
+                try {
+                  users = jsonDecode(registeredUsers).cast<String>();
+                } catch (e) {
+                  users = [];
+                }
+                if (!users.contains("$server $personId")) {
+                  users.add("$server $personId");
+                  Globals.prefs.setString('registered_users', jsonEncode(users));
+                }
 
                 Navigator.pop(Globals.context!);
 
@@ -147,11 +138,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 StationInterface.fetchAll();
                 AlarmInterface.fetchAll();
 
-                UpdateInfo(UpdateType.ui, {3});
+                UpdateInfo(UpdateType.ui, {"3"});
               } catch (e) {
                 Logger.error('LoginScreen: $e');
                 errorToast('Ungültiger Code');
-                Globals.connectionAddress = lastDomain;
               }
             },
             child: const Text('Anmelden'),

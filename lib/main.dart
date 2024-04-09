@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
@@ -29,7 +30,6 @@ void main() async {
       await Globals.initialize();
     } catch (e, s) {
       Logger.error('Failed to initialize globals: $e\n$s');
-      print('Failed to initialize globals: $e\n$s');
       return;
     }
 
@@ -38,14 +38,12 @@ void main() async {
         await initializeAwesomeNotifications();
       } catch (e, s) {
         Logger.error('Failed to initialize awesome_notifications: $e\n$s');
-        print('Failed to initialize awesome_notifications: $e\n$s');
       }
 
       try {
         await initializeFirebaseMessaging();
       } catch (e, s) {
         Logger.error('Failed to initialize firebase_messaging: $e\n$s');
-        print('Failed to initialize firebase_messaging: $e\n$s');
       }
     }
 
@@ -55,7 +53,6 @@ void main() async {
       });
     } catch (e, s) {
       Logger.error('Failed to set up firebase messaging listeners: $e\n$s');
-      print('Failed to set up firebase messaging listeners: $e\n$s');
     }
 
     // lock to portrait mode
@@ -63,39 +60,55 @@ void main() async {
       await SystemChrome.setPreferredOrientations(<DeviceOrientation>[DeviceOrientation.portraitUp]);
     } catch (e, s) {
       Logger.error('Failed to lock to portrait mode: $e\n$s');
-      print('Failed to lock to portrait mode: $e\n$s');
     }
 
     runApp(const FFAlarmApp());
   }, (error, stack) {
     if (error is AckError) {
       Logger.warn('runZonedGuarded error: ${error.errorCode}, ${error.errorMessage}');
-      print('runZonedGuarded error: ${error.errorCode}, ${error.errorMessage}');
       return;
     }
     Logger.error('runZonedGuarded error: $error\n$stack');
-    print('runZonedGuarded error: $error\n$stack');
   });
 }
 
-Future<void> logout() async {
-  Globals.prefs.remove('auth_token');
-  Globals.prefs.remove('auth_user');
-  Globals.prefs.remove('auth_session');
-  Globals.loggedIn = false;
-  Globals.person = null;
+Future<void> logout(String server) async {
+  Logger.warn('Logging out from $server');
+
+  Globals.prefs.remove('auth_user_$server');
+  Globals.prefs.remove('auth_session_$server');
+  Globals.prefs.remove('auth_token_$server');
+  Globals.localPersons.removeWhere((key, value) => key.startsWith(server));
+
+  String registeredUsers = Globals.prefs.getString('registered_users') ?? '[]';
+  List<String> users;
   try {
-    await RealTimeListener.socket?.close();
+    users = jsonDecode(registeredUsers).cast<String>();
+  } catch (e) {
+    users = [];
+  }
+  users.removeWhere((element) => element.startsWith("$server "));
+  Globals.prefs.setString('registered_users', jsonEncode(users));
+
+  try {
+    await RealTimeListener.listeners[server]?.socket?.close();
   } catch (e, s) {
     Logger.error('Failed to disconnect socket: $e\n$s');
   }
 
-  while (true) {
-    try {
-      Globals.router.go('/login');
-      break;
-    } catch (_) {
-      await Future.delayed(const Duration(milliseconds: 100));
+  await Globals.db.alarmDao.deleteByPrefix("$server ");
+  await Globals.db.personDao.deleteByPrefix("$server ");
+  await Globals.db.stationDao.deleteByPrefix("$server ");
+  await Globals.db.unitDao.deleteByPrefix("$server ");
+
+  if (users.isEmpty) {
+    while (true) {
+      try {
+        Globals.router.go('/login');
+        break;
+      } catch (_) {
+        await Future.delayed(const Duration(milliseconds: 10));
+      }
     }
   }
 }

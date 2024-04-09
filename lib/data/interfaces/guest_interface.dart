@@ -5,7 +5,7 @@ import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/server/request.dart';
 
 abstract class GuestInterface {
-  static Future<({String token, int sessionId, Person person})> login({required int personId, required String key}) async {
+  static Future<({String token, int sessionId, Person person})> login({required int personId, required String key, required String server}) async {
     String userAgent = '';
 
     if (Platform.isAndroid) {
@@ -24,7 +24,7 @@ abstract class GuestInterface {
       "userAgent": userAgent,
     };
 
-    Request response = await Request('login', data).emit(true, guest: true);
+    Request response = await Request('login', data, server).emit(true, guest: true);
 
     String token = response.ackData!['token'];
     int sessionId = response.ackData!['sessionId'];

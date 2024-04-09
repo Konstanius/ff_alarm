@@ -5,14 +5,27 @@ import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 
+import '../../globals.dart';
+
 abstract class AlarmInterface {
   static Future<void> fetchAll() async {
     DateTime archiveDate = DateTime.now().subtract(const Duration(days: 90));
     var allAlarms = await Alarm.getAll(filter: (alarm) => alarm.date.isAfter(archiveDate));
 
+    var servers = Globals.registeredServers;
+    var futures = <Future>[];
+    for (var server in servers) {
+      List<Alarm> serverAlarms = allAlarms.where((alarm) => alarm.server == server).toList();
+      futures.add(fetchAllForServer(server, serverAlarms));
+    }
+
+    await Future.wait(futures);
+  }
+
+  static Future<void> fetchAllForServer(String server, List<Alarm> nonArchivedAlarms) async {
     StringBuffer sb = StringBuffer();
-    for (Alarm alarm in allAlarms) {
-      sb.write(alarm.id);
+    for (Alarm alarm in nonArchivedAlarms) {
+      sb.write(alarm.idNumber);
       sb.write(':');
       sb.write(alarm.updated);
       sb.write(',');
@@ -20,10 +33,10 @@ abstract class AlarmInterface {
 
     Map<String, dynamic> alarms = {'data': sb.toString()};
 
-    Request response = await Request('alarmGetAll', alarms).emit(true);
+    Request response = await Request('alarmGetAll', alarms, server).emit(true);
     if (response.ackData!.isEmpty) return;
 
-    Set<int> updatedIds = {};
+    Set<String> updatedIds = {};
     var futures = <Future>[];
     for (Map<String, dynamic> alarm in response.ackData!['updated']) {
       if (futures.length > 25) {
@@ -42,8 +55,10 @@ abstract class AlarmInterface {
         futures.clear();
       }
 
-      futures.add(Alarm.delete(id, false));
-      updatedIds.add(id);
+      String idString = "$server $id";
+
+      futures.add(Alarm.delete(idString, false));
+      updatedIds.add(idString);
     }
 
     await Future.wait(futures);
@@ -53,9 +68,9 @@ abstract class AlarmInterface {
 
   static Future<Alarm> setResponse(Alarm alarm, AlarmResponse res) async {
     var json = res.toJson();
-    json['alarmId'] = alarm.id;
+    json['alarmId'] = alarm.idNumber;
 
-    Request response = await Request('alarmSetResponse', json).emit(true);
+    Request response = await Request('alarmSetResponse', json, alarm.server).emit(true);
 
     Alarm newAlarm = Alarm.fromJson(response.ackData!);
     await Alarm.update(newAlarm, true);
@@ -64,48 +79,48 @@ abstract class AlarmInterface {
   }
 
   static Future<({Alarm alarm, List<Unit> units, List<Station> stations, List<Person> persons})> getDetails(Alarm alarm) async {
-    var existingUnits = await Unit.getBatched(filter: (unit) => alarm.units.contains(unit.id));
-    Set<int> unitIds = {};
+    var existingUnits = await Unit.getBatched(filter: (unit) => alarm.unitProperIds.contains(unit.id));
+    Set<String> unitIds = {};
     for (var unit in existingUnits) {
       unitIds.add(unit.id);
     }
 
-    Set<int> stationIds = {};
+    Set<String> stationIds = {};
     for (var unit in existingUnits) {
-      stationIds.add(unit.stationId);
+      stationIds.add(unit.stationProperId);
     }
 
     var existingStations = await Station.getBatched(filter: (station) => stationIds.contains(station.id));
-    Set<int> personIds = {};
+    Set<String> personIds = {};
     for (var station in existingStations) {
-      personIds.addAll(station.persons);
+      personIds.addAll(station.personProperIds);
     }
 
     var existingPersons = await Person.getBatched(filter: (person) => personIds.contains(person.id) && person.allowedUnits.any((unitId) => alarm.units.contains(unitId)));
 
     Set<String> unitInfo = {};
     for (var unit in existingUnits) {
-      unitInfo.add('${unit.id}:${unit.updated}');
+      unitInfo.add('${unit.idNumber}:${unit.updated}');
     }
 
     Set<String> stationInfo = {};
     for (var station in existingStations) {
-      stationInfo.add('${station.id}:${station.updated}');
+      stationInfo.add('${station.idNumber}:${station.updated}');
     }
 
     Set<String> personInfo = {};
     for (var person in existingPersons) {
-      personInfo.add('${person.id}:${person.updated}');
+      personInfo.add('${person.idNumber}:${person.updated}');
     }
 
     Map<String, dynamic> data = {
-      'alarm': '${alarm.id}:${alarm.updated}',
+      'alarm': '${alarm.idNumber}:${alarm.updated}',
       'units': unitInfo.join(','),
       'stations': stationInfo.join(','),
       'persons': personInfo.join(','),
     };
 
-    Request response = await Request('alarmGetDetails', data).emit(true);
+    Request response = await Request('alarmGetDetails', data, alarm.server).emit(true);
 
     Alarm returnAlarm;
     if (response.ackData!['alarm'] != null) {
@@ -123,9 +138,9 @@ abstract class AlarmInterface {
     );
 
     var futures = <Future>[];
-    Set<int> updatedUnitIds = {};
-    Set<int> updatedStationIds = {};
-    Set<int> updatedPersonIds = {};
+    Set<String> updatedUnitIds = {};
+    Set<String> updatedStationIds = {};
+    Set<String> updatedPersonIds = {};
 
     if (response.ackData!['units'] != null) {
       for (Map<String, dynamic> unit in response.ackData!['units']) {

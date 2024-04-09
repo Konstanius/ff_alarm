@@ -39,7 +39,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
       criticalAlertsTests = Globals.prefs.getBool('critical_alerts_test') ?? false;
     }
 
-    UpdateInfo(UpdateType.ui, {1});
+    UpdateInfo(UpdateType.ui, {"1"});
 
     if (mounted) setState(() {});
   }

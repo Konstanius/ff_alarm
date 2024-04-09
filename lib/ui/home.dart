@@ -54,21 +54,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     super.didChangeAppLifecycleState(state);
 
     if (!Globals.foreground && state == AppLifecycleState.resumed) {
-      UpdateInfo(UpdateType.ui, {0});
+      UpdateInfo(UpdateType.ui, {"0"});
       AwesomeNotifications().dismissNotificationsByChannelKey('alarm');
       AwesomeNotifications().dismissNotificationsByChannelKey('test');
       AwesomeNotifications().cancelNotificationsByChannelKey('alarm');
       AwesomeNotifications().cancelNotificationsByChannelKey('test');
       resetAndroidNotificationVolume();
 
-      RealTimeListener.init();
+      RealTimeListener.initAll();
 
       PersonInterface.fetchAll();
       UnitInterface.fetchAll();
       StationInterface.fetchAll();
       AlarmInterface.fetchAll();
     } else if (Globals.foreground && state != AppLifecycleState.resumed) {
-      RealTimeListener.socket?.close();
+      for (var listener in RealTimeListener.listeners.values) {
+        listener.socket?.close();
+      }
     }
 
     Globals.foreground = state == AppLifecycleState.resumed;
@@ -91,20 +93,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     () async {
       badgeSettings.value = await SettingsScreenState.getBadLifeCycle() + await SettingsScreenState.getBadNotificationsAmount();
 
-      if (!Globals.loggedIn || badgeSettings.value == 0) return;
+      if (Globals.localPersons.isEmpty || badgeSettings.value == 0) return;
 
       showPermissionsPopup();
     }();
 
     _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
-      RealTimeListener.init();
+      RealTimeListener.initAll();
     });
 
     setupListener({UpdateType.ui});
 
-    RealTimeListener.init();
+    RealTimeListener.initAll();
 
-    if (Globals.loggedIn) {
+    if (Globals.localPersons.isNotEmpty) {
       PersonInterface.fetchAll();
       UnitInterface.fetchAll();
       StationInterface.fetchAll();
@@ -218,14 +220,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   void onUpdate(UpdateInfo info) async {
     if (info.type == UpdateType.ui) {
-      if (info.ids.contains(1)) {
+      if (info.ids.contains("1")) {
         badgeSettings.value = await SettingsScreenState.getBadLifeCycle() + await SettingsScreenState.getBadNotificationsAmount();
       }
 
-      if (info.ids.contains(3)) {
+      if (info.ids.contains("3")) {
         int bad = await SettingsScreenState.getBadLifeCycle() + await SettingsScreenState.getBadNotificationsAmount();
         badgeSettings.value = bad;
-        if (Globals.loggedIn && badgeSettings.value > 0) {
+        if (Globals.localPersons.isNotEmpty && badgeSettings.value > 0) {
           showPermissionsPopup();
         }
       }

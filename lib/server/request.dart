@@ -13,15 +13,16 @@ class Request {
   Map<String, dynamic> data;
   late DateTime time;
   String type;
+  String server;
   RequestStatus status = RequestStatus.unsent;
   Map<String, dynamic>? ackData;
   AckError? error;
 
-  Request(this.type, this.data);
+  Request(this.type, this.data, this.server);
 
-  static Future<bool> isConnected() async {
+  static Future<bool> isConnected(String server) async {
     try {
-      await Request('ping', {}).emit(true, guest: true);
+      await Request('ping', {}, server).emit(true, guest: true);
       return true;
     } catch (_) {
       return false;
@@ -42,13 +43,11 @@ class Request {
       connectTimeout: Duration(milliseconds: timeout),
       receiveTimeout: Duration(milliseconds: timeout),
       sendTimeout: Duration(milliseconds: timeout),
-      headers: Globals.loggedIn ? getAuthData() : null,
+      headers: !guest ? getAuthData(server) : null,
       method: 'POST',
-      baseUrl: 'http${Globals.connectionAddress}/api/',
+      baseUrl: 'http$server/api/',
       receiveDataWhenStatusError: true,
-      validateStatus: (_) {
-        return true;
-      },
+      validateStatus: (_) => true,
     );
 
     Dio dio = Dio(options);
@@ -69,7 +68,7 @@ class Request {
     Response<dynamic> response;
     try {
       response = await dio.post(
-        'http${Globals.connectionAddress}/api/$type',
+        'http$server/api/$type',
         data: data,
         onSendProgress: uploadProgressInt,
         onReceiveProgress: downloadProgressInt,
@@ -132,7 +131,8 @@ class Request {
         if (!guest) {
           error = AckError(HttpStatus.unauthorized, 'Du bist nicht angemeldet');
           status = RequestStatus.failed;
-          await logout();
+          await logout(server);
+          Logger.warn('Unauthorized request to $server');
         }
         break;
       default:
@@ -149,8 +149,8 @@ class Request {
     return this;
   }
 
-  static Map<String, String> getAuthData() {
-    String rawAuth = '${Globals.prefs.getInt('auth_session')} ${Globals.prefs.getString('auth_token')}';
+  static Map<String, String> getAuthData(String server) {
+    String rawAuth = '${Globals.prefs.getInt('auth_session_$server')} ${Globals.prefs.getString('auth_token_$server')}';
     String encodedAuth = base64Encode(gzip.encode(utf8.encode(rawAuth)));
 
     String rawToken = Globals.prefs.getString('fcm_token') ?? '';

@@ -6,7 +6,9 @@ import 'package:floor/floor.dart';
 @entity
 class Person {
   @primaryKey
-  final int id;
+  final String id;
+  String get server => id.split(' ')[0];
+  int get idNumber => int.parse(id.split(' ')[1]);
 
   String firstName;
 
@@ -15,6 +17,7 @@ class Person {
   String get fullName => "$firstName $lastName";
 
   List<int> allowedUnits;
+  List<String> get allowedUnitProperIds => allowedUnits.map((e) => "$server $e").toList();
 
   /// Qualifications Format:
   /// "quali":"startMillis/null":"endMillis/null",...
@@ -58,6 +61,7 @@ class Person {
   });
 
   static const Map<String, String> jsonShorts = {
+    "server": "s",
     "id": "i",
     "firstName": "f",
     "lastName": "l",
@@ -69,7 +73,7 @@ class Person {
 
   factory Person.fromJson(Map<String, dynamic> json) {
     return Person(
-      id: json[jsonShorts["id"]],
+      id: "${json[jsonShorts["server"]]} ${json[jsonShorts["id"]]}",
       firstName: json[jsonShorts["firstName"]],
       lastName: json[jsonShorts["lastName"]],
       allowedUnits: List<int>.from(json[jsonShorts["allowedUnits"]]),
@@ -79,26 +83,14 @@ class Person {
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      jsonShorts["id"]!: id,
-      jsonShorts["firstName"]!: firstName,
-      jsonShorts["lastName"]!: lastName,
-      jsonShorts["allowedUnits"]!: allowedUnits,
-      jsonShorts["qualifications"]!: qualifications.map((e) => e.toString()).toList(),
-      jsonShorts["response"]!: response?.toJson(),
-      jsonShorts["updated"]!: updated,
-    };
-  }
-
   static Future<List<Person>> getBatched({
     bool Function(Person)? filter,
     int? limit,
-    int? startingId,
+    String? startingId,
   }) async {
     var persons = <Person>[];
 
-    int lowestId = startingId ?? double.maxFinite.toInt();
+    String lowestId = startingId ?? "\u{10FFFF}";
     const batchSize = 50;
     while (true) {
       var newPersons = await Globals.db.personDao.getWithLowerIdThan(lowestId, batchSize);
@@ -107,7 +99,7 @@ class Person {
       var toAdd = <Person>[];
       for (var person in newPersons) {
         if (filter == null || filter(person)) toAdd.add(person);
-        if (person.id < lowestId) lowestId = person.id;
+        if (person.id.compareTo(lowestId) < 0) lowestId = person.id;
 
         if (limit != null && toAdd.length + persons.length >= limit) break;
       }
@@ -132,13 +124,13 @@ class Person {
       await Globals.db.personDao.inserts(person);
     }
 
-    if (person.id == Globals.person?.id) Globals.person = person;
+    if (Globals.localPersons.containsKey(person.id)) Globals.localPersons[person.id] = person;
 
     if (!bc) return;
     UpdateInfo(UpdateType.person, {person.id});
   }
 
-  static Future<void> delete(int personId, bool bc) async {
+  static Future<void> delete(String personId, bool bc) async {
     await Globals.db.personDao.deleteById(personId);
 
     if (!bc) return;
