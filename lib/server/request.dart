@@ -150,7 +150,7 @@ class Request {
   }
 
   static Map<String, String> getAuthData() {
-    String rawAuth = '${Globals.prefs.getInt('auth_user')} ${Globals.prefs.getString('auth_token')}';
+    String rawAuth = '${Globals.prefs.getInt('auth_session')} ${Globals.prefs.getString('auth_token')}';
     String encodedAuth = base64Encode(gzip.encode(utf8.encode(rawAuth)));
 
     String rawToken = Globals.prefs.getString('fcm_token') ?? '';

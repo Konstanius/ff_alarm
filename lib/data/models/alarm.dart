@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:floor/floor.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../ui/popups/alarm_info.dart';
 
@@ -21,6 +22,31 @@ class Alarm {
   int number;
 
   String address;
+  Position? get positionFromAddressIfCoordinates {
+    var split = address.split(',');
+    if (split.length != 2) return null;
+    try {
+      double? lat = double.tryParse(split[0]);
+      double? lon = double.tryParse(split[1]);
+      if (lat == null || lon == null) return null;
+      return Position(
+        latitude: lat,
+        longitude: lon,
+        accuracy: 0,
+        altitude: 0,
+        altitudeAccuracy: 0,
+        heading: 0,
+        headingAccuracy: 0,
+        speed: 0,
+        speedAccuracy: 0,
+        timestamp: DateTime.now(),
+        floor: 0,
+        isMocked: false,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 
   List<String> notes;
 
@@ -157,6 +183,25 @@ class Alarm {
   }
 
   static Future<List<Alarm>> getAll({bool Function(Alarm)? filter}) => getBatched(filter: filter);
+
+  static Stream<List<Alarm>> getAllStreamed({int delay = 100}) async* {
+    int lowestId = double.maxFinite.toInt();
+    const batchSize = 25;
+    while (true) {
+      var newAlarms = await Globals.db.alarmDao.getWithLowerIdThan(lowestId, batchSize);
+      if (newAlarms.isEmpty) break;
+
+      for (var alarm in newAlarms) {
+        if (alarm.id < lowestId) lowestId = alarm.id;
+      }
+
+      newAlarms.sort((a, b) => b.date.compareTo(a.date));
+      yield newAlarms;
+      if (newAlarms.length < batchSize) break;
+
+      await Future.delayed(Duration(milliseconds: delay));
+    }
+  }
 
   static Future<void> update(Alarm alarm, bool bc) async {
     var existing = await Globals.db.alarmDao.getById(alarm.id);

@@ -37,8 +37,10 @@ class _MapPageState extends State<MapPage> {
                 for (var position in positions)
                   Marker(
                     width: 80.0,
-                    alignment: Alignment.topCenter,
+                    height: 100,
+                    alignment: Alignment.center,
                     point: position.position,
+                    rotate: false,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: <Widget>[

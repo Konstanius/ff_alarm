@@ -13,9 +13,9 @@ import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/map.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:map_launcher/map_launcher.dart';
@@ -61,6 +61,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
   bool alarmDetailsBusy = false;
 
   TextEditingController noteController = TextEditingController();
+  FocusNode noteFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -130,7 +131,9 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
           } catch (e) {
             errorToast('Fehler beim Bestätigen des Alarms: $e');
           } finally {
-            timerBusy = false;
+            Future.delayed(const Duration(milliseconds: 200), () {
+              timerBusy = false;
+            });
             if (mounted) setState(() {});
           }
         }
@@ -219,7 +222,15 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
       while (true) {
         if (!mounted) return;
         try {
-          var position = await Formats.getCoordinates(alarm.address);
+          Position? pos = alarm.positionFromAddressIfCoordinates;
+
+          LatLng? position;
+          if (pos != null) {
+            position = Formats.positionToLatLng(pos);
+          } else {
+            position = await Formats.getCoordinates(alarm.address);
+          }
+
           alarmPosition = position;
           resetMapInfoNotifiers();
           if (!mounted) return;
@@ -245,6 +256,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
     alarmMapController.dispose();
     responsesMapController.dispose();
     noteController.dispose();
+    noteFocusNode.dispose();
     super.dispose();
   }
 
@@ -324,9 +336,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
             Card(
               clipBehavior: Clip.antiAliasWithSaveLayer,
               color: selectedStation == station.id ? Colors.blue : Theme.of(context).focusColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               margin: const EdgeInsets.all(8),
               elevation: selectedStation == station.id ? 5 : 0,
               child: ListTile(
@@ -521,6 +531,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 },
               ),
             ),
+          ...genericAlarmInfo(),
         ],
       ),
     );
@@ -694,7 +705,12 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                   shareString += 'Stichwort: ${alarm.word}\n';
                   shareString += 'Datum: ${Formats.dateTime(alarm.date)}\n\n';
 
-                  shareString += 'Adresse: ${alarm.address}\n\n';
+                  Position? pos = alarm.positionFromAddressIfCoordinates;
+                  if (pos != null) {
+                    shareString += 'Koordinaten: ${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}\n';
+                  } else {
+                    shareString += 'Adresse: ${alarm.address}\n';
+                  }
 
                   shareString += 'Notizen: ${alarm.notes.join('\n')}\n\n';
 
@@ -793,8 +809,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                     children: [
                       // General information (time, type, word, address, notes)
                       ...genericAlarmInfo(),
-                      if (alarm.notes.isNotEmpty) const Divider(height: 20),
-                      if (alarm.notes.isEmpty) const SizedBox(height: 8),
+                      if (alarm.responses.containsKey(Globals.person!.id)) const Divider(height: 20),
                       if (alarm.responses.containsKey(Globals.person!.id))
                         Column(
                           children: [
@@ -832,6 +847,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                       maxLines: 1,
                                       maxLength: 200,
                                       controller: noteController,
+                                      focusNode: noteFocusNode,
                                       textCapitalization: TextCapitalization.sentences,
                                       expands: false,
                                       readOnly: alarm.date.isBefore(DateTime.now().subtract(const Duration(hours: 1))),
@@ -839,7 +855,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                         if (alarm.responses.containsKey(Globals.person!.id)) {
                                           if (noteController.text == (alarm.responses[Globals.person!.id]!.note ?? '')) return;
                                           try {
-                                            FocusScope.of(context).unfocus();
+                                            noteFocusNode.unfocus();
                                             await AlarmInterface.setResponse(
                                               alarm,
                                               AlarmResponse(
@@ -864,7 +880,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                       if (alarm.responses.containsKey(Globals.person!.id)) {
                                         if (noteController.text == (alarm.responses[Globals.person!.id]!.note ?? '')) return;
                                         try {
-                                          FocusScope.of(context).unfocus();
+                                          noteFocusNode.unfocus();
                                           await AlarmInterface.setResponse(
                                             alarm,
                                             AlarmResponse(
@@ -1197,7 +1213,60 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 /// - Anzeige der Antworten und ca. Zeit (Farblich markiert)
                 /// - Ansicht, nach wie viel Zeit wie viele da sind
                 /// - Karte mit live Position aller Personen, die positiv geantwortet haben
-                const Text('Antworten'),
+                SafeArea(
+                  child: () {
+                    if (data == null) return const Center(child: CircularProgressIndicator());
+
+                    List<MapEntry<Person, AlarmResponse>> responsesForSelectedStation = [];
+                    for (var person in data!.persons) {
+                      if (alarm.responses.containsKey(person.id) && alarm.responses[person.id]!.stationId == selectedStation) {
+                        responsesForSelectedStation.add(MapEntry(person, alarm.responses[person.id]!));
+                      }
+                    }
+
+                    // sort by response.index, if same by name
+                    responsesForSelectedStation.sort((a, b) {
+                      if (a.value.type.index == b.value.type.index) {
+                        return a.key.fullName.compareTo(b.key.fullName);
+                      }
+                      return a.value.type.index.compareTo(b.value.type.index);
+                    });
+
+                    return ListView(
+                      padding: const EdgeInsets.all(12),
+                      children: [
+                        for (var entry in responsesForSelectedStation)
+                          Card(
+                            color: entry.value.type.color,
+                            clipBehavior: Clip.antiAliasWithSaveLayer,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            margin: const EdgeInsets.all(8),
+                            elevation: 5,
+                            child: ListTile(
+                              title: Text(entry.key.fullName, style: const TextStyle(color: Colors.black)),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(entry.value.type.name, style: const TextStyle(color: Colors.black)),
+                                  if (entry.value.type.timeAmount >= 0) Text('Ankunft bis ${DateFormat('HH:mm').format(entry.value.time!.add(Duration(minutes: entry.value.type.timeAmount)))}', style: const TextStyle(color: Colors.black)),
+                                ],
+                              ),
+                              trailing: () {
+                                if (entry.value.time != null) {
+                                  return Text(DateFormat('HH:mm').format(entry.value.time!), style: const TextStyle(color: Colors.black));
+                                } else {
+                                  return const SizedBox();
+                                }
+                              }(),
+                            ),
+                          ),
+                        const SizedBox(height: 8),
+                      ],
+                    );
+                  }(),
+                ),
               ],
             ),
           ),
@@ -1391,7 +1460,18 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         children: [
           const Icon(Icons.location_on_outlined),
           const SizedBox(width: 8),
-          Flexible(child: Text(alarm.address)),
+          Flexible(
+            child: Text(
+              () {
+                var pos = alarm.positionFromAddressIfCoordinates;
+                if (pos != null) {
+                  return 'Koordinaten: ${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}';
+                } else {
+                  return 'Adresse: ${alarm.address}';
+                }
+              }(),
+            ),
+          ),
         ],
       ),
       if (alarm.notes.isNotEmpty) const Divider(height: 20),

@@ -81,6 +81,7 @@ void main() async {
 Future<void> logout() async {
   Globals.prefs.remove('auth_token');
   Globals.prefs.remove('auth_user');
+  Globals.prefs.remove('auth_session');
   Globals.loggedIn = false;
   Globals.person = null;
   try {

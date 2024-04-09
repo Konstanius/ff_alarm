@@ -116,7 +116,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 await Person.update(result.person, false);
                 Globals.loggedIn = true;
                 Globals.person = result.person;
-                Globals.prefs.setInt('auth_user', result.sessionId);
+                Globals.prefs.setInt('auth_user', result.person.id);
+                Globals.prefs.setInt('auth_session', result.sessionId);
                 Globals.prefs.setString('auth_token', result.token);
                 Globals.prefs.setString('connection_address', domain);
 
