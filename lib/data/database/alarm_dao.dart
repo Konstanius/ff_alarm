@@ -23,4 +23,7 @@ abstract class AlarmDao {
 
   @Query('DELETE FROM Alarm WHERE id LIKE :id||" %"')
   Future<void> deleteByPrefix(String id);
+
+  @Query('SELECT COUNT(*) FROM Alarm WHERE id LIKE :prefix||"%"')
+  Future<int?> getAmountWithPrefix(String prefix);
 }

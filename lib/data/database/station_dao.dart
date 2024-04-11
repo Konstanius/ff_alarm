@@ -23,4 +23,7 @@ abstract class StationDao {
 
   @Query('DELETE FROM Station WHERE id LIKE :id||" %"')
   Future<void> deleteByPrefix(String id);
+
+  @Query('SELECT COUNT(*) FROM Station WHERE id LIKE :prefix||"%"')
+  Future<int?> getAmountWithPrefix(String prefix);
 }

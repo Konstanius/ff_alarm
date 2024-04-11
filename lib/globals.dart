@@ -12,6 +12,7 @@ import 'package:ff_alarm/main.dart';
 import 'package:ff_alarm/ui/home.dart';
 import 'package:ff_alarm/ui/popups/alarm_info.dart';
 import 'package:ff_alarm/ui/popups/login_screen.dart';
+import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/settings/lifecycle.dart';
 import 'package:ff_alarm/ui/settings/notifications.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
@@ -71,6 +72,7 @@ abstract class Globals {
       }
 
       positionSubscription = Geolocator.getPositionStream().listen((Position position) {
+        if (lastPositionTime != null && DateTime.now().difference(lastPositionTime!) < const Duration(seconds: 3)) return;
         lastPosition = position;
         lastPositionTime = DateTime.now();
         UpdateInfo(UpdateType.ui, {"2"});
@@ -188,6 +190,13 @@ abstract class Globals {
           GoRoute(
             path: 'notifications',
             builder: (BuildContext context, GoRouterState state) => const NotificationSettings(),
+          ),
+          GoRoute(
+            path: 'alarmsettings',
+            builder: (BuildContext context, GoRouterState state) {
+              final String stationId = state.extra! as String;
+              return SettingsAlarmInformationPage(stationId: stationId);
+            },
           ),
           GoRoute(
             path: 'login',

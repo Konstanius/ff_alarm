@@ -15,10 +15,10 @@ class LifeCycleSettings extends StatefulWidget {
   const LifeCycleSettings({super.key});
 
   @override
-  State<LifeCycleSettings> createState() => _LifeCycleSettingsState();
+  State<LifeCycleSettings> createState() => LifeCycleSettingsState();
 }
 
-class _LifeCycleSettingsState extends State<LifeCycleSettings> {
+class LifeCycleSettingsState extends State<LifeCycleSettings> {
   bool ignoreBatteryOptimizations = false;
   bool locationWhenInUse = false;
   bool locationAlways = false;
@@ -316,7 +316,7 @@ class _LifeCycleSettingsState extends State<LifeCycleSettings> {
                   color: Colors.blue,
                   title: 'Automatischer Start',
                   content: const Text(
-                    'Durch das Aktivieren des automatischen Starts wird die App und ihre Dienste von selbst starten können.\n\n'
+                    'Durch das Aktivieren des automatischen Starts kann die App gestoppte Dienste von selbst starten können.\n\n'
                     'Dies ist notwendig, damit die App auch im Hintergrund weiterlaufen kann und Alarmierungen zuverlässig empfangen werden können.\n\n'
                     'Beim Fortfahren musst du in der folgenden Seite die Batterienutzung öffnen und die Einstellung "Automatischer Start" (oder Ähnlich) aktivieren.',
                   ),
@@ -390,68 +390,71 @@ class _LifeCycleSettingsState extends State<LifeCycleSettings> {
                 return;
               }
 
-              var result = await Permission.locationWhenInUse.request();
-              if (result.isGranted) {
-                var res = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Standortzugriff',
-                  content: const Text(
-                    'Durch das Aktivieren des dauerhaften Standortzugriffs wird FF Alarm auch im Hintergrund während einer Alarmierung auf deinen Standort zugreifen können.\n\n'
-                    'DEIN STANDORT WIRD NIEMALS ABSEITS EINER ALARMIERUNG MIT ANDEREN GETEILT ODER GESPEICHERT!\n\n'
-                    'Beim Fortfahren musst du in der folgenden Seite den Standortzugriff auf "Immer erlauben" setzen.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      child: const Text('Abbrechen'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      child: const Text('Fortfahren'),
-                    ),
-                  ],
-                );
-                if (res != true) {
-                  checkSettings();
-                  return;
-                }
-
-                result = await Permission.locationAlways.request();
-              }
-              if (result.isGranted) {
-                successToast('Einstellung erfolgreich!');
-
-                try {
-                  Globals.positionSubscription?.cancel();
-                  Globals.positionSubscription = Geolocator.getPositionStream().listen((Position position) async {
-                    Globals.lastPosition = position;
-                    Globals.lastPositionTime = DateTime.now();
-                    UpdateInfo(UpdateType.ui, {"2"});
-                  });
-
-                  // get initial position
-                  Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 5)).then((Position? position) {
-                    Globals.lastPosition = position;
-                    Globals.lastPositionTime = DateTime.now();
-                    UpdateInfo(UpdateType.ui, {"2"});
-                  }).catchError((e, s) {
-                    Logger.warn('Failed to get initial position: $e\n$s');
-                  });
-                } catch (e, s) {
-                  Logger.warn('Failed to initialize geolocator: $e\n$s');
-                }
-              } else {
-                errorToast('Einstellung fehlgeschlagen!');
-              }
+              await requestLocationPermission();
               checkSettings();
             },
           ),
         ],
       ),
     );
+  }
+
+  static Future<void> requestLocationPermission() async {
+    var result = await Permission.locationWhenInUse.request();
+    if (result.isGranted) {
+      var res = await generalDialog(
+        color: Colors.blue,
+        title: 'Standortzugriff',
+        content: const Text(
+          'Durch das Aktivieren des dauerhaften Standortzugriffs wird FF Alarm auch im Hintergrund während einer Alarmierung auf deinen Standort zugreifen können.\n\n'
+          'DEIN STANDORT WIRD NIEMALS ABSEITS EINER ALARMIERUNG MIT ANDEREN GETEILT ODER GESPEICHERT!\n\n'
+          'Beim Fortfahren musst du in der folgenden Seite den Standortzugriff auf "Immer erlauben" setzen.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(Globals.context!, false);
+            },
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(Globals.context!, true);
+            },
+            child: const Text('Fortfahren'),
+          ),
+        ],
+      );
+      if (res != true) {
+        return;
+      }
+
+      result = await Permission.locationAlways.request();
+    }
+    if (result.isGranted) {
+      successToast('Einstellung erfolgreich!');
+
+      try {
+        Globals.positionSubscription?.cancel();
+        Globals.positionSubscription = Geolocator.getPositionStream().listen((Position position) async {
+          Globals.lastPosition = position;
+          Globals.lastPositionTime = DateTime.now();
+          UpdateInfo(UpdateType.ui, {"2"});
+        });
+
+        // get initial position
+        Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 5)).then((Position? position) {
+          Globals.lastPosition = position;
+          Globals.lastPositionTime = DateTime.now();
+          UpdateInfo(UpdateType.ui, {"2"});
+        }).catchError((e, s) {
+          Logger.warn('Failed to get initial position: $e\n$s');
+        });
+      } catch (e, s) {
+        Logger.warn('Failed to initialize geolocator: $e\n$s');
+      }
+    } else {
+      errorToast('Einstellung fehlgeschlagen!');
+    }
   }
 }

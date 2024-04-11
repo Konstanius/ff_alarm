@@ -162,7 +162,7 @@ Future<void> resetAndroidNotificationVolume() async {
 
 Future<bool> sendAlarm(Alarm alarm) async {
   try {
-    AlarmOption option = alarm.getAlertOption();
+    AlarmOption option = await alarm.getAlertOption();
 
     if (Globals.appStarted && option == AlarmOption.alert) {
       Globals.router.go('/alarm', extra: alarm);

@@ -2,17 +2,27 @@ import 'dart:io';
 
 import 'package:assets_audio_player/assets_audio_player.dart';
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:ff_alarm/data/models/alarm.dart';
+import 'package:ff_alarm/data/models/person.dart';
+import 'package:ff_alarm/data/models/station.dart';
+import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/main.dart';
 import 'package:ff_alarm/notifications/awn_init.dart';
+import 'package:ff_alarm/server/request.dart';
+import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:real_volume/real_volume.dart';
 
 import '../../log/logger.dart';
+import '../utils/format.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key, required this.badge});
@@ -29,6 +39,9 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
 
   int notificationsBad = 0;
   int lifeCycleBad = 0;
+
+  List<Station>? stations;
+  Map<String, SettingsNotificationData> allNotificationSettings = SettingsNotificationData.getAll();
 
   static Future<int> getBadNotificationsAmount() async {
     int notificationsBad = 0;
@@ -94,7 +107,12 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
   void initState() {
     super.initState();
     checkSettings();
-    setupListener({UpdateType.ui});
+    setupListener({UpdateType.ui, UpdateType.station});
+
+    Station.getAll().then((value) {
+      stations = value;
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -107,6 +125,175 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
       body: ListView(
         padding: const EdgeInsets.all(8),
         children: <Widget>[
+          const SettingsDivider(text: 'Daten-Quellen'),
+          for (var localUser in Globals.localPersons.values)
+            () {
+              Uri uri;
+              try {
+                uri = Uri.parse('http${localUser.server}');
+              } catch (e) {
+                return const SizedBox.shrink();
+              }
+
+              return ListTile(
+                leading: const Icon(Icons.storage_outlined),
+                title: Text(uri.host),
+                subtitle: Row(
+                  children: [
+                    if (localUser.server.startsWith('s')) ...[
+                      const Icon(Icons.lock_outlined, color: Colors.green, size: kDefaultFontSize),
+                      const SizedBox(width: 4),
+                      const Text('Verschlüsselt'),
+                    ] else ...[
+                      const Icon(Icons.lock_person_outlined, color: Colors.red, size: kDefaultFontSize),
+                      const SizedBox(width: 4),
+                      const Text('Nicht verschlüsselt'),
+                    ],
+                  ],
+                ),
+                onTap: () async {
+                  Globals.context!.loaderOverlay.show();
+
+                  int stationsAmount = await Station.getAmount(localUser.server) ?? 0;
+                  int alarmsAmount = await Alarm.getAmount(localUser.server) ?? 0;
+                  int unitsAmount = await Unit.getAmount(localUser.server) ?? 0;
+                  int personsAmount = await Person.getAmount(localUser.server) ?? 0;
+
+                  Globals.context!.loaderOverlay.hide();
+
+                  generalDialog(
+                    color: Colors.blue,
+                    title: 'Daten-Quelle',
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ListTile(
+                          title: const Text('Server'),
+                          subtitle: Text(uri.host),
+                        ),
+                        ListTile(
+                          title: const Text('Port'),
+                          subtitle: Text(uri.port.toString()),
+                        ),
+                        ListTile(
+                          title: const Text('SSL-Verschlüsselung'),
+                          subtitle: Text(localUser.server.startsWith('s') ? 'Ja' : 'Nein'),
+                        ),
+                        ListTile(
+                          title: const Text('Benutzer'),
+                          subtitle: Text(localUser.fullName),
+                        ),
+                        const Divider(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Wachen'),
+                            Text(stationsAmount.toString()),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Einheiten'),
+                            Text(unitsAmount.toString()),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Personen'),
+                            Text(personsAmount.toString()),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Alarmierungen'),
+                            Text(alarmsAmount.toString()),
+                          ],
+                        ),
+                      ],
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('OK'),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          Globals.context!.loaderOverlay.show();
+                          try {
+                            bool connected = await Request.isConnected(localUser.server);
+                            if (connected) {
+                              successToast('Verbindung erfolgreich');
+                            } else {
+                              errorToast('Verbindung fehlgeschlagen');
+                            }
+                            Globals.context!.loaderOverlay.hide();
+                          } catch (e, s) {
+                            exceptionToast(e, s);
+                            Globals.context!.loaderOverlay.hide();
+                          }
+                        },
+                        child: const Text('Verbindung testen'),
+                      ),
+                    ],
+                  );
+                },
+                trailing: IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size.zero)),
+                  onPressed: () {
+                    generalDialog(
+                      color: Colors.blue,
+                      title: 'Quelle löschen',
+                      content: Text('Möchtest Du die Daten-Quelle ${uri.host} wirklich löschen?\n\n'
+                          'Alle Daten, die von dieser Quelle stammen, werden ebenfalls gelöscht.\n\n'
+                          'Zur erneuten Registrierung musst Du von einem Wachen-Admin hinzugefügt werden.'),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('Abbrechen'),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            Globals.context!.loaderOverlay.show();
+                            try {
+                              var data = {
+                                "sessionId": Globals.prefs.getInt('auth_session_${localUser.server}'),
+                                "token": Globals.prefs.getString('auth_token_${localUser.server}'),
+                                "fcmToken": "${Platform.isAndroid ? "A" : "I"}${Globals.prefs.getString('fcm_token')}",
+                              };
+                              await Request('logout', data, localUser.server).emit(true, guest: true);
+                              Navigator.of(Globals.context!).pop();
+                              await Future.delayed(const Duration(milliseconds: 20));
+                              await logout(localUser.server);
+                              Globals.context!.loaderOverlay.hide();
+                            } catch (e, s) {
+                              exceptionToast(e, s);
+                              Globals.context!.loaderOverlay.hide();
+                            }
+                          },
+                          child: const Text('Löschen'),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              );
+            }(),
+          ElevatedButton(
+            onPressed: () {
+              Globals.router.go('/login');
+            },
+            child: const Text('Daten-Quelle hinzufügen'),
+          ),
           const SettingsDivider(text: 'App-Funktionalität'),
           ListTile(
             leading: const Icon(Icons.settings_outlined),
@@ -138,7 +325,33 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
               Globals.router.push('/notifications');
             },
           ),
-          const SettingsDivider(text: 'Personalisierung'),
+          const SettingsDivider(text: 'Bereitschaft'),
+          if (stations == null)
+            const CircularProgressIndicator()
+          else ...[
+            for (var station in stations!)
+              ListTile(
+                leading: allNotificationSettings.containsKey(station.id) ? const Icon(Icons.settings_outlined) : const Icon(Icons.question_mark_outlined),
+                title: Text("${station.name} (${station.prefix} ${station.area} ${station.stationNumber})"),
+                subtitle: () {
+                  LatLng? lastPosition;
+                  if (Globals.lastPosition != null) {
+                    lastPosition = Formats.positionToLatLng(Globals.lastPosition!);
+                  }
+                  // TODO better format
+                  if (allNotificationSettings.containsKey(station.id)) {
+                    return Text(allNotificationSettings[station.id]!.shouldNotify(lastPosition) ? 'Benachrichtigen' : 'Nicht benachrichtigen');
+                  } else {
+                    return const Text('Nicht konfiguriert');
+                  }
+                }(),
+                trailing: const Icon(Icons.arrow_forward_outlined),
+                onTap: () {
+                  Globals.router.push('/alarmsettings', extra: station.id);
+                },
+              ),
+          ],
+          const SettingsDivider(text: 'Alarmierungs-Ton'),
           ListTile(
             enabled: Platform.isIOS,
             leading: const Icon(Icons.phone_callback_outlined),
@@ -303,8 +516,17 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
 
   @override
   void onUpdate(UpdateInfo info) {
-    if (!mounted || !info.ids.contains("1")) return;
-    checkSettings();
+    if (info.type == UpdateType.ui) {
+      if (!mounted || (!info.ids.contains("1") && !info.ids.contains("3"))) return;
+      allNotificationSettings = SettingsNotificationData.getAll();
+      checkSettings();
+    } else if (info.type == UpdateType.station) {
+      if (!mounted) return;
+      Station.getAll().then((value) {
+        stations = value;
+        if (mounted) setState(() {});
+      });
+    }
   }
 }
 

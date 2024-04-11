@@ -14,6 +14,7 @@ import 'package:ff_alarm/ui/home/units_screen.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 
 class FFAlarmApp extends StatelessWidget {
   const FFAlarmApp({super.key});
@@ -33,6 +34,15 @@ class FFAlarmApp extends StatelessWidget {
       ),
       locale: const Locale('de', 'DE'),
       routerConfig: Globals.router,
+      builder: (context, child) {
+        return LoaderOverlay(
+          closeOnBackButton: false,
+          disableBackButton: true,
+          overlayColor: Colors.black.withOpacity(0.5),
+          overlayWholeScreen: true,
+          child: child!,
+        );
+      },
     );
   }
 }

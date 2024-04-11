@@ -136,6 +136,8 @@ class Person {
     if (!bc) return;
     UpdateInfo(UpdateType.person, {personId});
   }
+
+  static Future<int?> getAmount(String server) => Globals.db.personDao.getAmountWithPrefix(server);
 }
 
 class Qualification {

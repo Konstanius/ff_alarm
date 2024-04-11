@@ -7,6 +7,3 @@ installation:
   - Nginx setup (ask for domain, generate certificate, build in certificate)
   - Provide web panel for the government to manage the server (Create stations, units, tokens, persons, etc.)
   - Authentication in app is done via QR Scan, contains person access code, domain, and token
-
-future:
-  - allow multiple domains to be used as backend for a single person (e.g. a person can be in multiple stations of different governments)

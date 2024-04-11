@@ -24,7 +24,9 @@ class Request {
     try {
       await Request('ping', {}, server).emit(true, guest: true);
       return true;
-    } catch (_) {
+    } catch (e, s) {
+      Logger.warn(e);
+      Logger.warn(s);
       return false;
     }
   }

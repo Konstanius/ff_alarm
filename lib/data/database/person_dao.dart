@@ -23,4 +23,7 @@ abstract class PersonDao {
 
   @Query('DELETE FROM Person WHERE id LIKE :id||" %"')
   Future<void> deleteByPrefix(String id);
+
+  @Query('SELECT COUNT(*) FROM Person WHERE id LIKE :prefix||"%"')
+  Future<int?> getAmountWithPrefix(String prefix);
 }

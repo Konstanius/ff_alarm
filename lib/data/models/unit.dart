@@ -128,6 +128,8 @@ class Unit {
     if (!bc) return;
     UpdateInfo(UpdateType.unit, {unitId});
   }
+
+  static Future<int?> getAmount(String server) => Globals.db.unitDao.getAmountWithPrefix(server);
 }
 
 enum UnitPosition {

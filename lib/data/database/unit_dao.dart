@@ -23,4 +23,7 @@ abstract class UnitDao {
 
   @Query('DELETE FROM Unit WHERE id LIKE :id||" %"')
   Future<void> deleteByPrefix(String id);
+
+  @Query('SELECT COUNT(*) FROM Unit WHERE id LIKE :prefix||"%"')
+  Future<int?> getAmountWithPrefix(String prefix);
 }

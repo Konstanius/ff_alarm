@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:floor/floor.dart';
 import 'package:geolocator/geolocator.dart';
@@ -152,7 +153,7 @@ class Alarm {
     return Alarm.fromJson(json);
   }
 
-  AlarmOption getAlertOption() {
+  Future<AlarmOption> getAlertOption() async {
     DateTime now = DateTime.now();
     if (date.isAfter(now.subtract(const Duration(minutes: 15)))) {
       if (type.startsWith('Test')) {
@@ -162,8 +163,12 @@ class Alarm {
         bool? muted = Globals.prefs.getBool('alarms_muted');
         if (muted == true) return AlarmOption.silent;
       }
-      return AlarmOption.alert;
+
+      bool shouldNotify = await SettingsNotificationData.shouldNotifyForAlarmRegardless(this);
+
+      return shouldNotify ? AlarmOption.alert : AlarmOption.silent;
     }
+
     if (date.isAfter(now.subtract(const Duration(hours: 24)))) return AlarmOption.silent;
     return AlarmOption.none;
   }
@@ -238,6 +243,8 @@ class Alarm {
     if (!bc) return;
     UpdateInfo(UpdateType.alarm, {alarmId});
   }
+
+  static Future<int?> getAmount(String server) => Globals.db.alarmDao.getAmountWithPrefix(server);
 }
 
 enum AlarmOption {

@@ -1287,6 +1287,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
   }
 
   void resetMapInfoNotifiers() {
+    if (!mounted) return;
     informationNotifier.value = [];
     responsesNotifier.value = [];
 
