@@ -283,7 +283,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
   @override
   Widget build(BuildContext context) {
     if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    bool showAnswerScreen = newAnswer;
+    bool showAnswerScreen = newAnswer || (!alarm.responseTimeExpired && !alarm.responses.containsKey(relevantLocalPerson.idNumber));
     if (!showAnswerScreen && !alarm.responseTimeExpired && alarm.responses.containsKey(relevantLocalPerson.idNumber)) {
       var response = alarm.responses[relevantLocalPerson.idNumber]!;
       showAnswerScreen = response.responses.values.any((element) => element == AlarmResponseType.notSet);

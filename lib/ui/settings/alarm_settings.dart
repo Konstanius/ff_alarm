@@ -331,6 +331,19 @@ class SettingsNotificationData {
       return {};
     }
   }
+
+  static void delete(Set<String> toDelete) {
+    File file = File("${Globals.filesPath}/notification_settings.json");
+    if (!file.existsSync()) return;
+
+    try {
+      Map<String, dynamic> json = jsonDecode(file.readAsStringSync());
+      for (String key in toDelete) {
+        json.remove(key);
+      }
+      file.writeAsStringSync(jsonEncode(json));
+    } catch (_) {}
+  }
 }
 
 class SettingsAlarmInformationPage extends StatefulWidget {

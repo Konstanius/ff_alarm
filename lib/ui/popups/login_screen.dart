@@ -7,6 +7,7 @@ import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/server/request.dart';
+import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
@@ -196,6 +197,25 @@ class _LoginScreenState extends State<LoginScreen> {
                 try {
                   Globals.context!.loaderOverlay.show();
                   setState(() {});
+
+                  // delete all data relevant to this server
+                  await Globals.db.alarmDao.deleteByPrefix(server);
+                  await Globals.db.personDao.deleteByPrefix(server);
+                  await Globals.db.stationDao.deleteByPrefix(server);
+                  await Globals.db.unitDao.deleteByPrefix(server);
+
+                  var allResponses = SettingsNotificationData.getAll();
+                  Set<String> toRemove = {};
+                  for (var response in allResponses.entries) {
+                    if (response.value.server == server) {
+                      toRemove.add(response.key);
+                    }
+                  }
+                  for (var key in toRemove) {
+                    allResponses.remove(key);
+                  }
+                  SettingsNotificationData.delete(toRemove);
+
                   // regenerate FCM token to prevent old servers from sending notifications to the outdated token
                   // TODO possibly do this in another way
                   try {

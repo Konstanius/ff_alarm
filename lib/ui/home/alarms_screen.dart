@@ -373,7 +373,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                 "word": "BMA Alarmierung",
                 "number": 240400002,
                 "address": "Carl Zeiss Promenade 10, 07745 Jena",
-                "units": [2],
+                "units": [3],
               };
 
               await Request('alarmSendExample', data, server).emit(true);
