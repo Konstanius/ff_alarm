@@ -116,7 +116,7 @@ class Alarm {
         Map<String, dynamic> decoded = json[jsonShorts["responses"]];
         decoded.forEach((key, value) {
           var response = AlarmResponse.fromJson(value);
-          if (response != null) result[int.parse(key)] = response;
+          result[int.parse(key)] = response;
         });
         return result;
       }(),
@@ -253,30 +253,70 @@ enum AlarmOption {
   none,
 }
 
+/// Each responder gives a single response to each alarm
 class AlarmResponse {
-  String? note;
-  DateTime? time;
-  AlarmResponseType type;
-  int? stationId;
+  /// The note left to be visible for other responders of the station they are not "Not going" to
+  /// If the response is "Not going" to all stations, the note is visible to all responders
+  String note;
 
-  AlarmResponse({this.note, this.time, required this.type, this.stationId});
+  /// The time at which the response was given
+  DateTime time;
 
-  static AlarmResponse? fromJson(Map<String, dynamic>? json) {
-    if (json == null || !json.containsKey('d')) return null;
+  /// The type of response given, for each station
+  Map<int, AlarmResponseType> responses;
+
+  AlarmResponse({
+    required this.note,
+    required this.time,
+    required this.responses,
+  });
+
+  static const Map<String, String> jsonShorts = {
+    "note": "n",
+    "time": "t",
+    "responses": "r",
+  };
+
+  factory AlarmResponse.fromJson(Map<String, dynamic> json) {
     return AlarmResponse(
-      note: json['n'],
-      time: json['t'] != null ? DateTime.fromMillisecondsSinceEpoch(json['t']) : null,
-      type: AlarmResponseType.values[json['d']],
-      stationId: json['s'],
+      note: json[jsonShorts["note"]],
+      time: DateTime.fromMillisecondsSinceEpoch(json[jsonShorts["time"]]),
+      responses: () {
+        Map<int, AlarmResponseType> responses = {};
+        json[jsonShorts["responses"]].forEach((key, value) {
+          responses[int.parse(key)] = AlarmResponseType.values[value];
+        });
+        return responses;
+      }(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'n': note,
-      't': time?.millisecondsSinceEpoch,
-      'd': type.index,
-      's': stationId,
+      jsonShorts["note"]!: note,
+      jsonShorts["time"]!: time.millisecondsSinceEpoch,
+      jsonShorts["responses"]!: responses.map((key, value) => MapEntry(key.toString(), value.index)),
     };
+  }
+
+  ({int? stationId, AlarmResponseType responseType}) getResponseInfo() {
+    int? stationId;
+    AlarmResponseType? responseType;
+
+    bool anyNotSet = false;
+    for (var response in responses.entries) {
+      if (response.value != AlarmResponseType.notReady && response.value != AlarmResponseType.notSet) {
+        responseType = response.value;
+        stationId = response.key;
+        break;
+      }
+
+      if (response.value == AlarmResponseType.notSet) anyNotSet = true;
+    }
+
+    if (anyNotSet) responseType = AlarmResponseType.notSet;
+    responseType ??= AlarmResponseType.notReady;
+
+    return (stationId: stationId, responseType: responseType);
   }
 }

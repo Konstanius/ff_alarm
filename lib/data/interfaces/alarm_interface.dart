@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/server/request.dart';
+import 'package:ff_alarm/ui/popups/alarm_info.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 
 import '../../globals.dart';
@@ -66,11 +69,35 @@ abstract class AlarmInterface {
     UpdateInfo(UpdateType.alarm, updatedIds);
   }
 
-  static Future<Alarm> setResponse(Alarm alarm, AlarmResponse res) async {
-    var json = res.toJson();
-    json['alarmId'] = alarm.idNumber;
+  static Future<void> fetchSingle(String server, int id) async {
+    Map<String, dynamic> data = {'alarmId': id};
 
-    Request response = await Request('alarmSetResponse', json, alarm.server).emit(true);
+    Request response = await Request('alarmGet', data, server).emit(true);
+    if (response.ackData!.isEmpty) return;
+
+    Alarm newAlarm = Alarm.fromJson(response.ackData!);
+    await Alarm.update(newAlarm, true);
+  }
+
+  static Future<Alarm> setResponse({
+    required String server,
+    required int alarmId,
+    required AlarmResponseType responseType,
+    required int? stationId,
+    required String note,
+  }) async {
+    if (stationId == null && responseType != AlarmResponseType.notReady) {
+      throw AckError(HttpStatus.badRequest, "Du musst eine Station angeben, wenn du eine Antwort gibst.");
+    }
+
+    Map<String, dynamic> data = {
+      "alarmId": alarmId,
+      "responseType": responseType.index,
+      "stationId": stationId,
+      "note": note,
+    };
+
+    Request response = await Request('alarmSetResponse', data, server).emit(true);
 
     Alarm newAlarm = Alarm.fromJson(response.ackData!);
     await Alarm.update(newAlarm, true);

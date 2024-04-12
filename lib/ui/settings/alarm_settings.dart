@@ -7,14 +7,18 @@ import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
+import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/settings/lifecycle.dart';
+import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/format.dart';
+import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 /// Optionen:
@@ -24,6 +28,8 @@ import 'package:permission_handler/permission_handler.dart';
 /// - Geofencing
 class SettingsNotificationData {
   String stationId;
+  String get server => stationId.split(' ')[0];
+  int get stationIdNumber => int.parse(stationId.split(' ')[1]);
 
   /// 0 = off, 1 = none, 2 = always
   int manualOverride;
@@ -175,23 +181,31 @@ class SettingsNotificationData {
     return true;
   }
 
+  static const Map<String, String> jsonShorts = {
+    "stationId": "s",
+    "manualOverride": "m",
+    "calendar": "c",
+    "enabledMode": "e",
+    "shiftPlan": "sp",
+    "geofencing": "g",
+  };
+
   Map<String, dynamic> toJson() {
     DateTime now = DateTime.now();
     calendar.removeWhere((element) => element.end.isBefore(now) || element.end.isBefore(element.start));
     return {
-      "stationId": stationId,
-      if (manualOverride != 1) "manualOverride": manualOverride,
-      if (calendar.isNotEmpty) "calendar": calendar.map((e) => "${e.start.millisecondsSinceEpoch};${e.end.millisecondsSinceEpoch}").toList(),
-      if (enabledMode != 0) "enabledMode": enabledMode,
-      if (shiftPlan.isNotEmpty) "shiftPlan": shiftPlan.map((e) => "${e.day};${e.start};${e.end}").toList(),
-      if (geofencing.isNotEmpty) "geofencing": geofencing.map((e) => "${e.position.latitude};${e.position.longitude};${e.radius}").toList(),
+      if (manualOverride != 1) jsonShorts["manualOverride"]!: manualOverride,
+      if (calendar.isNotEmpty) jsonShorts["calendar"]!: calendar.map((e) => "${e.start.millisecondsSinceEpoch};${e.end.millisecondsSinceEpoch}").toList(),
+      if (enabledMode != 0) jsonShorts["enabledMode"]!: enabledMode,
+      if (shiftPlan.isNotEmpty) jsonShorts["shiftPlan"]!: shiftPlan.map((e) => "${e.day};${e.start};${e.end}").toList(),
+      if (geofencing.isNotEmpty) jsonShorts["geofencing"]!: geofencing.map((e) => "${e.position.latitude};${e.position.longitude};${e.radius}").toList(),
     };
   }
 
   factory SettingsNotificationData.fromJson(String stationId, Map<String, dynamic> json) {
-    int manualOverride = json["manualOverride"] ?? 1;
+    int manualOverride = json[jsonShorts["manualOverride"]] ?? 1;
 
-    List<dynamic> calendar = json["calendar"] ?? [];
+    List<dynamic> calendar = json[jsonShorts["calendar"]] ?? [];
     List<({DateTime start, DateTime end})> calendarList = [];
     DateTime now = DateTime.now();
     for (String item in calendar) {
@@ -208,9 +222,9 @@ class SettingsNotificationData {
       } catch (_) {}
     }
 
-    int enabledMode = json["enabledMode"] ?? 0;
+    int enabledMode = json[jsonShorts["enabledMode"]] ?? 0;
 
-    List<dynamic> shiftPlan = json["shiftPlan"] ?? [];
+    List<dynamic> shiftPlan = json[jsonShorts["shiftPlan"]] ?? [];
     List<({int day, int start, int end})> shiftPlanList = [];
     for (String item in shiftPlan) {
       try {
@@ -225,7 +239,7 @@ class SettingsNotificationData {
       } catch (_) {}
     }
 
-    List<dynamic> geofencing = json["geofencing"] ?? [];
+    List<dynamic> geofencing = json[jsonShorts["geofencing"]] ?? [];
     List<({LatLng position, int radius})> geofencingList = [];
     for (String item in geofencing) {
       try {
@@ -245,6 +259,27 @@ class SettingsNotificationData {
       shiftPlan: shiftPlanList,
       geofencing: geofencingList,
     );
+  }
+
+  static Map<String, dynamic> toJsonServer(Map<String, SettingsNotificationData> responses, String server) {
+    Map<String, dynamic> json = {};
+    for (var entry in responses.entries) {
+      if (entry.value.server != server) continue;
+      try {
+        json[entry.value.stationIdNumber.toString()] = entry.value.toJson();
+      } catch (_) {}
+    }
+    return json;
+  }
+
+  static Map<String, SettingsNotificationData> fromJsonServer(Map<String, dynamic> json, String server) {
+    Map<String, SettingsNotificationData> responses = {};
+    for (var entry in json.entries) {
+      try {
+        responses["$server ${entry.key}"] = SettingsNotificationData.fromJson("$server ${entry.key}", entry.value);
+      } catch (_) {}
+    }
+    return responses;
   }
 
   static SettingsNotificationData loadForStation(String stationId) {
@@ -309,6 +344,7 @@ class SettingsAlarmInformationPage extends StatefulWidget {
 
 class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationPage> with Updates {
   Station? station;
+  late SettingsNotificationData onEntry;
   late SettingsNotificationData current;
   bool loading = true;
 
@@ -322,6 +358,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
     setupListener({UpdateType.station, UpdateType.ui});
 
     current = SettingsNotificationData.loadForStation(widget.stationId);
+    onEntry = SettingsNotificationData.loadForStation(widget.stationId);
 
     Permission.locationAlways.isGranted.then((value) {
       if (mounted) {
@@ -356,6 +393,33 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
     });
   }
 
+  bool hasChanges() {
+    if (current.manualOverride != onEntry.manualOverride) return true;
+
+    if (current.calendar.length != onEntry.calendar.length) return true;
+    for (int i = 0; i < current.calendar.length; i++) {
+      if (current.calendar[i].start != onEntry.calendar[i].start) return true;
+      if (current.calendar[i].end != onEntry.calendar[i].end) return true;
+    }
+
+    if (current.enabledMode != onEntry.enabledMode) return true;
+
+    if (current.shiftPlan.length != onEntry.shiftPlan.length) return true;
+    for (int i = 0; i < current.shiftPlan.length; i++) {
+      if (current.shiftPlan[i].day != onEntry.shiftPlan[i].day) return true;
+      if (current.shiftPlan[i].start != onEntry.shiftPlan[i].start) return true;
+      if (current.shiftPlan[i].end != onEntry.shiftPlan[i].end) return true;
+    }
+
+    if (current.geofencing.length != onEntry.geofencing.length) return true;
+    for (int i = 0; i < current.geofencing.length; i++) {
+      if (current.geofencing[i].position != onEntry.geofencing[i].position) return true;
+      if (current.geofencing[i].radius != onEntry.geofencing[i].radius) return true;
+    }
+
+    return false;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loading) return const SizedBox();
@@ -373,98 +437,168 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
     }
     bool notify = current.shouldNotify(lastPosition);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Bereitschaftseinstellung"),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(8),
-        children: [
-          ListTile(
-            title: const Text("Station"),
-            subtitle: Text(station.name),
-          ),
-          const SettingsDivider(text: "Alarmierungs-Einstellungen"),
-          Center(
-            child: CustomToggleButtons(
-              onPressed: (index) {
-                setState(() {
-                  current.manualOverride = index;
-                  current.save();
-                });
+    return PopScope(
+      canPop: !hasChanges(),
+      onPopInvoked: (bool didPop) {
+        if (didPop) return;
+
+        generalDialog(
+          color: Colors.blue,
+          title: "Änderungen verwerfen",
+          content: const Text("Möchtest Du deine Änderungen verwerfen?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
               },
-              selectedIndex: current.manualOverride,
-              iconList: const [Icons.notifications_off_outlined, Icons.keyboard_double_arrow_down_outlined, Icons.notifications_active_outlined],
-              textList: const ["Alle aus", "Siehe unten", "Alle an"],
+              child: const Text("Abbrechen"),
             ),
-          ),
-          if (current.manualOverride == 1) ...[
-            const SizedBox(height: 10),
-            Text("Deaktiviert an folgenden Tagen:", style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 5),
-            // list all datetime ranges
-            for (var item in current.calendar) ...[
-              ListTile(
-                title: Text("${DateFormat("dd.MM.yyyy").format(item.start)}  bis  ${DateFormat("dd.MM.yyyy").format(item.end.subtract(const Duration(days: 1)))}"),
-                subtitle: Text("Dauer: ${item.end.difference(item.start).inDays} Tage"),
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete),
-                  onPressed: () {
-                    setState(() {
-                      current.calendar.remove(item);
-                      current.save();
-                    });
-                  },
-                ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pop();
+              },
+              child: const Text("Verwerfen"),
+            ),
+          ],
+        );
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text("Bereitschaftseinstellung"),
+        ),
+        floatingActionButton: hasChanges()
+            ? FloatingActionButton(
+                onPressed: () async {
+                  bool? confirm = await generalDialog(
+                    color: Colors.blue,
+                    title: "Speichern",
+                    content: const Text("Möchtest Du deine Änderungen speichern?\n\n"
+                        "Deine Bereitschaftseinstellung wird mit den Servern synchronisiert und füllt eine Absage im Bedarfsfall automatisch aus.\n\n"
+                        "Du kannst trotzdem jederzeit die Absage in einer Alarmierung manuell überschreiben."),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(false);
+                        },
+                        child: const Text("Abbrechen"),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(true);
+                        },
+                        child: const Text("Speichern"),
+                      ),
+                    ],
+                  );
+                  if (confirm != true) return;
+
+                  Globals.context!.loaderOverlay.show();
+                  try {
+                    var all = SettingsNotificationData.getAll();
+                    all[current.stationId] = current;
+                    var serverJson = SettingsNotificationData.toJsonServer(all, current.server);
+
+                    await Request("personSetResponse", serverJson, current.server).emit(true);
+                    current.save();
+                    onEntry = SettingsNotificationData.loadForStation(current.stationId);
+                    if (mounted) setState(() {});
+                    Globals.context!.loaderOverlay.hide();
+                    successToast("Einstellungen erfolgreich gespeichert");
+                  } catch (e, s) {
+                    exceptionToast(e, s);
+                    Globals.context!.loaderOverlay.hide();
+                  }
+                },
+                backgroundColor: Colors.blue,
+                child: const Icon(Icons.save_outlined),
+              )
+            : null,
+        body: ListView(
+          padding: const EdgeInsets.all(8),
+          children: [
+            ListTile(
+              title: const Text("Station"),
+              subtitle: Text(station.name),
+            ),
+            const SettingsDivider(text: "Alarmierungs-Einstellungen"),
+            Center(
+              child: CustomToggleButtons(
+                onPressed: (index) {
+                  setState(() {
+                    current.manualOverride = index;
+                  });
+                },
+                selectedIndex: current.manualOverride,
+                iconList: const [Icons.cancel_outlined, Icons.keyboard_double_arrow_down_outlined, Icons.check_circle_outline],
+                textList: const ["Alle absagen", "Siehe unten", "Alle an"],
               ),
-            ],
-            if (current.calendar.isNotEmpty) const SizedBox(height: 5),
-            ElevatedButton(
-              onPressed: () async {
-                DateTimeRange? range = await showDateRangePicker(
-                  context: context,
-                  firstDate: DateTime.now(),
-                  lastDate: DateTime.now().add(const Duration(days: 365)),
-                );
-                if (range == null) return;
-
-                setState(() {
-                  current.calendar.add((start: range.start, end: range.end.add(const Duration(days: 1))));
-                  current.save();
-                });
-              },
-              child: const Text("Zeitraum hinzufügen"),
             ),
-            const SizedBox(height: 10),
-
-            const SettingsDivider(text: "Dynamische Einstellungen"),
-            CustomToggleButtons(
-              onPressed: (index) {
-                setState(() {
-                  current.enabledMode = index;
-                  current.save();
-                });
-              },
-              selectedIndex: current.enabledMode,
-              iconList: const [Icons.notifications_on_outlined, Icons.check_box_outlined, Icons.indeterminate_check_box_outlined, Icons.location_on_outlined],
-              textList: const ["Egal", "Schichtplan (Aktiviert)", "Schichtplan (Deaktiviert)", "Geofencing"],
-            ),
-
-            if (current.enabledMode != 0) ...[
+            if (current.manualOverride == 1) ...[
               const SizedBox(height: 10),
-              if (current.enabledMode == 3 && !locationPermissionGranted) ...[
-                Text("Standortberechtigung fehlt", style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                const SizedBox(height: 5),
-                ElevatedButton(
-                  onPressed: () async {
-                    LifeCycleSettingsState.requestLocationPermission();
-                  },
-                  child: const Text("Berechtigung erteilen"),
+              Text("Deaktiviert an folgenden Tagen:", style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 5),
+              // list all datetime ranges
+              for (var item in current.calendar) ...[
+                ListTile(
+                  title: Text("${DateFormat("dd.MM.yyyy").format(item.start)}  bis  ${DateFormat("dd.MM.yyyy").format(item.end.subtract(const Duration(days: 1)))}"),
+                  subtitle: Text("Dauer: ${item.end.difference(item.start).inDays} Tage"),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete),
+                    onPressed: () {
+                      setState(() {
+                        current.calendar.remove(item);
+                      });
+                    },
+                  ),
                 ),
+              ],
+              if (current.calendar.isNotEmpty) const SizedBox(height: 5),
+              ElevatedButton(
+                onPressed: () async {
+                  DateTimeRange? range = await showDateRangePicker(
+                    context: context,
+                    firstDate: DateTime.now(),
+                    lastDate: DateTime.now().add(const Duration(days: 365)),
+                  );
+                  if (range == null) return;
+
+                  setState(() {
+                    current.calendar.add((start: range.start, end: range.end.add(const Duration(days: 1))));
+                  });
+                },
+                child: const Text("Zeitraum hinzufügen"),
+              ),
+              const SizedBox(height: 10),
+
+              const SettingsDivider(text: "Dynamische Einstellungen"),
+              CustomToggleButtons(
+                onPressed: (index) {
+                  setState(() {
+                    current.enabledMode = index;
+                  });
+                },
+                selectedIndex: current.enabledMode,
+                iconList: const [Icons.check_circle_outline, Icons.check_box_outlined, Icons.indeterminate_check_box_outlined, Icons.location_on_outlined],
+                textList: const ["Alle an", "Schichtplan (Aktiviert)", "Schichtplan (Deaktiviert)", "Geofencing"],
+              ),
+
+              if (current.enabledMode != 0) ...[
+                const SizedBox(height: 10),
+                if (current.enabledMode == 3 && !locationPermissionGranted) ...[
+                  Text("Standortberechtigung fehlt", style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  const SizedBox(height: 5),
+                  ElevatedButton(
+                    onPressed: () async {
+                      LifeCycleSettingsState.requestLocationPermission();
+                    },
+                    child: const Text("Berechtigung erteilen"),
+                  ),
+                ],
               ],
             ],
           ],
-        ],
+        ),
       ),
     );
   }

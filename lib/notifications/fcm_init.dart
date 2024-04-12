@@ -1,3 +1,4 @@
+import 'package:ff_alarm/data/interfaces/alarm_interface.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
@@ -51,6 +52,12 @@ Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) as
         await Alarm.update(alarm, true);
 
         await sendAlarm(alarm);
+
+        try {
+          await AlarmInterface.fetchSingle(alarm.server, alarm.idNumber);
+        } catch (e, s) {
+          Logger.error('Failed to fetch single alarm: $e\n$s');
+        }
         break;
       }
   }

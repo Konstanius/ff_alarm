@@ -1,19 +1,16 @@
-Alarmierungsbildschirm:
-  - Alarmierungsbildschirm verbessern mit allen Infos
-
 Alarmierungstöne:
   - Android Ton ändert sich nicht (Channel cant be edited)
 
 Distanzen:
   - Distance Matrix API
-  - https://openrouteservice.org/dev/#/signup possible
+  - https://openrouteservice.org/dev/#/signup
+  - (möglicherweise)
 
 Allgemein:
   - externe TETRA API Anbindung
   - Web Admin Panel
 
 Bereitschaft:
-  - fest eingestellt
-  - nach Kalender
-  - Geofences
-  - Schichtplan
+  - Geofences (background sync)
+  - Automatische Absage durch Geofences
+  - Swift Implementation von Geofences

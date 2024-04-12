@@ -33,15 +33,16 @@ class AlarmsFilter {
     if (testsMode != null && alarm.type.startsWith('Test') != testsMode) return false;
 
     AlarmResponse? ownResponse = alarm.ownResponse;
+    var info = ownResponse?.getResponseInfo();
 
-    if (responseNotSet && ownResponse != null) return false;
-    if (responseType != null && ownResponse?.type != responseType) return false;
+    if (responseNotSet && ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) return false;
+    if (responseType != null && info?.responseType != responseType) return false;
     if (search != null &&
         !alarm.word.toLowerCase().contains(search!) &&
         !alarm.address.toLowerCase().contains(search!) &&
         !alarm.notes.any((element) => element.toLowerCase().contains(search!)) &&
         !alarm.type.toLowerCase().contains(search!)) return false;
-    if (station != null && station != "${alarm.server} ${alarm.ownResponse?.stationId}") return false;
+    if (station != null && station != "${alarm.server} ${info?.stationId}") return false;
     return true;
   }
 }
@@ -327,6 +328,58 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
             },
             child: const Text('Test Alarmierung'),
           ),
+          ElevatedButton(
+            onPressed: () async {
+              String registeredUsers = Globals.prefs.getString('registered_users') ?? '[]';
+              List<String> users;
+              try {
+                users = jsonDecode(registeredUsers).cast<String>();
+              } catch (e) {
+                users = [];
+              }
+
+              List<String> servers = [];
+              for (String user in users) {
+                servers.add(user.split(' ')[0]);
+              }
+
+              // dialog to select server
+              String? server = await showDialog<String>(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Server auswählen'),
+                    content: SingleChildScrollView(
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: [
+                          for (String server in servers)
+                            ListTile(
+                              title: Text(server),
+                              onTap: () {
+                                Navigator.of(context).pop(server);
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+              if (server == null) return;
+
+              Map<String, dynamic> data = {
+                "type": "Brand 1",
+                "word": "BMA Alarmierung",
+                "number": 240400002,
+                "address": "Carl Zeiss Promenade 10, 07745 Jena",
+                "units": [2],
+              };
+
+              await Request('alarmSendExample', data, server).emit(true);
+            },
+            child: const Text('Beispiel Alarmierung'),
+          ),
           for (int i = 0; i < alarmsList.length; i++)
             () {
               Alarm alarm = alarmsList[i];
@@ -352,7 +405,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                             end: Alignment.bottomRight,
                             colors: [
                               Colors.transparent,
-                              ownResponse?.type.color.withOpacity(0.5) ?? Colors.white.withOpacity(0.5),
+                              ownResponse?.getResponseInfo().responseType.color.withOpacity(0.5) ?? Colors.white.withOpacity(0.5),
                             ],
                           ),
                         ),

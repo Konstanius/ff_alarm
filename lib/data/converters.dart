@@ -67,7 +67,7 @@ class MapIntAlarmResponseConverter extends TypeConverter<Map<int, AlarmResponse>
     Map<int, AlarmResponse> result = {};
     decoded.forEach((key, value) {
       var response = AlarmResponse.fromJson(value);
-      if (response != null) result[int.parse(key)] = response;
+      result[int.parse(key)] = response;
     });
     return result;
   }

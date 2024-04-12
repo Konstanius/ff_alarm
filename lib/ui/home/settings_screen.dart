@@ -338,9 +338,11 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                   if (Globals.lastPosition != null) {
                     lastPosition = Formats.positionToLatLng(Globals.lastPosition!);
                   }
-                  // TODO better format
                   if (allNotificationSettings.containsKey(station.id)) {
-                    return Text(allNotificationSettings[station.id]!.shouldNotify(lastPosition) ? 'Benachrichtigen' : 'Nicht benachrichtigen');
+                    return Text(
+                      'Zu deiner Position & Zeit:\n'
+                      '${allNotificationSettings[station.id]!.shouldNotify(lastPosition) ? 'EINGESCHALTET' : 'STUMMGESCHALTET'}',
+                    );
                   } else {
                     return const Text('Nicht konfiguriert');
                   }

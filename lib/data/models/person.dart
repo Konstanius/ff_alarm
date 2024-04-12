@@ -1,4 +1,3 @@
-import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:floor/floor.dart';
@@ -46,8 +45,6 @@ class Person {
     return false;
   }
 
-  AlarmResponse? response;
-
   int updated;
 
   Person({
@@ -56,7 +53,6 @@ class Person {
     required this.lastName,
     required this.allowedUnits,
     required this.qualifications,
-    required this.response,
     required this.updated,
   });
 
@@ -67,7 +63,6 @@ class Person {
     "lastName": "l",
     "allowedUnits": "au",
     "qualifications": "q",
-    "response": "r",
     "updated": "up",
   };
 
@@ -78,7 +73,6 @@ class Person {
       lastName: json[jsonShorts["lastName"]],
       allowedUnits: List<int>.from(json[jsonShorts["allowedUnits"]]),
       qualifications: (json[jsonShorts["qualifications"]] as List).map((e) => Qualification.fromString(e)).toList(),
-      response: AlarmResponse.fromJson(json[jsonShorts["response"]]),
       updated: json[jsonShorts["updated"]],
     );
   }
