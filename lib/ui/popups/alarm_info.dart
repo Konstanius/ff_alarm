@@ -592,6 +592,15 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         child: ListView(
           padding: const EdgeInsets.all(8),
           children: <Widget>[
+            if (stations.length > 1)
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    selectedStation = null;
+                  });
+                },
+                child: const Text('Zurück zur Stationenauswahl'),
+              ),
             const SizedBox(height: 20),
             Row(
               mainAxisSize: MainAxisSize.max,
@@ -621,6 +630,223 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
             ),
             const SizedBox(height: 28),
             ...genericAlarmInfo(),
+            () {
+              Station? st;
+              if (selectedStation != null) {
+                for (var s in stations) {
+                  if (s.id == selectedStation) {
+                    st = s;
+                    break;
+                  }
+                }
+              } else {
+                for (var s in stations) {
+                  if (s.personProperIds.contains(relevantLocalPerson.id)) {
+                    st = s;
+                    break;
+                  }
+                }
+              }
+
+              if (st == null) return const SizedBox();
+              Station station = st;
+
+              return Card(
+                clipBehavior: Clip.antiAliasWithSaveLayer,
+                color: Theme.of(context).focusColor,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                margin: const EdgeInsets.all(8),
+                elevation: selectedStation == station.id ? 5 : 0,
+                child: ListTile(
+                  splashColor: Colors.blue,
+                  title: Text("${station.name} (${station.prefix} ${station.area} ${station.stationNumber})"),
+                  subtitle: () {
+                    var stationPosition = station.position;
+
+                    var dispatchedUnits = <Unit>[];
+                    for (var unit in units) {
+                      if (unit.stationProperId == station.id) dispatchedUnits.add(unit);
+                    }
+
+                    dispatchedUnits.sort((a, b) => a.unitCallSign(station).compareTo(b.unitCallSign(station)));
+
+                    List<int> responses = [
+                      0, // onStation
+                      0, // under5
+                      0, // under10
+                      0, // under15
+                      0, // onCall
+                      0, // notReady
+                      0, // notResponded
+                    ];
+                    if (data == null || alarm.units.isEmpty) {
+                      for (var person in station.persons) {
+                        if (alarm.responses.containsKey(person)) {
+                          var response = alarm.responses[person]!;
+
+                          if (response.responses.containsKey(station.idNumber)) {
+                            responses[response.responses[station.idNumber]!.index]++;
+                          } else {
+                            responses[6]++;
+                          }
+                        } else {
+                          responses[6]++;
+                        }
+                      }
+                    } else {
+                      for (var person in data!.persons) {
+                        // check intersection for units
+                        bool hasUnit = false;
+                        for (var unit in dispatchedUnits) {
+                          if (person.allowedUnitProperIds.contains(unit.id)) {
+                            hasUnit = true;
+                            break;
+                          }
+                        }
+                        if (!hasUnit) continue;
+
+                        if (alarm.responses.containsKey(person.idNumber)) {
+                          var response = alarm.responses[person.idNumber]!;
+
+                          if (response.responses.containsKey(station.idNumber)) {
+                            responses[response.responses[station.idNumber]!.index]++;
+                          } else {
+                            responses[6]++;
+                          }
+                        } else {
+                          responses[6]++;
+                        }
+                      }
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            Expanded(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.location_on_outlined, size: 15),
+                                  const SizedBox(width: 5),
+                                  Flexible(child: Text(station.address, softWrap: true)),
+                                ],
+                              ),
+                            ),
+                            if (stationPosition != null && Globals.lastPosition != null)
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.route_outlined, size: 15),
+                                  const SizedBox(width: 5),
+                                  Text(Formats.distanceBetween(Globals.lastPosition!, stationPosition)),
+                                ],
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        const Divider(height: 20),
+                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text('Antworten:', style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center)]),
+                        const SizedBox(height: 5),
+                        Row(
+                          mainAxisSize: MainAxisSize.max,
+                          children: [
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.circle, color: AlarmResponseType.onStation.color),
+                                      const SizedBox(width: 5),
+                                      Text('(vor Ort) ${responses[0]}'),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.circle, color: AlarmResponseType.under10.color),
+                                      const SizedBox(width: 5),
+                                      Text('(<10 min) ${responses[2]}'),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.circle, color: AlarmResponseType.onCall.color),
+                                      const SizedBox(width: 5),
+                                      Text('(Abruf) ${responses[4]}'),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.circle, color: Colors.grey),
+                                      const SizedBox(width: 5),
+                                      Text('(Unklar) ${responses[6]}'),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.circle, color: AlarmResponseType.under5.color),
+                                      const SizedBox(width: 5),
+                                      Text('(<5 min) ${responses[1]}'),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.circle, color: AlarmResponseType.under15.color),
+                                      const SizedBox(width: 5),
+                                      Text('(<15 min) ${responses[3]}'),
+                                    ],
+                                  ),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.circle, color: AlarmResponseType.notReady.color),
+                                      const SizedBox(width: 5),
+                                      Text('(Nein) ${responses[5]}'),
+                                    ],
+                                  ),
+                                  const Row(mainAxisSize: MainAxisSize.min, children: [Text('')]),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 5),
+                        const Divider(height: 20),
+                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text('Alarmierte Einheiten:', style: Theme.of(context).textTheme.titleMedium)]),
+                        const SizedBox(height: 5),
+                        for (var unit in dispatchedUnits)
+                          Row(
+                            mainAxisSize: MainAxisSize.max,
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Text(unit.unitCallSign(station)),
+                              const SizedBox(width: 5),
+                              Text(unit.unitDescription),
+                            ],
+                          ),
+                      ],
+                    );
+                  }(),
+                ),
+              );
+            }()
           ],
         ),
       ),
@@ -956,7 +1182,9 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                               if (!alarm.responses.containsKey(person.idNumber)) continue;
                               var response = alarm.responses[person.idNumber]!;
                               if (response.responses.containsKey(station.idNumber)) {
-                                if (response.responses[station.idNumber] == AlarmResponseType.notReady || response.responses[station.idNumber] == AlarmResponseType.onCall || response.responses[station.idNumber] == AlarmResponseType.notSet) {
+                                if (response.responses[station.idNumber] == AlarmResponseType.notReady ||
+                                    response.responses[station.idNumber] == AlarmResponseType.onCall ||
+                                    response.responses[station.idNumber] == AlarmResponseType.notSet) {
                                   continue;
                                 }
                               } else {
