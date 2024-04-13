@@ -164,7 +164,6 @@ class Alarm {
         if (muted == true) return AlarmOption.silent;
       }
 
-
       return shouldNotify ? AlarmOption.alert : AlarmOption.silent;
     }
 
