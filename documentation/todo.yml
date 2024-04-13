@@ -15,3 +15,4 @@ Bereitschaft:
   - Geofences (background sync)
   - Automatische Absage durch Geofences
   - Swift Implementation von Geofences
+  - Swift Implementation von Push Notifications sound setting

@@ -87,7 +87,7 @@ abstract class AlarmInterface {
     required String note,
   }) async {
     if (stationId == null && responseType != AlarmResponseType.notReady) {
-      throw AckError(HttpStatus.badRequest, "Du musst eine Station angeben, wenn du eine Antwort gibst.");
+      throw AckError(HttpStatus.badRequest, "Du musst eine Wache angeben, wenn du eine Antwort gibst.");
     }
 
     Map<String, dynamic> data = {

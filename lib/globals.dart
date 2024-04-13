@@ -16,7 +16,6 @@ import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/settings/lifecycle.dart';
 import 'package:ff_alarm/ui/settings/notifications.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -59,16 +58,56 @@ abstract class Globals {
     await initializeTemporary();
   }
 
-  static Future<void> initializeTemporary() async {
+  static Future<void> initGeoLocator() async {
     try {
       // check if permission is granted, else throw
       if (!await Geolocator.isLocationServiceEnabled()) {
+        lastPosition = null;
+        lastPositionTime = null;
         throw 'Location service is disabled';
       }
 
       var status = await Geolocator.checkPermission();
       if (status == LocationPermission.denied) {
+        lastPosition = null;
+        lastPositionTime = null;
         throw 'Location permission is denied';
+      }
+
+      // read last location from file
+      try {
+        String path = '$filesPath/last_location.txt';
+        File file = File(path);
+        if (file.existsSync()) {
+          List<String> parts = file.readAsStringSync().split(',');
+          if (parts.length == 3) {
+            double lat = double.tryParse(parts[0]) ?? 0;
+            double lon = double.tryParse(parts[1]) ?? 0;
+            int time = int.tryParse(parts[2]) ?? 0;
+            lastPosition = Position(
+              latitude: lat,
+              longitude: lon,
+              accuracy: 0,
+              altitude: 0,
+              altitudeAccuracy: 0,
+              heading: 0,
+              headingAccuracy: 0,
+              speed: 0,
+              speedAccuracy: 0,
+              timestamp: DateTime.now(),
+              floor: 0,
+              isMocked: false,
+            );
+            lastPositionTime = DateTime.fromMillisecondsSinceEpoch(time);
+          }
+        }
+      } catch (e, s) {
+        Logger.warn('Failed to read last location: $e\n$s');
+      }
+
+      if (positionSubscription != null) {
+        positionSubscription!.cancel();
+        positionSubscription = null;
       }
 
       positionSubscription = Geolocator.getPositionStream().listen((Position position) {
@@ -91,6 +130,10 @@ abstract class Globals {
         Logger.warn('Failed to initialize geolocator: $e\n$s');
       }
     }
+  }
+
+  static Future<void> initializeTemporary() async {
+    await initGeoLocator();
 
     String registeredUsers = prefs.getString('registered_users') ?? '[]';
     List<String> users;

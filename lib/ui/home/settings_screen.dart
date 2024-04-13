@@ -518,8 +518,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
 
   @override
   void onUpdate(UpdateInfo info) {
-    if (info.type == UpdateType.ui) {
-      if (!mounted || (!info.ids.contains("1") && !info.ids.contains("3"))) return;
+    if (info.type == UpdateType.ui && mounted && (info.ids.contains("1") || info.ids.contains("3"))) {
       allNotificationSettings = SettingsNotificationData.getAll();
       checkSettings();
     } else if (info.type == UpdateType.station) {
@@ -528,6 +527,8 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
         stations = value;
         if (mounted) setState(() {});
       });
+    } else if (info.type == UpdateType.ui && mounted && info.ids.contains("2")) {
+      checkSettings();
     }
   }
 }

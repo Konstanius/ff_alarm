@@ -406,8 +406,8 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
         color: Colors.blue,
         title: 'Standortzugriff',
         content: const Text(
-          'Durch das Aktivieren des dauerhaften Standortzugriffs wird FF Alarm auch im Hintergrund während einer Alarmierung auf deinen Standort zugreifen können.\n\n'
-          'DEIN STANDORT WIRD NIEMALS ABSEITS EINER ALARMIERUNG MIT ANDEREN GETEILT ODER GESPEICHERT!\n\n'
+          'Durch das Aktivieren des dauerhaften Standortzugriffs wird FF Alarm im Hintergrund für Geofences deinen Standort mit dem Server teilen.\n\n'
+          'DEIN STANDORT WIRD NIEMALS MIT ANDEREN GETEILT ODER DAUERHAFT GESPEICHERT!\n\n'
           'Beim Fortfahren musst du in der folgenden Seite den Standortzugriff auf "Immer erlauben" setzen.',
         ),
         actions: [

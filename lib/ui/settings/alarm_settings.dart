@@ -172,7 +172,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
     if (this.station == null) {
       return Scaffold(
         appBar: AppBar(title: const Text("Bereitschaftseinstellung")),
-        body: const Center(child: Text("Station konnte nicht geladen werden")),
+        body: const Center(child: Text("Wache konnte nicht geladen werden")),
       );
     }
     Station station = this.station!;
@@ -249,6 +249,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
                     await Request("personSetResponse", serverJson, current.server).emit(true);
                     current.save();
                     onEntry = SettingsNotificationData.loadForStation(current.stationId);
+                    Globals.initGeoLocator();
                     if (mounted) setState(() {});
                     Globals.context!.loaderOverlay.hide();
                     successToast("Einstellungen erfolgreich gespeichert");
@@ -265,7 +266,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
           padding: const EdgeInsets.all(8),
           children: [
             ListTile(
-              title: const Text("Station"),
+              title: const Text("Wache"),
               subtitle: Text(station.name),
             ),
             const SettingsDivider(text: "Alarmierungs-Einstellungen"),
@@ -277,7 +278,11 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
                   });
                 },
                 selectedIndex: current.manualOverride,
-                iconList: const [Icons.cancel_outlined, Icons.keyboard_double_arrow_down_outlined, Icons.check_circle_outline],
+                iconList: const [
+                  Icons.cancel_outlined,
+                  Icons.keyboard_double_arrow_down_outlined,
+                  Icons.check_circle_outline,
+                ],
                 textList: const ["Alle absagen", "Siehe unten", "Alle an"],
               ),
             ),
@@ -326,7 +331,12 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
                   });
                 },
                 selectedIndex: current.enabledMode,
-                iconList: const [Icons.check_circle_outline, Icons.check_box_outlined, Icons.indeterminate_check_box_outlined, Icons.location_on_outlined],
+                iconList: const [
+                  Icons.check_circle_outline,
+                  Icons.check_box_outlined,
+                  Icons.indeterminate_check_box_outlined,
+                  Icons.location_on_outlined,
+                ],
                 textList: const ["Alle an", "Schichtplan (Aktiviert)", "Schichtplan (Deaktiviert)", "Geofencing"],
               ),
 
@@ -1105,7 +1115,7 @@ class SettingsNotificationData {
     json[stationId] = toJson();
     file.writeAsStringSync(jsonEncode(json));
 
-    UpdateInfo(UpdateType.ui, {"3"});
+    UpdateInfo(UpdateType.ui, {"1"});
   }
 
   static Map<String, SettingsNotificationData> getAll() {
