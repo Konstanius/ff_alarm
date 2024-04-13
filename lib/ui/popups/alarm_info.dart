@@ -75,7 +75,10 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
       }
     }
     if (tempRelevantLocalPerson == null) {
-      // TODO this A) shouldnt happen and B) be dealt with properly
+      Alarm.delete(alarm.id, true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.of(Globals.context!).pop();
+      });
       return;
     }
     relevantLocalPerson = tempRelevantLocalPerson;
@@ -268,7 +271,15 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
 
   @override
   Widget build(BuildContext context) {
-    if (loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (loading) {
+      return Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: true,
+          title: const Text('Alarmierung'),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
     bool showAnswerScreen = newAnswer || (!alarm.responseTimeExpired && !alarm.responses.containsKey(relevantLocalPerson.idNumber));
     if (!showAnswerScreen && !alarm.responseTimeExpired && alarm.responses.containsKey(relevantLocalPerson.idNumber)) {
       var response = alarm.responses[relevantLocalPerson.idNumber]!;

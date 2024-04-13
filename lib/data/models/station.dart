@@ -126,6 +126,15 @@ class Station {
   static Future<List<Station>> getAll({bool Function(Station)? filter}) => getBatched(filter: filter);
 
   static Future<void> update(Station station, bool bc) async {
+    // guarantee, that:
+    // id contains a space
+    // id split 0 != null
+    // id split 1 != 0
+    var splits = station.id.split(' ');
+    if (splits.length != 2 || splits[0].isEmpty || splits[1].isEmpty) return;
+    if (splits[0] == 'null' || splits[1] == '0') return;
+    if (int.tryParse(splits[1]) == null) return;
+
     var existing = await Globals.db.stationDao.getById(station.id);
     if (existing != null) {
       if (existing.updated >= station.updated) return;

@@ -307,8 +307,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                   return AlertDialog(
                     title: const Text('Server auswählen'),
                     content: SingleChildScrollView(
-                      child: ListView(
-                        shrinkWrap: true,
+                      child: Column(
                         children: [
                           for (String server in servers)
                             ListTile(
@@ -355,8 +354,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                   return AlertDialog(
                     title: const Text('Server auswählen'),
                     content: SingleChildScrollView(
-                      child: ListView(
-                        shrinkWrap: true,
+                      child: Column(
                         children: [
                           for (String server in servers)
                             ListTile(
