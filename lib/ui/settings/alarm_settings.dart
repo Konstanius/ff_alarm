@@ -15,7 +15,6 @@ import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/map.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';

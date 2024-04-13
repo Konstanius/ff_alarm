@@ -243,14 +243,14 @@ class _$AlarmDao extends AlarmDao {
   @override
   Future<void> deleteByPrefix(String id) async {
     await _queryAdapter.queryNoReturn(
-        'DELETE FROM Alarm WHERE id LIKE ?1||\" %\"',
+        'DELETE FROM Alarm WHERE id LIKE ?1||" %"',
         arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Alarm WHERE id LIKE ?1||\"%\"',
+        'SELECT COUNT(*) FROM Alarm WHERE id LIKE ?1||"%"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [prefix]);
   }
@@ -385,14 +385,14 @@ class _$StationDao extends StationDao {
   @override
   Future<void> deleteByPrefix(String id) async {
     await _queryAdapter.queryNoReturn(
-        'DELETE FROM Station WHERE id LIKE ?1||\" %\"',
+        'DELETE FROM Station WHERE id LIKE ?1||" %"',
         arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Station WHERE id LIKE ?1||\"%\"',
+        'SELECT COUNT(*) FROM Station WHERE id LIKE ?1||"%"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [prefix]);
   }
@@ -525,14 +525,14 @@ class _$UnitDao extends UnitDao {
   @override
   Future<void> deleteByPrefix(String id) async {
     await _queryAdapter.queryNoReturn(
-        'DELETE FROM Unit WHERE id LIKE ?1||\" %\"',
+        'DELETE FROM Unit WHERE id LIKE ?1||" %"',
         arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Unit WHERE id LIKE ?1||\"%\"',
+        'SELECT COUNT(*) FROM Unit WHERE id LIKE ?1||"%"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [prefix]);
   }
@@ -652,14 +652,14 @@ class _$PersonDao extends PersonDao {
   @override
   Future<void> deleteByPrefix(String id) async {
     await _queryAdapter.queryNoReturn(
-        'DELETE FROM Person WHERE id LIKE ?1||\" %\"',
+        'DELETE FROM Person WHERE id LIKE ?1||" %"',
         arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Person WHERE id LIKE ?1||\"%\"',
+        'SELECT COUNT(*) FROM Person WHERE id LIKE ?1||"%"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [prefix]);
   }
