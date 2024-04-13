@@ -9,6 +9,7 @@ Distanzen:
 Allgemein:
   - externe TETRA API Anbindung
   - Web Admin Panel
+  - Einsatzmonitor via Raspberry Pi ODER Android TV App
 
 Bereitschaft:
   - Geofences (background sync)

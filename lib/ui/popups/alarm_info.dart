@@ -14,6 +14,7 @@ import 'package:ff_alarm/ui/utils/map.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
@@ -55,9 +56,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
   ValueNotifier<List<MapPos>> informationNotifier = ValueNotifier<List<MapPos>>([]);
   MapController alarmMapController = MapController();
 
-  ValueNotifier<List<MapPos>> responsesNotifier = ValueNotifier<List<MapPos>>([]);
-  MapController responsesMapController = MapController();
-
   bool alarmDetailsBusy = false;
 
   TextEditingController noteController = TextEditingController();
@@ -67,7 +65,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
   void initState() {
     super.initState();
     alarm = widget.alarm;
-    tabController = TabController(length: 2, vsync: this);
+    tabController = TabController(length: 3, vsync: this);
 
     Person? tempRelevantLocalPerson;
     for (var person in Globals.localPersons.keys) {
@@ -188,7 +186,9 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         if (value != null) stations.add(value);
       }
 
-      if (alarm.responses.containsKey(relevantLocalPerson.idNumber) && alarm.responses[relevantLocalPerson.idNumber]!.responses.isNotEmpty) {
+      if (stations.length == 1) {
+        selectedStation = stations.first.id;
+      } else if (alarm.responses.containsKey(relevantLocalPerson.idNumber) && alarm.responses[relevantLocalPerson.idNumber]!.responses.isNotEmpty) {
         selectedStation = null;
         for (var entry in alarm.responses[relevantLocalPerson.idNumber]!.responses.entries) {
           if (entry.value != AlarmResponseType.notReady && entry.value != AlarmResponseType.notSet) {
@@ -228,18 +228,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         }
       });
 
-      responsesMapController.mapEventStream.listen((event) {
-        if (event is MapEventMove) {
-          responsesMapController.rotate(0);
-        }
-
-        if (responsesMapController.camera.zoom < minZoom) {
-          responsesMapController.move(responsesMapController.camera.center, minZoom);
-        } else if (responsesMapController.camera.zoom > maxZoom) {
-          responsesMapController.move(responsesMapController.camera.center, maxZoom);
-        }
-      });
-
       while (true) {
         if (!mounted) return;
         try {
@@ -272,9 +260,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
     clickDuration.dispose();
     tabController?.dispose();
     informationNotifier.dispose();
-    responsesNotifier.dispose();
     alarmMapController.dispose();
-    responsesMapController.dispose();
     noteController.dispose();
     noteFocusNode.dispose();
     super.dispose();
@@ -599,7 +585,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                     selectedStation = null;
                   });
                 },
-                child: const Text('Zurück zur Stationenauswahl'),
+                child: const Text('Zurück zur Wachenauswahl'),
               ),
             const SizedBox(height: 20),
             Row(
@@ -1049,7 +1035,8 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
           TabBar(
             controller: tabController,
             tabs: const [
-              Tab(text: 'Informationen'),
+              Tab(text: 'Infos'),
+              Tab(text: 'Bereitschaft'),
               Tab(text: 'Antworten'),
             ],
           ),
@@ -1070,7 +1057,8 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                     children: [
                       // General information (time, type, word, address, notes)
                       ...genericAlarmInfo(),
-                      if (ownResponse != null) const Divider(height: 20),
+                      if (ownResponse != null) const Divider(height: 12),
+                      if (ownResponse != null) const SizedBox(height: 4),
                       if (ownResponse != null)
                         Column(
                           children: [
@@ -1102,6 +1090,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                       decoration: InputDecoration(
                                         labelText: 'Deine Notiz',
                                         hintText: 'Deine Notiz',
+                                        counter: const SizedBox(),
                                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
                                       keyboardType: TextInputType.text,
@@ -1111,7 +1100,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                       focusNode: noteFocusNode,
                                       textCapitalization: TextCapitalization.sentences,
                                       expands: false,
-                                      readOnly: alarm.date.isBefore(DateTime.now().subtract(const Duration(hours: 1))),
+                                      readOnly: alarm.responseTimeExpired,
                                       onEditingComplete: () async {
                                         if (alarm.responses.containsKey(relevantLocalPerson.idNumber)) {
                                           if (noteController.text == (alarm.responses[relevantLocalPerson.idNumber]!.note)) return;
@@ -1472,11 +1461,173 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                   ),
                 ),
 
+                /// Bereitschaft:
+                /// - Nach wie viel Zeit welche Funktion wie viele hat
+                SafeArea(
+                  child: () {
+                    if (data == null) return const Center(child: CircularProgressIndicator());
+
+                    if (station == null) {
+                      return const Center(child: Text('Keine Wache ausgewählt'));
+                    }
+
+                    List<MapEntry<Person, AlarmResponse>> responsesForSelectedStation = [];
+                    for (var person in data!.persons) {
+                      if (alarm.responses.containsKey(person.idNumber)) {
+                        if (alarm.responses[person.idNumber]!.responses.containsKey(station.idNumber)) {
+                          responsesForSelectedStation.add(MapEntry(person, alarm.responses[person.idNumber]!));
+                        } else {
+                          responsesForSelectedStation.add(MapEntry(person, AlarmResponse(time: alarm.date, responses: {}, note: '')));
+                        }
+                      } else {
+                        responsesForSelectedStation.add(MapEntry(person, AlarmResponse(time: alarm.date, responses: {}, note: '')));
+                      }
+                    }
+
+                    Map<AlarmResponseType, Map<String, int>> responseTypes = {};
+                    Map<AlarmResponseType, int> responseTypesTotal = {};
+                    for (var type in AlarmResponseType.values) {
+                      responseTypes[type] = {};
+                      responseTypesTotal[type] = 0;
+                    }
+
+                    for (var entry in responsesForSelectedStation) {
+                      var person = entry.key;
+                      var response = entry.value.responses[station.idNumber];
+                      if (response == null) continue;
+
+                      var activeQualifications = person.activeQualifications(alarm.date);
+                      for (var qualification in activeQualifications) {
+                        String type = qualification.type;
+
+                        for (var key in responseTypes.keys) {
+                          if (!responseTypes[key]!.containsKey(type)) {
+                            responseTypes[key]![type] = 0;
+                          }
+                        }
+
+                        if (response.timeAmount >= 0) {
+                          for (var key in responseTypes.keys) {
+                            if (key.timeAmount >= response.timeAmount) {
+                              responseTypes[key]![type] = responseTypes[key]![type]! + 1;
+                            }
+                          }
+                        } else {
+                          responseTypes[response]![type] = responseTypes[response]![type]! + 1;
+                        }
+                      }
+
+                      if (response.timeAmount >= 0) {
+                        for (var key in responseTypes.keys) {
+                          if (key.timeAmount >= response.timeAmount) {
+                            responseTypesTotal[key] = responseTypesTotal[key]! + 1;
+                          }
+                        }
+                      } else {
+                        responseTypesTotal[response] = responseTypesTotal[response]! + 1;
+                      }
+                    }
+
+                    List<Map<String, int>> responseTypesList = [];
+                    for (var type in AlarmResponseType.values) {
+                      responseTypesList.add(responseTypes[type]!);
+                    }
+
+                    return SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 4, left: 8, right: 8),
+                        child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Column(
+                              children: [
+                                for (var type in AlarmResponseType.values)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                    color: type.color,
+                                    child: Row(
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            for (var entry in responseTypesList[type.index].entries)
+                                              if (entry.value == 0)
+                                                const SizedBox()
+                                              else
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.end,
+                                                  mainAxisSize: MainAxisSize.min,
+                                                  children: [
+                                                    Text(
+                                                      '${entry.key}:',
+                                                      style: const TextStyle(
+                                                        color: Colors.black,
+                                                        height: 1.3,
+                                                        fontWeight: FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      ' ${entry.value.toString().padLeft(2, '  ')}',
+                                                      style: const TextStyle(
+                                                        color: Colors.black,
+                                                        height: 1.3,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.end,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Text(
+                                                  'Gesamt:',
+                                                  style: TextStyle(
+                                                    color: Colors.black,
+                                                    height: 1.3,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  ' ${responseTypesTotal[type].toString().padLeft(2, '  ')}',
+                                                  style: const TextStyle(
+                                                    color: Colors.black,
+                                                    height: 1.3,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        const Spacer(),
+                                        Column(
+                                          children: [
+                                            Text(
+                                              type.name,
+                                              style: const TextStyle(
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            if (type.timeAmount >= 0)
+                                              Text(
+                                                'bis ${DateFormat('HH:mm').format(alarm.date.add(Duration(minutes: type.timeAmount)))}',
+                                                style: const TextStyle(color: Colors.black),
+                                              ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            )),
+                      ),
+                    );
+                  }(),
+                ),
+
                 /// Antworten:
                 /// - Liste der Personen, die für die gleiche Wache geantwortet haben wie der lokale Nutzer
                 /// - Informationen zu den Qualifikationen der Personen (AGT, TF / GF / ZF, Ma)
                 /// - Anzeige der Antworten und ca. Zeit (Farblich markiert)
-                /// - Ansicht, nach wie viel Zeit wie viele da sind
                 /// - Karte mit live Position aller Personen, die positiv geantwortet haben
                 SafeArea(
                   child: () {
@@ -1507,33 +1658,50 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                     });
 
                     return ListView(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(8),
                       children: [
                         for (var entry in responsesForSelectedStation)
-                          Card(
-                            color: entry.value.responses[station.idNumber]!.color,
-                            clipBehavior: Clip.antiAliasWithSaveLayer,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            margin: const EdgeInsets.all(8),
-                            elevation: 5,
-                            child: ListTile(
-                              title: Text(entry.key.fullName, style: const TextStyle(color: Colors.black)),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(entry.value.responses[station.idNumber]!.name, style: const TextStyle(color: Colors.black)),
-                                  if (entry.value.responses[station.idNumber]!.timeAmount >= 0)
-                                    Text(
-                                      'Ankunft bis ${DateFormat('HH:mm').format(entry.value.time.add(Duration(minutes: entry.value.responses[station.idNumber]!.timeAmount)))}',
-                                      style: const TextStyle(color: Colors.black),
-                                    ),
-                                ],
+                          () {
+                            var activeQualifications = entry.key.activeQualifications(alarm.date);
+                            return Card(
+                              color: entry.value.responses[station!.idNumber]!.color,
+                              clipBehavior: Clip.antiAliasWithSaveLayer,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
                               ),
-                              trailing: Text(DateFormat('HH:mm').format(entry.value.time), style: const TextStyle(color: Colors.black)),
-                            ),
-                          ),
+                              margin: const EdgeInsets.only(bottom: 8),
+                              elevation: 5,
+                              child: ListTile(
+                                title: Text(entry.key.fullName, style: const TextStyle(color: Colors.black)),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(entry.value.responses[station.idNumber]!.name, style: const TextStyle(color: Colors.black)),
+                                    if (entry.value.responses[station.idNumber]!.timeAmount >= 0)
+                                      Text(
+                                        'Ankunft bis ${DateFormat('HH:mm').format(entry.value.time.add(Duration(minutes: entry.value.responses[station.idNumber]!.timeAmount)))}',
+                                        style: const TextStyle(color: Colors.black),
+                                      ),
+                                    if (activeQualifications.isNotEmpty) const SizedBox(height: 5),
+                                    if (activeQualifications.isNotEmpty)
+                                      Row(
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              activeQualifications.map((e) => e.type).join(',  '),
+                                              style: const TextStyle(color: Colors.black),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    if (entry.value.note.isNotEmpty) const SizedBox(height: 5),
+                                    if (entry.value.note.isNotEmpty) Text(entry.value.note, style: const TextStyle(color: Colors.black)),
+                                  ],
+                                ),
+                                trailing: Text(DateFormat('HH:mm').format(entry.value.time), style: const TextStyle(color: Colors.black)),
+                              ),
+                            );
+                          }(),
                         const SizedBox(height: 8),
                       ],
                     );
@@ -1550,7 +1718,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
   void resetMapInfoNotifiers() {
     if (!mounted) return;
     informationNotifier.value = [];
-    responsesNotifier.value = [];
 
     if (alarmPosition != null) {
       informationNotifier.value.add(MapPos(
@@ -1657,28 +1824,9 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
             ),
           ));
         }
-
-        bool foundInResponses = false;
-        for (var pos in responsesNotifier.value) {
-          if (pos.id == 'self') {
-            pos.position = Formats.positionToLatLng(Globals.lastPosition!);
-            foundInResponses = true;
-          }
-        }
-        if (!foundInResponses) {
-          responsesNotifier.value.add(MapPos(
-            id: 'self',
-            position: Formats.positionToLatLng(Globals.lastPosition!),
-            name: 'Du',
-            widget: const PulseIcon(
-              pulseColor: Colors.green,
-              icon: Icons.person,
-              pulseCount: 2,
-            ),
-          ));
-        }
-        if (mounted) setState(() {});
       }
+
+      informationNotifier.notifyListeners();
 
       if (info.ids.contains("0")) {
         AlarmInterface.getDetails(alarm).then((value) {
@@ -1699,69 +1847,103 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
 
   List<Widget> genericAlarmInfo() {
     return [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          const Icon(Icons.access_time),
-          const SizedBox(width: 8),
-          Text(Formats.dateTime(alarm.date)),
-          const SizedBox(width: 15),
-          () {
-            DateTime now = DateTime.now();
-            Duration difference = now.difference(alarm.date);
-
-            if (difference.inMinutes < 1) {
-              return const Text('(Jetzt)');
-            } else if (difference.inMinutes < 60) {
-              return Text('(vor ${difference.inMinutes} min)');
-            } else if (difference.inHours < 3) {
-              return Text('(vor ${difference.inHours} h, ${difference.inMinutes % 60} min)');
-            } else if (difference.inHours < 24) {
-              return Text('(vor ${difference.inHours} h)');
-            } else {
-              return Text('(vor ${difference.inDays} d)');
-            }
-          }(),
-        ],
-      ),
-      const SizedBox(height: 8),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          const Icon(Icons.info_outlined),
-          const SizedBox(width: 8),
-          Flexible(child: Text('${alarm.type} - ${alarm.word}')),
-        ],
-      ),
-      const SizedBox(height: 8),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          const Icon(Icons.location_on_outlined),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
+      InkWell(
+        onTap: () {
+          Clipboard.setData(ClipboardData(text: Formats.dateTime(alarm.date)));
+          successToast('Uhrzeit kopiert');
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const Icon(Icons.access_time),
+              const SizedBox(width: 8),
+              Text(Formats.dateTime(alarm.date)),
+              const SizedBox(width: 15),
               () {
-                var pos = alarm.positionFromAddressIfCoordinates;
-                if (pos != null) {
-                  return 'Koordinaten: ${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}';
+                DateTime now = DateTime.now();
+                Duration difference = now.difference(alarm.date);
+
+                if (difference.inMinutes < 1) {
+                  return const Text('(Jetzt)');
+                } else if (difference.inMinutes < 60) {
+                  return Text('(vor ${difference.inMinutes} min)');
+                } else if (difference.inHours < 3) {
+                  return Text('(vor ${difference.inHours} h, ${difference.inMinutes % 60} min)');
+                } else if (difference.inHours < 24) {
+                  return Text('(vor ${difference.inHours} h)');
                 } else {
-                  return 'Adresse: ${alarm.address}';
+                  return Text('(vor ${difference.inDays} d)');
                 }
               }(),
+            ],
+          ),
+        ),
+      ),
+      InkWell(
+        onTap: () {
+          Clipboard.setData(ClipboardData(text: '${alarm.type} - ${alarm.word}'));
+          successToast('Typ und Stichwort kopiert');
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const Icon(Icons.info_outlined),
+              const SizedBox(width: 8),
+              Flexible(child: Text('${alarm.type} - ${alarm.word}')),
+            ],
+          ),
+        ),
+      ),
+      InkWell(
+        onTap: () {
+          Clipboard.setData(ClipboardData(text: alarm.address));
+          successToast('Adresse kopiert');
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              const Icon(Icons.location_on_outlined),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  () {
+                    var pos = alarm.positionFromAddressIfCoordinates;
+                    if (pos != null) {
+                      return '${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}';
+                    } else {
+                      return alarm.address;
+                    }
+                  }(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      if (alarm.notes.isNotEmpty) const Divider(height: 12),
+      if (alarm.notes.isNotEmpty)
+        InkWell(
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: alarm.notes.join('\n')));
+            successToast('Notizen kopiert');
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const Icon(Icons.notes_outlined),
+                const SizedBox(width: 8),
+                Flexible(child: Text(alarm.notes.join('\n'))),
+              ],
             ),
           ),
-        ],
-      ),
-      if (alarm.notes.isNotEmpty) const Divider(height: 20),
-      if (alarm.notes.isNotEmpty)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            const Icon(Icons.notes_outlined),
-            const SizedBox(width: 8),
-            Flexible(child: Text(alarm.notes.join('\n'))),
-          ],
         ),
     ];
   }

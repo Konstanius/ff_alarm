@@ -3,11 +3,20 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 class MapPage extends StatefulWidget {
-  const MapPage({super.key, required this.initialPosition, required this.positionsNotifier, required this.controller});
+  const MapPage({
+    super.key,
+    required this.initialPosition,
+    required this.positionsNotifier,
+    required this.controller,
+    this.initialZoom = 15.5,
+    this.onTap,
+  });
 
   final LatLng initialPosition;
   final ValueNotifier<List<MapPos>> positionsNotifier;
   final MapController controller;
+  final double initialZoom;
+  final void Function(TapPosition, LatLng)? onTap;
 
   @override
   State<MapPage> createState() => _MapPageState();
@@ -20,7 +29,8 @@ class _MapPageState extends State<MapPage> {
       mapController: widget.controller,
       options: MapOptions(
         initialCenter: widget.initialPosition,
-        initialZoom: 15.5,
+        initialZoom: widget.initialZoom,
+        onTap: widget.onTap,
       ),
       children: [
         TileLayer(
@@ -34,7 +44,7 @@ class _MapPageState extends State<MapPage> {
           builder: (BuildContext context, List<MapPos> positions, Widget? child) {
             return MarkerLayer(
               markers: [
-                for (var position in positions)
+                for (var position in positions.where((element) => element.radius == null))
                   Marker(
                     width: 80.0,
                     height: 100,
@@ -53,6 +63,24 @@ class _MapPageState extends State<MapPage> {
             );
           },
         ),
+        ValueListenableBuilder(
+          valueListenable: widget.positionsNotifier,
+          builder: (BuildContext context, List<MapPos> positions, Widget? child) {
+            return CircleLayer(
+              circles: [
+                for (var position in positions.where((element) => element.radius != null))
+                  CircleMarker(
+                    point: position.position,
+                    radius: position.radius!.toDouble(),
+                    color: Colors.blue.withOpacity(0.3),
+                    borderColor: Colors.blue,
+                    borderStrokeWidth: 2,
+                    useRadiusInMeter: true,
+                  ),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
@@ -63,8 +91,15 @@ class MapPos {
   LatLng position;
   String name;
   Widget widget;
+  int? radius;
 
-  MapPos({required this.id, required this.position, required this.name, required this.widget});
+  MapPos({
+    required this.id,
+    required this.position,
+    required this.name,
+    required this.widget,
+    this.radius,
+  });
 }
 
 extension SmoothMapController on MapController {

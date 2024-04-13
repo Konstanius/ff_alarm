@@ -31,11 +31,28 @@ class Person {
   /// - c (C-Führerschein)
   /// - ce (CE-Führerschein)
   /// - bo (Bootsführerschein)
+  ///
+  /// hardcoded: zf,gf,agt,ma
   List<Qualification> qualifications;
 
-  bool hasQualification(String type, DateTime checkDate) {
+  List<Qualification> activeQualifications(DateTime date) {
+    List<Qualification> active = [];
+
     for (var qualification in qualifications) {
-      if (qualification.type != type) continue;
+      if (qualification.start == null && qualification.end == null) continue;
+      if (qualification.start == null && qualification.end != null && qualification.end!.isAfter(date)) active.add(qualification);
+      if (qualification.start != null && qualification.end == null && qualification.start!.isBefore(date)) active.add(qualification);
+      if (qualification.start != null && qualification.end != null && qualification.start!.isBefore(date) && qualification.end!.isAfter(date)) active.add(qualification);
+    }
+
+    return active;
+  }
+
+  bool hasQualification(String type, DateTime checkDate) {
+    type = type.toLowerCase();
+    for (var qualification in qualifications) {
+      String thisType = qualification.type.toLowerCase();
+      if (thisType != type) continue;
       if (qualification.start == null && qualification.end == null) return false;
       if (qualification.start == null && qualification.end != null) return qualification.end!.isAfter(checkDate);
       if (qualification.start != null && qualification.end == null) return qualification.start!.isBefore(checkDate);

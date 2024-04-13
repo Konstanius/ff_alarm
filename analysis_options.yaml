@@ -9,3 +9,4 @@ linter:
     avoid_slow_async_io: true
     close_sinks: true
     enable_null_safety: true
+    invalid_use_of_visible_for_testing_member: false
