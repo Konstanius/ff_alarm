@@ -69,14 +69,15 @@ abstract class AlarmInterface {
     UpdateInfo(UpdateType.alarm, updatedIds);
   }
 
-  static Future<void> fetchSingle(String server, int id) async {
+  static Future<Alarm> fetchSingle(String server, int id) async {
     Map<String, dynamic> data = {'alarmId': id};
 
     Request response = await Request('alarmGet', data, server).emit(true);
-    if (response.ackData!.isEmpty) return;
 
     Alarm newAlarm = Alarm.fromJson(response.ackData!);
     await Alarm.update(newAlarm, true);
+
+    return newAlarm;
   }
 
   static Future<Alarm> setResponse({

@@ -3,6 +3,8 @@ import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/notifications/awn_init.dart';
+import 'package:ff_alarm/ui/popups/alarm_info.dart';
+import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
@@ -51,10 +53,27 @@ Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) as
         }
         await Alarm.update(alarm, true);
 
-        await sendAlarm(alarm);
+        bool shouldNotify = await SettingsNotificationData.shouldNotifyForAlarmRegardless(alarm);
+        AlarmOption option = await alarm.getAlertOption(shouldNotify);
+
+        await sendAlarm(alarm, option);
+
+        if (alarm.type.startsWith('Test')) return;
+        if (alarm.responseTimeExpired) return;
 
         try {
-          await AlarmInterface.fetchSingle(alarm.server, alarm.idNumber);
+          var fetched = await AlarmInterface.fetchSingle(alarm.server, alarm.idNumber);
+
+          var ownResponse = fetched.ownResponse;
+          if ((ownResponse == null || ownResponse.getResponseInfo().responseType == AlarmResponseType.notSet) && !shouldNotify) {
+            await AlarmInterface.setResponse(
+              server: alarm.server,
+              alarmId: alarm.idNumber,
+              responseType: AlarmResponseType.notReady,
+              stationId: null,
+              note: '',
+            );
+          }
         } catch (e, s) {
           Logger.error('Failed to fetch single alarm: $e\n$s');
         }

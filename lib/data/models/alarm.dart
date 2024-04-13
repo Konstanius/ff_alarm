@@ -153,7 +153,7 @@ class Alarm {
     return Alarm.fromJson(json);
   }
 
-  Future<AlarmOption> getAlertOption() async {
+  Future<AlarmOption> getAlertOption(bool shouldNotify) async {
     DateTime now = DateTime.now();
     if (date.isAfter(now.subtract(const Duration(minutes: 15)))) {
       if (type.startsWith('Test')) {
@@ -164,7 +164,6 @@ class Alarm {
         if (muted == true) return AlarmOption.silent;
       }
 
-      bool shouldNotify = await SettingsNotificationData.shouldNotifyForAlarmRegardless(this);
 
       return shouldNotify ? AlarmOption.alert : AlarmOption.silent;
     }

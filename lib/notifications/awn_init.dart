@@ -26,6 +26,20 @@ Future<void> initializeAwesomeNotifications() async {
     ],
     <NotificationChannel>[
       NotificationChannel(
+        channelKey: 'geofence',
+        channelGroupKey: 'geofence',
+        channelName: 'Geofence Service',
+        channelDescription: 'Benachrichtigungskanal für Geofence-Alarmierungen',
+        channelShowBadge: false,
+        criticalAlerts: false,
+        defaultPrivacy: NotificationPrivacy.Private,
+        defaultRingtoneType: DefaultRingtoneType.Notification,
+        enableVibration: false,
+        enableLights: false,
+        importance: NotificationImportance.Min,
+        locked: true,
+      ),
+      NotificationChannel(
         channelKey: 'test',
         channelGroupKey: 'test',
         channelName: 'Test Alarmierungen',
@@ -160,9 +174,8 @@ Future<void> resetAndroidNotificationVolume() async {
   }
 }
 
-Future<bool> sendAlarm(Alarm alarm) async {
+Future<bool> sendAlarm(Alarm alarm, AlarmOption option) async {
   try {
-    AlarmOption option = await alarm.getAlertOption();
 
     if (Globals.appStarted && option == AlarmOption.alert) {
       Globals.router.go('/alarm', extra: alarm);

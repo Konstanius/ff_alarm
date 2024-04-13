@@ -136,6 +136,7 @@ abstract class Globals {
                   initialNotificationTitle: "FF Alarm Geofence",
                   initialNotificationContent: "FF Alarm Geofencing ist aktiv im Hintergrund.",
                   onStart: onServiceStartAndroid,
+                  notificationChannelId: 'geofence',
                 ),
               );
 
