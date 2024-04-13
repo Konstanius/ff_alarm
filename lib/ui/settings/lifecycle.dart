@@ -443,7 +443,7 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
         });
 
         // get initial position
-        Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 5)).then((Position? position) {
+        Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high, timeLimit: const Duration(seconds: 5)).then((Position? position) {
           Globals.lastPosition = position;
           Globals.lastPositionTime = DateTime.now();
           UpdateInfo(UpdateType.ui, {"2"});

@@ -159,7 +159,7 @@ abstract class Globals {
       });
 
       // get initial position
-      Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 5)).then((Position? position) {
+      Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high, timeLimit: const Duration(seconds: 5)).then((Position? position) {
         lastPosition = position;
         lastPositionTime = DateTime.now();
         UpdateInfo(UpdateType.ui, {"2"});
@@ -300,7 +300,7 @@ abstract class Globals {
 Future<bool> backgroundGPSSync() async {
   try {
 
-    var location = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 12));
+    var location = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high, timeLimit: const Duration(seconds: 12));
     if (Globals.lastPosition != null && Globals.lastPositionTime != null) {
       if (DateTime.now().difference(Globals.lastPositionTime!) < const Duration(minutes: 5)) {
         double distance = Geolocator.distanceBetween(Globals.lastPosition!.latitude, Globals.lastPosition!.longitude, location.latitude, location.longitude);

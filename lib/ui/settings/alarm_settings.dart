@@ -881,7 +881,6 @@ class SettingsNotificationData {
     try {
       Set<String> stations;
       if (alarm.units.isNotEmpty) {
-        // TODO get the current LatLng
         var allUnits = await Unit.getAll(filter: (unit) => alarm.unitProperIds.contains(unit.id));
         var filteredUnits = [];
         var personId = Globals.localPersonForServer(alarm.server);
@@ -913,9 +912,61 @@ class SettingsNotificationData {
         }
       }
 
+      bool anyGeofencing = false;
+      for (var data in settings.values) {
+        if (data.enabledMode == 3 && data.geofencing.isNotEmpty && data.manualOverride == 1) {
+          anyGeofencing = true;
+          break;
+        }
+      }
+
+      DateTime now = DateTime.now();
+      if (anyGeofencing && Globals.lastPositionTime == null || Globals.lastPositionTime!.isBefore(now.subtract(const Duration(minutes: 10))) || Globals.lastPosition == null) {
+        try {
+          String path = '${Globals.filesPath}/last_location.txt';
+          File file = File(path);
+          if (file.existsSync()) {
+            List<String> parts = file.readAsStringSync().split(',');
+            if (parts.length == 3) {
+              double lat = double.tryParse(parts[0]) ?? 0;
+              double lon = double.tryParse(parts[1]) ?? 0;
+              int time = int.tryParse(parts[2]) ?? 0;
+              DateTime lastTime = DateTime.fromMillisecondsSinceEpoch(time);
+              if (lastTime.isAfter(now.subtract(const Duration(minutes: 10))) && lat != 0 && lon != 0) {
+                Globals.lastPosition = Position(
+                  latitude: lat,
+                  longitude: lon,
+                  accuracy: 0,
+                  altitude: 0,
+                  altitudeAccuracy: 0,
+                  heading: 0,
+                  headingAccuracy: 0,
+                  speed: 0,
+                  speedAccuracy: 0,
+                  timestamp: DateTime.now(),
+                  floor: 0,
+                  isMocked: false,
+                );
+                Globals.lastPositionTime = lastTime;
+              }
+            }
+          }
+        } catch (e, s) {
+          Logger.error("Error in shouldNotifyForAlarmRegardless: $e\n$s");
+        }
+      }
+
       LatLng? lastPosition;
       if (Globals.lastPosition != null) {
         lastPosition = Formats.positionToLatLng(Globals.lastPosition!);
+      } else if (anyGeofencing) {
+        var granted = await Permission.locationAlways.isGranted;
+        if (granted) {
+          try {
+            var position = await Geolocator.getCurrentPosition(timeLimit: const Duration(seconds: 10), desiredAccuracy: LocationAccuracy.high);
+            lastPosition = LatLng(position.latitude, position.longitude);
+          } catch (_) {}
+        }
       }
       for (var data in settings.values) {
         if (data.shouldNotify(lastPosition)) return true;
