@@ -6,10 +6,10 @@ abstract class UnitDao {
   @Query('SELECT * FROM Unit WHERE id = :id')
   Future<Unit?> getById(String id);
 
-  @update
+  @Update(onConflict: OnConflictStrategy.replace)
   Future<void> updates(Unit unit);
 
-  @insert
+  @Insert(onConflict: OnConflictStrategy.replace)
   Future<void> inserts(Unit unit);
 
   @delete

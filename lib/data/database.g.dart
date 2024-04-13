@@ -243,26 +243,26 @@ class _$AlarmDao extends AlarmDao {
   @override
   Future<void> deleteByPrefix(String id) async {
     await _queryAdapter.queryNoReturn(
-        'DELETE FROM Alarm WHERE id LIKE ?1||" %"',
+        'DELETE FROM Alarm WHERE id LIKE ?1||\" %\"',
         arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Alarm WHERE id LIKE ?1||"%"',
+        'SELECT COUNT(*) FROM Alarm WHERE id LIKE ?1||\"%\"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [prefix]);
   }
 
   @override
   Future<void> inserts(Alarm alarm) async {
-    await _alarmInsertionAdapter.insert(alarm, OnConflictStrategy.abort);
+    await _alarmInsertionAdapter.insert(alarm, OnConflictStrategy.replace);
   }
 
   @override
   Future<void> updates(Alarm alarm) async {
-    await _alarmUpdateAdapter.update(alarm, OnConflictStrategy.abort);
+    await _alarmUpdateAdapter.update(alarm, OnConflictStrategy.replace);
   }
 
   @override
@@ -385,26 +385,26 @@ class _$StationDao extends StationDao {
   @override
   Future<void> deleteByPrefix(String id) async {
     await _queryAdapter.queryNoReturn(
-        'DELETE FROM Station WHERE id LIKE ?1||" %"',
+        'DELETE FROM Station WHERE id LIKE ?1||\" %\"',
         arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Station WHERE id LIKE ?1||"%"',
+        'SELECT COUNT(*) FROM Station WHERE id LIKE ?1||\"%\"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [prefix]);
   }
 
   @override
   Future<void> inserts(Station station) async {
-    await _stationInsertionAdapter.insert(station, OnConflictStrategy.abort);
+    await _stationInsertionAdapter.insert(station, OnConflictStrategy.replace);
   }
 
   @override
   Future<void> updates(Station station) async {
-    await _stationUpdateAdapter.update(station, OnConflictStrategy.abort);
+    await _stationUpdateAdapter.update(station, OnConflictStrategy.replace);
   }
 
   @override
@@ -525,26 +525,26 @@ class _$UnitDao extends UnitDao {
   @override
   Future<void> deleteByPrefix(String id) async {
     await _queryAdapter.queryNoReturn(
-        'DELETE FROM Unit WHERE id LIKE ?1||" %"',
+        'DELETE FROM Unit WHERE id LIKE ?1||\" %\"',
         arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Unit WHERE id LIKE ?1||"%"',
+        'SELECT COUNT(*) FROM Unit WHERE id LIKE ?1||\"%\"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [prefix]);
   }
 
   @override
   Future<void> inserts(Unit unit) async {
-    await _unitInsertionAdapter.insert(unit, OnConflictStrategy.abort);
+    await _unitInsertionAdapter.insert(unit, OnConflictStrategy.replace);
   }
 
   @override
   Future<void> updates(Unit unit) async {
-    await _unitUpdateAdapter.update(unit, OnConflictStrategy.abort);
+    await _unitUpdateAdapter.update(unit, OnConflictStrategy.replace);
   }
 
   @override
@@ -652,26 +652,26 @@ class _$PersonDao extends PersonDao {
   @override
   Future<void> deleteByPrefix(String id) async {
     await _queryAdapter.queryNoReturn(
-        'DELETE FROM Person WHERE id LIKE ?1||" %"',
+        'DELETE FROM Person WHERE id LIKE ?1||\" %\"',
         arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Person WHERE id LIKE ?1||"%"',
+        'SELECT COUNT(*) FROM Person WHERE id LIKE ?1||\"%\"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [prefix]);
   }
 
   @override
   Future<void> inserts(Person person) async {
-    await _personInsertionAdapter.insert(person, OnConflictStrategy.abort);
+    await _personInsertionAdapter.insert(person, OnConflictStrategy.replace);
   }
 
   @override
   Future<void> updates(Person person) async {
-    await _personUpdateAdapter.update(person, OnConflictStrategy.abort);
+    await _personUpdateAdapter.update(person, OnConflictStrategy.replace);
   }
 
   @override

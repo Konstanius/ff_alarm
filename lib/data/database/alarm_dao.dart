@@ -6,10 +6,10 @@ abstract class AlarmDao {
   @Query('SELECT * FROM Alarm WHERE id = :id')
   Future<Alarm?> getById(String id);
 
-  @update
+  @Update(onConflict: OnConflictStrategy.replace)
   Future<void> updates(Alarm alarm);
 
-  @insert
+  @Insert(onConflict: OnConflictStrategy.replace)
   Future<void> inserts(Alarm alarm);
 
   @delete

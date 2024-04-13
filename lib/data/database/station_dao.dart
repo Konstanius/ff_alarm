@@ -6,10 +6,10 @@ abstract class StationDao {
   @Query('SELECT * FROM Station WHERE id = :id')
   Future<Station?> getById(String id);
 
-  @update
+  @Update(onConflict: OnConflictStrategy.replace)
   Future<void> updates(Station station);
 
-  @insert
+  @Insert(onConflict: OnConflictStrategy.replace)
   Future<void> inserts(Station station);
 
   @delete

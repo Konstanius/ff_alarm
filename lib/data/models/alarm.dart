@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:ff_alarm/globals.dart';
-import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:floor/floor.dart';
 import 'package:geolocator/geolocator.dart';

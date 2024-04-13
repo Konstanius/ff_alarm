@@ -6,10 +6,10 @@ abstract class PersonDao {
   @Query('SELECT * FROM Person WHERE id = :id')
   Future<Person?> getById(String id);
 
-  @update
+  @Update(onConflict: OnConflictStrategy.replace)
   Future<void> updates(Person person);
 
-  @insert
+  @Insert(onConflict: OnConflictStrategy.replace)
   Future<void> inserts(Person person);
 
   @delete
