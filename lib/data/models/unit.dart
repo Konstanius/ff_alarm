@@ -110,6 +110,15 @@ class Unit {
   static Future<List<Unit>> getAll({bool Function(Unit)? filter}) => getBatched(filter: filter);
 
   static Future<void> update(Unit unit, bool bc) async {
+    // guarantee, that:
+    // id contains a space
+    // id split 0 != null
+    // id split 1 != 0
+    var splits = unit.id.split(' ');
+    if (splits.length != 2 || splits[0].isEmpty || splits[1].isEmpty) return;
+    if (splits[0] == 'null' || splits[1] == '0') return;
+    if (int.tryParse(splits[1]) == null) return;
+
     var existing = await Globals.db.unitDao.getById(unit.id);
     if (existing != null) {
       if (existing.updated >= unit.updated) return;

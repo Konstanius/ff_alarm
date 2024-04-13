@@ -127,6 +127,15 @@ class Person {
   static Future<List<Person>> getAll({bool Function(Person)? filter}) => getBatched(filter: filter);
 
   static Future<void> update(Person person, bool bc) async {
+    // guarantee, that:
+    // id contains a space
+    // id split 0 != null
+    // id split 1 != 0
+    var splits = person.id.split(' ');
+    if (splits.length != 2 || splits[0].isEmpty || splits[1].isEmpty) return;
+    if (splits[0] == 'null' || splits[1] == '0') return;
+    if (int.tryParse(splits[1]) == null) return;
+
     var existing = await Globals.db.personDao.getById(person.id);
     if (existing != null) {
       if (existing.updated >= person.updated) return;
