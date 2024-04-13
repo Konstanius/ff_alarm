@@ -12,7 +12,7 @@ Allgemein:
   - Einsatzmonitor via Raspberry Pi ODER Android TV App
 
 Bereitschaft:
-  - Geofences (background sync)
+  - Geofences show popup when permission denied and fences active on App start
   - Automatische Absage durch Geofences
   - Swift Implementation von Geofences
   - Swift Implementation von Push Notifications sound setting

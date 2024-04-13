@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:app_group_directory/app_group_directory.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:ff_alarm/data/database.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/prefs.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/main.dart';
+import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/home.dart';
 import 'package:ff_alarm/ui/popups/alarm_info.dart';
 import 'package:ff_alarm/ui/popups/login_screen.dart';
@@ -18,9 +20,11 @@ import 'package:ff_alarm/ui/settings/notifications.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 abstract class Globals {
   static const MethodChannel channel = MethodChannel('app.feuerwehr.jena.de/methods');
@@ -103,6 +107,42 @@ abstract class Globals {
         }
       } catch (e, s) {
         Logger.warn('Failed to read last location: $e\n$s');
+      }
+
+      var permissionAlways = await Permission.locationAlways.isGranted;
+      if (permissionAlways) {
+        // check if any geofence is active
+        var all = SettingsNotificationData.getAll();
+        bool geofenceActive = false;
+        for (var data in all.values) {
+          if (data.geofencing.isNotEmpty && data.manualOverride == 1 && data.enabledMode == 3) {
+            geofenceActive = true;
+            break;
+          }
+        }
+
+        if (geofenceActive) {
+          if (Platform.isAndroid) {
+            var service = FlutterBackgroundService();
+
+            if (!await service.isRunning()) {
+              await service.configure(
+                iosConfiguration: IosConfiguration(autoStart: false),
+                androidConfiguration: AndroidConfiguration(
+                  isForegroundMode: true,
+                  autoStart: true,
+                  autoStartOnBoot: true,
+                  foregroundServiceNotificationId: 112233,
+                  initialNotificationTitle: "FF Alarm Geofence",
+                  initialNotificationContent: "FF Alarm Geofencing ist aktiv im Hintergrund.",
+                  onStart: onServiceStartAndroid,
+                ),
+              );
+
+              await service.startService();
+            }
+          }
+        }
       }
 
       if (positionSubscription != null) {
@@ -252,4 +292,119 @@ abstract class Globals {
       ),
     ],
   );
+}
+
+/// Refreshes every 5 minutes, if position changed by 50 meters or more
+/// Serverside treats a position as unreliable after 10 minutes
+Future<bool> backgroundGPSSync() async {
+  try {
+
+    var location = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.best, timeLimit: const Duration(seconds: 12));
+    if (Globals.lastPosition != null && Globals.lastPositionTime != null) {
+      if (DateTime.now().difference(Globals.lastPositionTime!) < const Duration(minutes: 5)) {
+        double distance = Geolocator.distanceBetween(Globals.lastPosition!.latitude, Globals.lastPosition!.longitude, location.latitude, location.longitude);
+        if (distance < 50) {
+          return true;
+        }
+      }
+    }
+
+    Globals.lastPosition = location;
+    Globals.lastPositionTime = DateTime.now();
+
+    String path = '${Globals.filesPath}/last_location.txt';
+    File file = File(path);
+    file.writeAsStringSync("${location.latitude},${location.longitude},${Globals.lastPositionTime!.millisecondsSinceEpoch}");
+
+    try {
+      var servers = Globals.registeredServers;
+
+      var futures = <Future>[];
+      for (var server in servers) {
+        futures.add(
+          Request('personSetLocation', {'a': location.latitude, 'o': location.longitude, 't': Globals.lastPositionTime!.millisecondsSinceEpoch}, server).emit(true),
+        );
+      }
+
+      await Future.wait(futures);
+    } catch (e, s) {
+      Logger.warn('Failed to send location: $e\n$s');
+    }
+
+    return true;
+  } catch (e, s) {
+    Logger.error('Failed to initialize service: $e\n$s');
+    return true;
+  }
+}
+
+@pragma('vm:entry-point')
+void onServiceStartAndroid(ServiceInstance instance) async {
+  bool locationGranted = await Permission.locationAlways.isGranted;
+  if (!locationGranted) {
+    await instance.stopSelf();
+    return;
+  }
+  Globals.filesPath = (await getApplicationSupportDirectory()).path;
+  Globals.prefs = Prefs(identifier: 'main');
+
+  var all = SettingsNotificationData.getAll();
+  if (all.isNotEmpty) {
+    bool geofenceActive = false;
+    for (var data in all.values) {
+      if (data.geofencing.isNotEmpty && data.manualOverride == 1 && data.enabledMode == 3) {
+        geofenceActive = true;
+        break;
+      }
+    }
+
+    if (!geofenceActive) {
+      await instance.stopSelf();
+      return;
+    }
+  } else {
+    await instance.stopSelf();
+    return;
+  }
+
+  while (true) {
+    await backgroundGPSSync();
+
+    int delay = 60;
+    while (delay > 0) {
+      await Future.delayed(const Duration(seconds: 1));
+
+      try {
+        File file = File("${Globals.filesPath}/notification_settings.json");
+        bool exists = file.existsSync();
+        if (exists && DateTime.now().difference(file.lastModifiedSync()).inSeconds < 60) {
+          var all = SettingsNotificationData.getAll();
+          if (all.isNotEmpty) {
+            bool geofenceActive = false;
+            for (var data in all.values) {
+              if (data.geofencing.isNotEmpty && data.manualOverride == 1 && data.enabledMode == 3) {
+                geofenceActive = true;
+                break;
+              }
+            }
+
+            if (!geofenceActive) {
+              await instance.stopSelf();
+              return;
+            }
+          } else {
+            await instance.stopSelf();
+            return;
+          }
+        } else if (!exists) {
+          await instance.stopSelf();
+          return;
+        }
+
+        delay--;
+      } catch (e, s) {
+        print('Failed to check notification settings: $e\n$s');
+      }
+    }
+  }
 }
