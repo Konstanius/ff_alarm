@@ -5,6 +5,7 @@ import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/notifications/awn_init.dart';
 import 'package:ff_alarm/ui/popups/alarm_info.dart';
 import 'package:ff_alarm/ui/settings/alarm_settings.dart';
+import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/cupertino.dart';
@@ -33,8 +34,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) async {
   Logger.fcm('FCM message received: ${message.data}');
-  // TODO UI update streams have to fire here if the app is open for iOS
-  if (Platform.isIOS) return; // handled by the app extension
   WidgetsFlutterBinding.ensureInitialized();
   await Globals.initialize();
 
@@ -46,6 +45,12 @@ Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) as
     case "alarm":
       {
         Alarm alarm = Alarm.inflateFromString(data['alarm']);
+        if (Platform.isIOS) {
+          await Future.delayed(const Duration(milliseconds: 100));
+          UpdateInfo(UpdateType.alarm, {alarm.id});
+          return; // handled by the app extension
+        }
+
         Alarm? existing = await Globals.db.alarmDao.getById(alarm.id);
         if (existing != null && existing.date.isAfter(alarm.date)) {
           Logger.warn('Received outdated alarm: $alarm');

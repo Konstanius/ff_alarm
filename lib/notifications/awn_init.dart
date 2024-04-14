@@ -64,7 +64,7 @@ Future<void> initializeAwesomeNotifications() async {
         defaultRingtoneType: DefaultRingtoneType.Notification,
         enableVibration: true,
         enableLights: false,
-        importance: NotificationImportance.Default,
+        importance: NotificationImportance.High,
         soundSource: null,
       ),
       NotificationChannel(
@@ -92,7 +92,7 @@ Future<void> initializeAwesomeNotifications() async {
         defaultRingtoneType: DefaultRingtoneType.Notification,
         enableVibration: true,
         enableLights: false,
-        importance: NotificationImportance.Default,
+        importance: NotificationImportance.High,
         soundSource: null,
       ),
     ],

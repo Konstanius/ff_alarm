@@ -996,7 +996,7 @@ class SettingsNotificationData {
     if (enabledMode == 0) return true;
 
     // if shiftPlan is not empty and enabledMode is 1 or 2
-    if ((enabledMode == 1 || enabledMode == 2)) {
+    if (enabledMode == 1 || enabledMode == 2) {
       int day = now.weekday;
       int dayMillis = now.hour * 3600000 + now.minute * 60000 + now.second * 1000 + now.millisecond;
       if (enabledMode == 1) {
@@ -1084,7 +1084,7 @@ class SettingsNotificationData {
       try {
         List<String> split = item.split(";");
         int day = int.parse(split[0]);
-        if (day < 0 || day > 6) continue;
+        if (day < 1 || day > 7) continue;
         shiftPlanList.add((
           day: int.parse(split[0]),
           start: int.parse(split[1]),

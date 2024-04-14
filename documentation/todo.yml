@@ -1,5 +1,5 @@
 Alarmierungstöne:
-  - Android Ton ändert sich nicht (Channel cant be edited)
+  - Android Ton ändert sich nicht (Channel cant be edited) -> try with channel sound set to null, notification sound set to custom sound
 
 Distanzen:
   - Distance Matrix API
@@ -17,3 +17,4 @@ Bereitschaft:
   - Automatische Absage durch Geofences
   - Swift Implementation von Geofences
   - Swift Implementation von Push Notifications sound setting
+  - ? Dont send geofence updates when calendar is actively blocking
