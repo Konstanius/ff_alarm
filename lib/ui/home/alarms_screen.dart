@@ -391,7 +391,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
           if (Platform.isIOS)
             ElevatedButton(
               onPressed: () {
-                File file = File('${Globals.filesPath}/nse.log');
+                File file = File('${Globals.filesPath}/last_location.txt');
                 if (!file.existsSync()) {
                   errorToast('Log-Datei nicht gefunden');
                   return;
@@ -423,7 +423,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
           if (Platform.isIOS)
             ElevatedButton(
               onPressed: () {
-                File file = File('${Globals.filesPath}/nse.log');
+                File file = File('${Globals.filesPath}/last_location.txt');
                 if (!file.existsSync()) {
                   errorToast('Log-Datei nicht gefunden');
                   return;

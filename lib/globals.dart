@@ -148,10 +148,9 @@ abstract class Globals {
           } else if (Platform.isIOS) {
             bg.BackgroundGeolocation.onLocation((bg.Location location) async {
               String iosPath = (await AppGroupDirectory.getAppGroupDirectory('group.de.jena.feuerwehr.app.ffAlarm'))!.path;
-              File file = File("$iosPath/location_log.txt");
-
-              // write current date as iso string, then event, then location
-              file.writeAsStringSync('${DateTime.now().toIso8601String()}: location\n', mode: FileMode.append);
+              File file = File("$iosPath/last_location.txt");
+              var now = DateTime.now();
+              file.writeAsStringSync("${location.coords.latitude},${location.coords.longitude},${now.millisecondsSinceEpoch}");
             });
             bg.BackgroundGeolocation.onHeartbeat((callback) async {
               String iosPath = (await AppGroupDirectory.getAppGroupDirectory('group.de.jena.feuerwehr.app.ffAlarm'))!.path;
@@ -221,7 +220,7 @@ abstract class Globals {
     startOnBoot: true,
     stopOnTerminate: false,
     allowIdenticalLocations: true,
-    heartbeatInterval: 60,
+    heartbeatInterval: 120,
     pausesLocationUpdatesAutomatically: false,
   );
 
