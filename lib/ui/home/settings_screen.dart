@@ -382,43 +382,48 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
               dynamic result = await generalDialog(
                 color: Colors.blue,
                 title: 'Alarmierungston',
-                content: StatefulBuilder(builder: (context, sbSetState) {
-                  return Column(mainAxisSize: MainAxisSize.min, children: [
-                    const Text('Wiedergabe hier leiser als bei Alarmierung'),
-                    ...alarmSounds.keys.map((e) {
-                      return ListTile(
-                        title: Text(e),
-                        selected: selected == e,
-                        onTap: () {
-                          selected = e;
-                          if (mounted) sbSetState(() {});
-                        },
-                        trailing: () {
-                          return IconButton(
-                            icon: playing == alarmSounds[e] ? const Icon(Icons.stop_outlined) : const Icon(Icons.play_arrow_outlined),
-                            onPressed: () async {
-                              if (playing == alarmSounds[e]) {
-                                await player.stop();
-                                playing = null;
-                              } else {
-                                await player.open(
-                                  Audio('android/app/src/main/res/raw/${alarmSounds[e]}.mp3'),
-                                  autoStart: true,
-                                  volume: 0.5,
-                                  loopMode: LoopMode.single,
-                                  showNotification: false,
-                                );
-                                await player.play();
-                                playing = alarmSounds[e];
-                              }
+                content: StatefulBuilder(
+                  builder: (context, sbSetState) {
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('Wiedergabe hier leiser als bei Alarmierung'),
+                        ...alarmSounds.keys.map((e) {
+                          return ListTile(
+                            title: Text(e),
+                            selected: selected == e,
+                            onTap: () {
+                              selected = e;
                               if (mounted) sbSetState(() {});
                             },
+                            trailing: () {
+                              return IconButton(
+                                icon: playing == alarmSounds[e] ? const Icon(Icons.stop_outlined) : const Icon(Icons.play_arrow_outlined),
+                                onPressed: () async {
+                                  if (playing == alarmSounds[e]) {
+                                    await player.stop();
+                                    playing = null;
+                                  } else {
+                                    await player.open(
+                                      Audio('android/app/src/main/res/raw/${alarmSounds[e]}.mp3'),
+                                      autoStart: true,
+                                      volume: 0.5,
+                                      loopMode: LoopMode.single,
+                                      showNotification: false,
+                                    );
+                                    await player.play();
+                                    playing = alarmSounds[e];
+                                  }
+                                  if (mounted) sbSetState(() {});
+                                },
+                              );
+                            }(),
                           );
-                        }(),
-                      );
-                    }),
-                  ]);
-                }),
+                        }),
+                      ],
+                    );
+                  },
+                ),
                 actions: <Widget>[
                   TextButton(
                     onPressed: () {

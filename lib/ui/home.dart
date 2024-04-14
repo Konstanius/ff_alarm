@@ -148,82 +148,92 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-          body: TabBarView(
+        body: TabBarView(
+          controller: tabController,
+          children: <Widget>[
+            AlarmsScreen(badge: badgeAlarms),
+            UnitsScreen(badge: badgeUnits),
+            SettingsScreen(badge: badgeSettings),
+          ],
+        ),
+        bottomNavigationBar: Card(
+          margin: EdgeInsets.zero,
+          elevation: 5,
+          clipBehavior: Clip.antiAliasWithSaveLayer,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(8),
+              topRight: Radius.circular(8),
+            ),
+          ),
+          color: Theme.of(context).focusColor,
+          child: TabBar(
             controller: tabController,
-            children: <Widget>[
-              AlarmsScreen(badge: badgeAlarms),
-              UnitsScreen(badge: badgeUnits),
-              SettingsScreen(badge: badgeSettings),
+            tabs: <Tab>[
+              Tab(
+                child: Column(
+                  children: <Widget>[
+                    const SizedBox(height: 6),
+                    ValueListenableBuilder(
+                      valueListenable: badgeAlarms,
+                      builder: (context, value, child) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.local_fire_department_outlined),
+                            if (value > 0) Text(' $value !', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                          ],
+                        );
+                      },
+                    ),
+                    const Text('Alarmierungen', textScaler: TextScaler.linear(0.8)),
+                  ],
+                ),
+              ),
+              Tab(
+                child: Column(
+                  children: <Widget>[
+                    const SizedBox(height: 6),
+                    ValueListenableBuilder(
+                      valueListenable: badgeUnits,
+                      builder: (context, value, child) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.fire_truck_outlined),
+                            if (value > 0) Text(' $value !', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                          ],
+                        );
+                      },
+                    ),
+                    const Text('Einheiten', textScaler: TextScaler.linear(0.8)),
+                  ],
+                ),
+              ),
+              Tab(
+                child: Column(
+                  children: <Widget>[
+                    const SizedBox(height: 6),
+                    ValueListenableBuilder(
+                      valueListenable: badgeSettings,
+                      builder: (context, value, child) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.settings_outlined),
+                            if (value > 0) Text(' $value !', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                          ],
+                        );
+                      },
+                    ),
+                    const Text('Einstellungen', textScaler: TextScaler.linear(0.8)),
+                  ],
+                ),
+              ),
             ],
           ),
-          bottomNavigationBar: Card(
-            margin: EdgeInsets.zero,
-            elevation: 5,
-            clipBehavior: Clip.antiAliasWithSaveLayer,
-            shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(8),
-                topRight: Radius.circular(8),
-              ),
-            ),
-            color: Theme.of(context).focusColor,
-            child: TabBar(
-              controller: tabController,
-              tabs: <Tab>[
-                Tab(
-                  child: Column(children: <Widget>[
-                    const SizedBox(height: 6),
-                    ValueListenableBuilder(
-                        valueListenable: badgeAlarms,
-                        builder: (context, value, child) {
-                          return Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.local_fire_department_outlined),
-                              if (value > 0) Text(' $value !', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                            ],
-                          );
-                        }),
-                    const Text('Alarmierungen', textScaler: TextScaler.linear(0.8)),
-                  ]),
-                ),
-                Tab(
-                  child: Column(children: <Widget>[
-                    const SizedBox(height: 6),
-                    ValueListenableBuilder(
-                        valueListenable: badgeUnits,
-                        builder: (context, value, child) {
-                          return Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.fire_truck_outlined),
-                              if (value > 0) Text(' $value !', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                            ],
-                          );
-                        }),
-                    const Text('Einheiten', textScaler: TextScaler.linear(0.8)),
-                  ]),
-                ),
-                Tab(
-                  child: Column(children: <Widget>[
-                    const SizedBox(height: 6),
-                    ValueListenableBuilder(
-                        valueListenable: badgeSettings,
-                        builder: (context, value, child) {
-                          return Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.settings_outlined),
-                              if (value > 0) Text(' $value !', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                            ],
-                          );
-                        }),
-                    const Text('Einstellungen', textScaler: TextScaler.linear(0.8)),
-                  ]),
-                ),
-              ],
-            ),
-          )),
+        ),
+      ),
     );
   }
 

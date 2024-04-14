@@ -1212,8 +1212,10 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                   elevation: 5,
                                   child: Column(
                                     children: [
-                                      Text('${element.station.name} (${element.station.prefix} ${element.station.area} ${element.station.stationNumber})',
-                                          style: Theme.of(context).textTheme.titleMedium),
+                                      Text(
+                                        '${element.station.name} (${element.station.prefix} ${element.station.area} ${element.station.stationNumber})',
+                                        style: Theme.of(context).textTheme.titleMedium,
+                                      ),
                                       const SizedBox(height: 5),
                                       Row(
                                         mainAxisAlignment: MainAxisAlignment.center,
@@ -1548,88 +1550,89 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                       child: Padding(
                         padding: const EdgeInsets.only(top: 4, left: 8, right: 8),
                         child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Column(
-                              children: [
-                                for (var type in AlarmResponseType.values)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                                    color: type.color,
-                                    child: Row(
-                                      children: [
-                                        Column(
-                                          crossAxisAlignment: CrossAxisAlignment.end,
-                                          children: [
-                                            for (var entry in responseTypesList[type.index].entries)
-                                              if (entry.value == 0)
-                                                const SizedBox()
-                                              else
-                                                Row(
-                                                  mainAxisAlignment: MainAxisAlignment.end,
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    Text(
-                                                      '${entry.key}:',
-                                                      style: const TextStyle(
-                                                        color: Colors.black,
-                                                        height: 1.3,
-                                                        fontWeight: FontWeight.bold,
-                                                      ),
+                          borderRadius: BorderRadius.circular(12),
+                          child: Column(
+                            children: [
+                              for (var type in AlarmResponseType.values)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                                  color: type.color,
+                                  child: Row(
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          for (var entry in responseTypesList[type.index].entries)
+                                            if (entry.value == 0)
+                                              const SizedBox()
+                                            else
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.end,
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Text(
+                                                    '${entry.key}:',
+                                                    style: const TextStyle(
+                                                      color: Colors.black,
+                                                      height: 1.3,
+                                                      fontWeight: FontWeight.bold,
                                                     ),
-                                                    Text(
-                                                      ' ${entry.value.toString().padLeft(2, '  ')}',
-                                                      style: const TextStyle(
-                                                        color: Colors.black,
-                                                        height: 1.3,
-                                                      ),
+                                                  ),
+                                                  Text(
+                                                    ' ${entry.value.toString().padLeft(2, '  ')}',
+                                                    style: const TextStyle(
+                                                      color: Colors.black,
+                                                      height: 1.3,
                                                     ),
-                                                  ],
-                                                ),
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.end,
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                const Text(
-                                                  'Gesamt:',
-                                                  style: TextStyle(
-                                                    color: Colors.black,
-                                                    height: 1.3,
-                                                    fontWeight: FontWeight.bold,
                                                   ),
-                                                ),
-                                                Text(
-                                                  ' ${responseTypesTotal[type].toString().padLeft(2, '  ')}',
-                                                  style: const TextStyle(
-                                                    color: Colors.black,
-                                                    height: 1.3,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        const Spacer(),
-                                        Column(
-                                          children: [
-                                            Text(
-                                              type.name,
-                                              style: const TextStyle(
-                                                color: Colors.black,
-                                                fontWeight: FontWeight.bold,
+                                                ],
                                               ),
-                                            ),
-                                            if (type.timeAmount >= 0)
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.end,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Text(
+                                                'Gesamt:',
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  height: 1.3,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
                                               Text(
-                                                'bis ${DateFormat('HH:mm').format(alarm.date.add(Duration(minutes: type.timeAmount)))}',
-                                                style: const TextStyle(color: Colors.black),
+                                                ' ${responseTypesTotal[type].toString().padLeft(2, '  ')}',
+                                                style: const TextStyle(
+                                                  color: Colors.black,
+                                                  height: 1.3,
+                                                ),
                                               ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      const Spacer(),
+                                      Column(
+                                        children: [
+                                          Text(
+                                            type.name,
+                                            style: const TextStyle(
+                                              color: Colors.black,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          if (type.timeAmount >= 0)
+                                            Text(
+                                              'bis ${DateFormat('HH:mm').format(alarm.date.add(Duration(minutes: type.timeAmount)))}',
+                                              style: const TextStyle(color: Colors.black),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                              ],
-                            )),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
                     );
                   }(),
@@ -1731,29 +1734,33 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
     informationNotifier.value = [];
 
     if (alarmPosition != null) {
-      informationNotifier.value.add(MapPos(
-        id: 'alarm',
-        position: alarmPosition!,
-        name: 'Einsatzort',
-        widget: const PulseIcon(
-          pulseColor: Colors.red,
-          icon: Icons.local_fire_department,
-          pulseCount: 2,
+      informationNotifier.value.add(
+        MapPos(
+          id: 'alarm',
+          position: alarmPosition!,
+          name: 'Einsatzort',
+          widget: const PulseIcon(
+            pulseColor: Colors.red,
+            icon: Icons.local_fire_department,
+            pulseCount: 2,
+          ),
         ),
-      ));
+      );
     }
 
     if (Globals.lastPosition != null) {
-      informationNotifier.value.add(MapPos(
-        id: 'self',
-        position: Formats.positionToLatLng(Globals.lastPosition!),
-        name: 'Du',
-        widget: const PulseIcon(
-          pulseColor: Colors.green,
-          icon: Icons.person,
-          pulseCount: 2,
+      informationNotifier.value.add(
+        MapPos(
+          id: 'self',
+          position: Formats.positionToLatLng(Globals.lastPosition!),
+          name: 'Du',
+          widget: const PulseIcon(
+            pulseColor: Colors.green,
+            icon: Icons.person,
+            pulseCount: 2,
+          ),
         ),
-      ));
+      );
     }
 
     if (selectedStation != null) {
@@ -1765,16 +1772,18 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         }
       }
       if (station != null && station.position != null) {
-        informationNotifier.value.add(MapPos(
-          id: 'station',
-          position: Formats.positionToLatLng(station.position!),
-          name: 'Wache',
-          widget: const PulseIcon(
-            pulseColor: Colors.blue,
-            icon: Icons.home,
-            pulseCount: 2,
+        informationNotifier.value.add(
+          MapPos(
+            id: 'station',
+            position: Formats.positionToLatLng(station.position!),
+            name: 'Wache',
+            widget: const PulseIcon(
+              pulseColor: Colors.blue,
+              icon: Icons.home,
+              pulseCount: 2,
+            ),
           ),
-        ));
+        );
       }
     }
   }
@@ -1824,16 +1833,18 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
           }
         }
         if (!foundInInfo) {
-          informationNotifier.value.add(MapPos(
-            id: 'self',
-            position: Formats.positionToLatLng(Globals.lastPosition!),
-            name: 'Du',
-            widget: const PulseIcon(
-              pulseColor: Colors.green,
-              icon: Icons.person,
-              pulseCount: 2,
+          informationNotifier.value.add(
+            MapPos(
+              id: 'self',
+              position: Formats.positionToLatLng(Globals.lastPosition!),
+              name: 'Du',
+              widget: const PulseIcon(
+                pulseColor: Colors.green,
+                icon: Icons.person,
+                pulseCount: 2,
+              ),
             ),
-          ));
+          );
         }
       }
 

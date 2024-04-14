@@ -82,13 +82,15 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
 
     for (int i = 0; i < current.geofencing.length; i++) {
       var position = current.geofencing[i];
-      positionsNotifier.value.add(MapPos(
-        id: i.toString(),
-        position: position.position,
-        name: "Radius: ${position.radius}m",
-        widget: const Icon(Icons.location_on_outlined, color: Colors.blue),
-        radius: position.radius,
-      ));
+      positionsNotifier.value.add(
+        MapPos(
+          id: i.toString(),
+          position: position.position,
+          name: "Radius: ${position.radius}m",
+          widget: const Icon(Icons.location_on_outlined, color: Colors.blue),
+          radius: position.radius,
+        ),
+      );
     }
 
     setCurrentPosition();
@@ -106,16 +108,18 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
       }
 
       if (!contained) {
-        positionsNotifier.value.add(MapPos(
-          id: 'self',
-          position: Formats.positionToLatLng(Globals.lastPosition!),
-          name: 'Du',
-          widget: const PulseIcon(
-            pulseColor: Colors.green,
-            icon: Icons.person,
-            pulseCount: 2,
+        positionsNotifier.value.add(
+          MapPos(
+            id: 'self',
+            position: Formats.positionToLatLng(Globals.lastPosition!),
+            name: 'Du',
+            widget: const PulseIcon(
+              pulseColor: Colors.green,
+              icon: Icons.person,
+              pulseCount: 2,
+            ),
           ),
-        ));
+        );
       }
     } else {
       positionsNotifier.value.removeWhere((element) => element.id == "self");
@@ -530,13 +534,15 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
 
                             for (int i = 0; i < current.geofencing.length; i++) {
                               var position = current.geofencing[i];
-                              positionsNotifier.value.add(MapPos(
-                                id: i.toString(),
-                                position: position.position,
-                                name: "Radius: ${position.radius}m",
-                                widget: const Icon(Icons.location_on_outlined, color: Colors.blue),
-                                radius: position.radius,
-                              ));
+                              positionsNotifier.value.add(
+                                MapPos(
+                                  id: i.toString(),
+                                  position: position.position,
+                                  name: "Radius: ${position.radius}m",
+                                  widget: const Icon(Icons.location_on_outlined, color: Colors.blue),
+                                  radius: position.radius,
+                                ),
+                              );
                             }
 
                             setCurrentPosition();
@@ -550,7 +556,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
                       ),
                     ],
                   ),
-                )
+                ),
               ],
             ],
           ],
@@ -690,24 +696,28 @@ class _GeoFenceSelectionWidgetState extends State<GeoFenceSelectionWidget> {
                               // show the circle
                               widget.positionsNotifier.value.removeWhere((element) => element.id == "temp");
 
-                              widget.positionsNotifier.value.add(MapPos(
-                                id: "temp",
-                                position: widget.mapController.camera.center,
-                                name: "Radius: ${value.toInt()}m",
-                                widget: const Icon(Icons.location_on_outlined, color: Colors.yellow),
-                                radius: value.toInt(),
-                              ));
+                              widget.positionsNotifier.value.add(
+                                MapPos(
+                                  id: "temp",
+                                  position: widget.mapController.camera.center,
+                                  name: "Radius: ${value.toInt()}m",
+                                  widget: const Icon(Icons.location_on_outlined, color: Colors.yellow),
+                                  radius: value.toInt(),
+                                ),
+                              );
 
                               widget.positionsNotifier.notifyListeners();
                             },
                             onChangeEnd: (value) {
-                              widget.positionsNotifier.value.add(MapPos(
-                                id: widget.current.geofencing.length.toString(),
-                                position: widget.mapController.camera.center,
-                                name: "Radius: ${value.toInt()}m",
-                                widget: const Icon(Icons.location_on_outlined, color: Colors.blue),
-                                radius: value.toInt(),
-                              ));
+                              widget.positionsNotifier.value.add(
+                                MapPos(
+                                  id: widget.current.geofencing.length.toString(),
+                                  position: widget.mapController.camera.center,
+                                  name: "Radius: ${value.toInt()}m",
+                                  widget: const Icon(Icons.location_on_outlined, color: Colors.blue),
+                                  radius: value.toInt(),
+                                ),
+                              );
                               widget.current.geofencing.add((position: widget.mapController.camera.center, radius: value.toInt()));
                               widget.positionsNotifier.notifyListeners();
                               setState(() {
@@ -1071,10 +1081,12 @@ class SettingsNotificationData {
         DateTime end = DateTime.fromMillisecondsSinceEpoch(int.parse(split[1]));
         if (end.isBefore(start)) continue;
         if (end.isBefore(now)) continue;
-        calendarList.add((
-          start: start,
-          end: end,
-        ));
+        calendarList.add(
+          (
+            start: start,
+            end: end,
+          ),
+        );
       } catch (_) {}
     }
 
@@ -1087,11 +1099,13 @@ class SettingsNotificationData {
         List<String> split = item.split(";");
         int day = int.parse(split[0]);
         if (day < 1 || day > 7) continue;
-        shiftPlanList.add((
-          day: int.parse(split[0]),
-          start: int.parse(split[1]),
-          end: int.parse(split[2]),
-        ));
+        shiftPlanList.add(
+          (
+            day: int.parse(split[0]),
+            start: int.parse(split[1]),
+            end: int.parse(split[2]),
+          ),
+        );
       } catch (_) {}
     }
 
@@ -1100,10 +1114,12 @@ class SettingsNotificationData {
     for (String item in geofencing) {
       try {
         List<String> split = item.split(";");
-        geofencingList.add((
-          position: LatLng(double.parse(split[0]), double.parse(split[1])),
-          radius: int.parse(split[2]),
-        ));
+        geofencingList.add(
+          (
+            position: LatLng(double.parse(split[0]), double.parse(split[1])),
+            radius: int.parse(split[2]),
+          ),
+        );
       } catch (_) {}
     }
 

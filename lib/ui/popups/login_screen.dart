@@ -56,21 +56,25 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(10),
             child: InkWell(
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (context) {
-                  return Scaffold(
-                    appBar: AppBar(
-                      automaticallyImplyLeading: true,
-                      title: const Text('Alarmierungsbereiche'),
-                    ),
-                    body: Center(
-                      child: PhotoView(
-                        imageProvider: const AssetImage('assets/alarm_areas_jena.jpg'),
-                        minScale: PhotoViewComputedScale.contained,
-                        maxScale: PhotoViewComputedScale.covered * 2,
-                      ),
-                    ),
-                  );
-                }));
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) {
+                      return Scaffold(
+                        appBar: AppBar(
+                          automaticallyImplyLeading: true,
+                          title: const Text('Alarmierungsbereiche'),
+                        ),
+                        body: Center(
+                          child: PhotoView(
+                            imageProvider: const AssetImage('assets/alarm_areas_jena.jpg'),
+                            minScale: PhotoViewComputedScale.contained,
+                            maxScale: PhotoViewComputedScale.covered * 2,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                );
               },
               child: Image.asset(
                 'assets/alarm_areas_jena.jpg',

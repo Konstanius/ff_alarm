@@ -1,12 +1,24 @@
 include: package:flutter_lints/flutter.yaml
 
+analyzer:
+  errors:
+    body_might_complete_normally_catch_error: ignore
+    invalid_use_of_visible_for_testing_member: ignore
+    invalid_use_of_protected_member: ignore
+  enable-experiment:
+    - inference-update-2
+  exclude:
+    [lib/data/database.g.dart]
+
 linter:
   rules:
     avoid_print: true
-    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+    always_use_package_imports: false
+    avoid_relative_lib_imports: false
     always_declare_return_types: true
-    avoid_relative_lib_imports: true
-    avoid_slow_async_io: true
+    avoid_empty_else: true
     close_sinks: true
-    enable_null_safety: true
-    invalid_use_of_visible_for_testing_member: false
+    require_trailing_commas: true
+    cancel_subscriptions: true
+    library_private_types_in_public_api: false
+    depend_on_referenced_packages: false

@@ -486,7 +486,7 @@ void onServiceStartAndroid(ServiceInstance instance) async {
 
         delay--;
       } catch (e, s) {
-        print('Failed to check notification settings: $e\n$s');
+        Logger.error('Failed to check notification settings: $e\n$s');
       }
     }
   }
