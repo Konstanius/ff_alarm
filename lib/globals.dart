@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:app_group_directory/app_group_directory.dart';
-import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:ff_alarm/data/database.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/person.dart';
@@ -18,6 +17,7 @@ import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/settings/lifecycle.dart';
 import 'package:ff_alarm/ui/settings/notifications.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
@@ -25,6 +25,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 
 abstract class Globals {
   static const MethodChannel channel = MethodChannel('app.feuerwehr.jena.de/methods');
@@ -144,6 +145,74 @@ abstract class Globals {
 
               await service.startService();
             }
+          } else if (Platform.isIOS) {
+            bg.BackgroundGeolocation.onLocation((bg.Location location) async {
+              String iosPath = (await AppGroupDirectory.getAppGroupDirectory('group.de.jena.feuerwehr.app.ffAlarm'))!.path;
+              File file = File("$iosPath/location_log.txt");
+
+              // write current date as iso string, then event, then location
+              file.writeAsStringSync('${DateTime.now().toIso8601String()}: location\n', mode: FileMode.append);
+            });
+            bg.BackgroundGeolocation.onHeartbeat((callback) async {
+              String iosPath = (await AppGroupDirectory.getAppGroupDirectory('group.de.jena.feuerwehr.app.ffAlarm'))!.path;
+              File file = File("$iosPath/location_log.txt");
+
+              // write current date as iso string, then event, then location
+              file.writeAsStringSync('${DateTime.now().toIso8601String()}: heartbeat\n', mode: FileMode.append);
+            });
+
+            bg.BackgroundGeolocation.ready(
+              bg.Config(
+                desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
+                distanceFilter: 50.0,
+                stopTimeout: 5,
+                debug: kDebugMode,
+                logLevel: bg.Config.LOG_LEVEL_VERBOSE,
+                disableElasticity: true,
+                disableStopDetection: true,
+                disableMotionActivityUpdates: false,
+                disableLocationAuthorizationAlert: false,
+                preventSuspend: true,
+                startOnBoot: true,
+                stopOnTerminate: false,
+                allowIdenticalLocations: true,
+                heartbeatInterval: 60,
+                pausesLocationUpdatesAutomatically: false,
+              ),
+            ).then((bg.State state) {
+              if (!state.enabled) {
+                bg.BackgroundGeolocation.start();
+                bg.BackgroundGeolocation.startBackgroundTask();
+              }
+            });
+          }
+        } else {
+          if (Platform.isAndroid) {
+            // none, stops itself
+          } else if (Platform.isIOS) {
+            bg.BackgroundGeolocation.ready(
+              bg.Config(
+                desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
+                distanceFilter: 50.0,
+                stopTimeout: 5,
+                debug: kDebugMode,
+                logLevel: bg.Config.LOG_LEVEL_VERBOSE,
+                disableElasticity: true,
+                disableStopDetection: true,
+                disableMotionActivityUpdates: false,
+                disableLocationAuthorizationAlert: false,
+                preventSuspend: true,
+                startOnBoot: true,
+                stopOnTerminate: false,
+                allowIdenticalLocations: true,
+                heartbeatInterval: 60,
+                pausesLocationUpdatesAutomatically: false,
+              ),
+            ).then((bg.State state) {
+              if (state.enabled) {
+                bg.BackgroundGeolocation.stop();
+              }
+            });
           }
         }
       }
@@ -301,7 +370,6 @@ abstract class Globals {
 /// Serverside treats a position as unreliable after 10 minutes
 Future<bool> backgroundGPSSync() async {
   try {
-
     var location = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high, timeLimit: const Duration(seconds: 12));
     if (Globals.lastPosition != null && Globals.lastPositionTime != null) {
       if (DateTime.now().difference(Globals.lastPositionTime!) < const Duration(minutes: 5)) {
