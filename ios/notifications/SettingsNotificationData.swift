@@ -52,9 +52,7 @@ class SettingsNotificationData {
                 let end = Date(timeIntervalSince1970: Double(splits[1])! / 1000)
                 if end > now && end > start {
                     calendar.append(CalendarEntry(start: start, end: end))
-                    log("Added calendar entry: \(start) - \(end)")
                 } else {
-                    log("Invalid calendar entry: \(start) - \(end)")
                 }
             }
         }
@@ -209,11 +207,8 @@ class SettingsNotificationData {
         }
 
         let now = Date()
-        log("Checking notification settings for \(stationId) at \(now)")
         for entry in calendar {
-            log("Checking calendar entry \(entry.start) - \(entry.end)")
             if entry.isInRange(now) {
-                log("Calendar entry is in range")
                 return false
             }
         }
