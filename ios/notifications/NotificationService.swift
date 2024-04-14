@@ -27,30 +27,48 @@ class NotificationService: UNNotificationServiceExtension {
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
         self.contentHandler = contentHandler
         bestAttemptContent = (request.content.mutableCopy() as? UNMutableNotificationContent)
-        
+
         if let bestAttemptContent = bestAttemptContent {
-            do {
-                sharedContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.de.jena.feuerwehr.app.ffAlarm")
+            var finished = false
 
-                loggerFile = FileHandle(forWritingAtPath: sharedContainer!.appendingPathComponent("nse.log").path)
-                if loggerFile == nil {
-                    FileManager.default.createFile(atPath: sharedContainer!.appendingPathComponent("nse.log").path, contents: nil, attributes: nil)
-                    loggerFile = FileHandle(forWritingAtPath: sharedContainer!.appendingPathComponent("nse.log").path)
+            defer {
+                if !finished {
+                    bestAttemptContent.title = "Alarmierung (Synchronisierungsfehler)"
+                    bestAttemptContent.body = "Eine Alarmierung wurde gesendet. Bitte überprüfe die App auf neue Alarmierungen."
+                    let customSound = UNNotificationSound.criticalSoundNamed(UNNotificationSoundName(rawValue: "res_alarm_1.mp3"), withAudioVolume: 1.0)
+                    bestAttemptContent.sound = customSound
+
+                    if #available(iOSApplicationExtension 15.0, *) {
+                        bestAttemptContent.interruptionLevel = .timeSensitive
+                    }
+                    contentHandler(bestAttemptContent)
                 }
-                loggerFile?.seekToEndOfFile()
+            }
+            sharedContainer = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.de.jena.feuerwehr.app.ffAlarm")
 
-                let prefsPath = sharedContainer!.appendingPathComponent("prefs/main.json")
-                prefs = try! JSONSerialization.jsonObject(with: Data(contentsOf: prefsPath), options: []) as? [String: Any]
+            loggerFile = FileHandle(forWritingAtPath: sharedContainer!.appendingPathComponent("nse.log").path)
+            if loggerFile == nil {
+                FileManager.default.createFile(atPath: sharedContainer!.appendingPathComponent("nse.log").path, contents: nil, attributes: nil)
+                loggerFile = FileHandle(forWritingAtPath: sharedContainer!.appendingPathComponent("nse.log").path)
+            }
+            loggerFile?.seekToEndOfFile()
 
-                let dbPath = sharedContainer!.appendingPathComponent("databases/database.db")
-                database = try! Connection(dbPath.path)
+            let prefsPath = sharedContainer!.appendingPathComponent("prefs/main.json")
+            prefs = try! JSONSerialization.jsonObject(with: Data(contentsOf: prefsPath), options: []) as? [String: Any]
 
+            let dbPath = sharedContainer!.appendingPathComponent("databases/database.db")
+            database = try! Connection(dbPath.path)
+
+            let type = bestAttemptContent.userInfo["type"] as! String
+
+            // empty switch on type
+            switch type {
+            case "alarm":
                 let alarm = Alarm.inflateFromString(input: bestAttemptContent.userInfo["alarm"] as! String)
                 Alarm.insert(alarm: alarm)
 
                 var alarmSoundPath = prefs!["alarm_soundPath"] as? String ?? "res_alarm_1"
                 alarmSoundPath = alarmSoundPath + ".mp3"
-
 
                 var channelKey = "alarm"
                 // starts with "Test" is test
@@ -58,10 +76,10 @@ class NotificationService: UNNotificationServiceExtension {
                     channelKey = "test"
                 }
 
-                let alarmOption = alarm.getAlertOption(prefs: prefs!)
+                let alarmOption = alarm.getAlertOption(prefs: prefs!, shouldNotify: true)
                 switch alarmOption {
                 case .alert:
-                bestAttemptContent.sound = UNNotificationSound.criticalSoundNamed(UNNotificationSoundName(rawValue: alarmSoundPath), withAudioVolume: 1.0)
+                    bestAttemptContent.sound = UNNotificationSound.criticalSoundNamed(UNNotificationSoundName(rawValue: alarmSoundPath), withAudioVolume: 1.0)
                     if #available(iOSApplicationExtension 15.0, *) {
                         bestAttemptContent.interruptionLevel = .timeSensitive
                     }
@@ -91,24 +109,19 @@ class NotificationService: UNNotificationServiceExtension {
                 let alarmData = try! JSONSerialization.data(withJSONObject: alarm.toJson(), options: [])
                 bestAttemptContent.userInfo["alarm"] = String(data: alarmData, encoding: .utf8)
                 bestAttemptContent.userInfo["received"] = String(Date().timeIntervalSince1970)
-
-                contentHandler(bestAttemptContent)
-            } catch {
-                bestAttemptContent.title = "Alarmierung (Synchronisierungsfehler)"
-                bestAttemptContent.body = "Eine Alarmierung wurde gesendet. Bitte überprüfe die App auf neue Alarmierungen."
-                let customSound = UNNotificationSound.criticalSoundNamed(UNNotificationSoundName(rawValue: "res_alarm_1.mp3"), withAudioVolume: 1.0)
-                bestAttemptContent.sound = customSound
-
-                if #available(iOSApplicationExtension 15.0, *) {
-                    bestAttemptContent.interruptionLevel = .timeSensitive
-                }
-                contentHandler(bestAttemptContent)
+                break
+            default:
+                break
             }
+
+            contentHandler(bestAttemptContent)
+
+            finished = true
         }
     }
-    
+
     override func serviceExtensionTimeWillExpire() {
-        if let contentHandler = contentHandler, let bestAttemptContent =  bestAttemptContent {
+        if let contentHandler = contentHandler, let bestAttemptContent = bestAttemptContent {
             bestAttemptContent.title = "Alarmierung (Synchronisierungsfehler)"
             bestAttemptContent.body = "Eine Alarmierung wurde gesendet. Bitte überprüfe die App auf neue Alarmierungen."
             let customSound = UNNotificationSound.criticalSoundNamed(UNNotificationSoundName(rawValue: "res_alarm_1.mp3"), withAudioVolume: 1.0)

@@ -68,6 +68,7 @@ abstract class Globals {
       if (!await Geolocator.isLocationServiceEnabled()) {
         lastPosition = null;
         lastPositionTime = null;
+        Globals.positionSubscription?.cancel();
         throw 'Location service is disabled';
       }
 
@@ -75,6 +76,7 @@ abstract class Globals {
       if (status == LocationPermission.denied) {
         lastPosition = null;
         lastPositionTime = null;
+        Globals.positionSubscription?.cancel();
         throw 'Location permission is denied';
       }
 

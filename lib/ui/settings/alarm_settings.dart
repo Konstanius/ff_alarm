@@ -64,6 +64,8 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
 
     locationPermissionTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
       Permission.locationAlways.isGranted.then((value) {
+        if (value == locationPermissionGranted) return;
+        Globals.initGeoLocator();
         if (mounted) {
           setState(() {
             locationPermissionGranted = value;

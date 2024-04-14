@@ -8,7 +8,6 @@ import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class LifeCycleSettings extends StatefulWidget {
@@ -60,7 +59,16 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
     checkSettings();
 
     _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
+      bool locationAlwaysPreviously = locationAlways;
       checkSettings();
+      if (locationAlways != locationAlwaysPreviously) {
+        Globals.initGeoLocator();
+        if (locationAlways) {
+          successToast('Standortzugriff aktiviert!');
+        } else {
+          errorToast('Standortzugriff deaktiviert!');
+        }
+      }
     });
   }
 
@@ -400,13 +408,40 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
   }
 
   static Future<void> requestLocationPermission() async {
+    if (Platform.isIOS) {
+      // Tell the user that they need to select "When in use" in the first dialog, or else it will fail
+      var res = await generalDialog(
+        color: Colors.blue,
+        title: 'Standortzugriff',
+        content: const Text(
+          'Durch das Aktivieren des Standortzugriffs wird FF Alarm deinen Standort auf Karten für dich anzeigen können.\n\n'
+          'Klicke auf "Fortfahren" und wähle dann "Immer erlauben" aus.\n\n'
+          '"Einmal erlauben" reicht nicht aus, da Du die Berechtigung sonst bei Inaktivität verlierst',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(Globals.context!, false);
+            },
+            child: const Text('Abbrechen'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(Globals.context!, true);
+            },
+            child: const Text('Fortfahren'),
+          ),
+        ],
+      );
+      if (res != true) return;
+    }
     var result = await Permission.locationWhenInUse.request();
     if (result.isGranted) {
       var res = await generalDialog(
         color: Colors.blue,
         title: 'Standortzugriff',
         content: const Text(
-          'Durch das Aktivieren des dauerhaften Standortzugriffs wird FF Alarm im Hintergrund für Geofences deinen Standort mit dem Server teilen.\n\n'
+          'Durch das Aktivieren des dauerhaften Standortzugriffs wird FF Alarm bei aktivierten Geofences im Hintergrund deinen Standort mit dem Server teilen.\n\n'
           'DEIN STANDORT WIRD NIEMALS MIT ANDEREN GETEILT ODER DAUERHAFT GESPEICHERT!\n\n'
           'Beim Fortfahren musst du in der folgenden Seite den Standortzugriff auf "Immer erlauben" setzen.',
         ),
@@ -430,31 +465,6 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
       }
 
       result = await Permission.locationAlways.request();
-    }
-    if (result.isGranted) {
-      successToast('Einstellung erfolgreich!');
-
-      try {
-        Globals.positionSubscription?.cancel();
-        Globals.positionSubscription = Geolocator.getPositionStream().listen((Position position) async {
-          Globals.lastPosition = position;
-          Globals.lastPositionTime = DateTime.now();
-          UpdateInfo(UpdateType.ui, {"2"});
-        });
-
-        // get initial position
-        Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high, timeLimit: const Duration(seconds: 5)).then((Position? position) {
-          Globals.lastPosition = position;
-          Globals.lastPositionTime = DateTime.now();
-          UpdateInfo(UpdateType.ui, {"2"});
-        }).catchError((e, s) {
-          Logger.warn('Failed to get initial position: $e\n$s');
-        });
-      } catch (e, s) {
-        Logger.warn('Failed to initialize geolocator: $e\n$s');
-      }
-    } else {
-      errorToast('Einstellung fehlgeschlagen!');
     }
   }
 }

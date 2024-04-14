@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/station.dart';
@@ -386,6 +387,52 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
               }
             },
             child: const Text('Beispiel Alarmierung'),
+          ),
+          // button to read Globals.filesPath/nse.log and display it in a dialog
+          ElevatedButton(
+            onPressed: ()  {
+              File file = File('${Globals.filesPath}/nse.log');
+              if (!file.existsSync()) {
+                errorToast('Log-Datei nicht gefunden');
+                return;
+              }
+
+              String log = file.readAsStringSync();
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('NSE Log'),
+                    content: SingleChildScrollView(
+                      child: Text(log),
+                    ),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Schließen'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+            child: const Text('NSE Log anzeigen'),
+          ),
+          // Button to delete it
+          ElevatedButton(
+            onPressed: () {
+              File file = File('${Globals.filesPath}/nse.log');
+              if (!file.existsSync()) {
+                errorToast('Log-Datei nicht gefunden');
+                return;
+              }
+
+              file.deleteSync();
+              successToast('Log-Datei gelöscht');
+            },
+            child: const Text('NSE Log löschen'),
           ),
           for (int i = 0; i < alarmsList.length; i++)
             () {
