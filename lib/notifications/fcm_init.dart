@@ -63,8 +63,7 @@ Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) as
 
         await sendAlarm(alarm, option);
 
-        if (alarm.type.startsWith('Test')) return;
-        if (alarm.responseTimeExpired) return;
+        if (alarm.type.startsWith('Test') || alarm.responseTimeExpired) return;
 
         try {
           var fetched = await AlarmInterface.fetchSingle(alarm.server, alarm.idNumber);
