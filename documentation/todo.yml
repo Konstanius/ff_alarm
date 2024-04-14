@@ -15,5 +15,4 @@ Allgemein:
 Bereitschaft:
   - Geofences show popup when permission denied and fences active on App start
   - Swift Implementation von Geofences wenn keine Bewegung
-  - Swift fetch alarm details after FCM received and possibly send notReady answer if necessary
   - ? Dont send geofence updates when calendar is actively blocking

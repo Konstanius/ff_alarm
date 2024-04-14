@@ -305,4 +305,43 @@ class AlarmResponse {
         case notReady = 5
         case notSet = 6
     }
+
+    func getResponseInfo() -> AlarmResponseInfo {
+
+        var stationId: Int?
+        var responseType: AlarmResponseType?
+
+        var anyNotSet = false
+        for (key, value) in responses {
+            if value != .notReady && value != .notSet {
+                stationId = key
+                responseType = value
+                break
+            }
+
+            if value == .notSet {
+                anyNotSet = true
+            }
+        }
+
+        if anyNotSet {
+            responseType = .notSet
+        }
+
+        if (responseType == nil) {
+            responseType = .notReady
+        }
+
+        return AlarmResponseInfo(stationId: stationId, responseType: responseType!)
+    }
+}
+
+struct AlarmResponseInfo {
+    var stationId: Int?
+    var responseType: AlarmResponse.AlarmResponseType
+
+    init(stationId: Int?, responseType: AlarmResponse.AlarmResponseType) {
+        self.stationId = stationId
+        self.responseType = responseType
+    }
 }
