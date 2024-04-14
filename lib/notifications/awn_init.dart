@@ -128,6 +128,12 @@ Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
       case 'alarm':
         {
           Alarm alarm = Alarm.fromJson(jsonDecode(payload['alarm']!));
+          try {
+            Alarm? existing = await Globals.db.alarmDao.getById(alarm.id);
+            if (existing != null) {
+              alarm = existing;
+            }
+          } catch (_) {}
           if (Globals.router.routeInformationProvider.value.uri.pathSegments.lastOrNull != 'alarm') {
             Globals.router.go('/alarm', extra: alarm);
           } else if (Globals.router.routeInformationProvider.value.uri.pathSegments.isNotEmpty) {}
@@ -142,6 +148,12 @@ Future<void> onActionReceivedMethod(ReceivedAction receivedAction) async {
       {
         resetAndroidNotificationVolume();
         Alarm alarm = Alarm.fromJson(jsonDecode(payload['alarm']!));
+        try {
+          Alarm? existing = await Globals.db.alarmDao.getById(alarm.id);
+          if (existing != null) {
+            alarm = existing;
+          }
+        } catch (_) {}
         if (Globals.router.routeInformationProvider.value.uri.pathSegments.lastOrNull != 'alarm') {
           Globals.router.go('/alarm', extra: alarm);
         } else if (Globals.router.routeInformationProvider.value.uri.pathSegments.isNotEmpty) {}
@@ -176,7 +188,6 @@ Future<void> resetAndroidNotificationVolume() async {
 
 Future<bool> sendAlarm(Alarm alarm, AlarmOption option) async {
   try {
-
     if (Globals.appStarted && option == AlarmOption.alert) {
       Globals.router.go('/alarm', extra: alarm);
     }

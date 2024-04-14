@@ -287,8 +287,8 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
                 textList: const ["Alle absagen", "Siehe unten", "Alle an"],
               ),
             ),
-            const SettingsDivider(text: "Kalender-Abschaltung"),
             if (current.manualOverride == 1) ...[
+              const SettingsDivider(text: "Kalender-Abschaltung"),
               Text("Deaktiviert an folgenden Tagen:", style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 5),
               // list all datetime ranges

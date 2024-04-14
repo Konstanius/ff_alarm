@@ -108,10 +108,9 @@ packages:
   background_fetch:
     dependency: transitive
     description:
-      name: background_fetch
-      sha256: dbffec0317ccdef6e2014cb543e147f52441e29c4fcb53dfd23558c4d92ddece
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/background_fetch-1.3.2"
+      relative: true
+    source: path
     version: "1.3.2"
   badges:
     dependency: "direct main"
@@ -425,10 +424,9 @@ packages:
   flutter_background_geolocation:
     dependency: "direct main"
     description:
-      name: flutter_background_geolocation
-      sha256: "5a6337670f2906102535238fb62875743f24ac412d174f2a2cb77bda5dc4b76e"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/flutter_background_geolocation-4.15.1"
+      relative: true
+    source: path
     version: "4.15.1"
   flutter_background_service:
     dependency: "direct main"
