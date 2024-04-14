@@ -8,6 +8,7 @@ import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
 import 'package:permission_handler/permission_handler.dart';
 
 class LifeCycleSettings extends StatefulWidget {
@@ -443,11 +444,20 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                 );
                 if (res != true) return;
 
-                var result = await Permission.sensors.request();
-                if (result.isGranted) {
+                var state = await bg.BackgroundGeolocation.ready(Globals.iosBackgroundConfig);
+
+                int result = await bg.BackgroundGeolocation.requestPermission();
+                print(result); // TODO
+                if (result == 1) {
                   successToast('Einstellung erfolgreich!');
+                  if (!state.enabled) {
+                    await bg.BackgroundGeolocation.start();
+                  }
                 } else {
                   errorToast('Einstellung fehlgeschlagen!');
+                  if (state.enabled) {
+                    await bg.BackgroundGeolocation.stop();
+                  }
                 }
 
                 checkSettings();

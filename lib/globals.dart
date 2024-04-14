@@ -161,28 +161,9 @@ abstract class Globals {
               file.writeAsStringSync('${DateTime.now().toIso8601String()}: heartbeat\n', mode: FileMode.append);
             });
 
-            bg.BackgroundGeolocation.ready(
-              bg.Config(
-                desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
-                distanceFilter: 50.0,
-                stopTimeout: 5,
-                debug: kDebugMode,
-                logLevel: bg.Config.LOG_LEVEL_VERBOSE,
-                disableElasticity: true,
-                disableStopDetection: true,
-                disableMotionActivityUpdates: false,
-                disableLocationAuthorizationAlert: false,
-                preventSuspend: true,
-                startOnBoot: true,
-                stopOnTerminate: false,
-                allowIdenticalLocations: true,
-                heartbeatInterval: 60,
-                pausesLocationUpdatesAutomatically: false,
-              ),
-            ).then((bg.State state) {
+            bg.BackgroundGeolocation.ready(iosBackgroundConfig).then((bg.State state) {
               if (!state.enabled) {
                 bg.BackgroundGeolocation.start();
-                bg.BackgroundGeolocation.startBackgroundTask();
               }
             });
           }
@@ -190,25 +171,7 @@ abstract class Globals {
           if (Platform.isAndroid) {
             // none, stops itself
           } else if (Platform.isIOS) {
-            bg.BackgroundGeolocation.ready(
-              bg.Config(
-                desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
-                distanceFilter: 50.0,
-                stopTimeout: 5,
-                debug: kDebugMode,
-                logLevel: bg.Config.LOG_LEVEL_VERBOSE,
-                disableElasticity: true,
-                disableStopDetection: true,
-                disableMotionActivityUpdates: false,
-                disableLocationAuthorizationAlert: false,
-                preventSuspend: true,
-                startOnBoot: true,
-                stopOnTerminate: false,
-                allowIdenticalLocations: true,
-                heartbeatInterval: 60,
-                pausesLocationUpdatesAutomatically: false,
-              ),
-            ).then((bg.State state) {
+            bg.BackgroundGeolocation.ready(iosBackgroundConfig).then((bg.State state) {
               if (state.enabled) {
                 bg.BackgroundGeolocation.stop();
               }
@@ -243,6 +206,24 @@ abstract class Globals {
       }
     }
   }
+
+  static bg.Config iosBackgroundConfig = bg.Config(
+    desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
+    distanceFilter: 50.0,
+    stopTimeout: 5,
+    debug: kDebugMode,
+    logLevel: kDebugMode ? bg.Config.LOG_LEVEL_VERBOSE : bg.Config.LOG_LEVEL_OFF,
+    disableElasticity: false,
+    disableStopDetection: true,
+    disableMotionActivityUpdates: true,
+    disableLocationAuthorizationAlert: true,
+    preventSuspend: true,
+    startOnBoot: true,
+    stopOnTerminate: false,
+    allowIdenticalLocations: true,
+    heartbeatInterval: 60,
+    pausesLocationUpdatesAutomatically: false,
+  );
 
   static Future<void> initializeTemporary() async {
     await initGeoLocator();
