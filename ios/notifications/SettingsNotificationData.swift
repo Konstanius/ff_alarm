@@ -185,19 +185,19 @@ class SettingsNotificationData {
             return true
         }
 
-        var latitude =  null
-        var longitude = null
+        var latitude: Double? = nil
+        var longitude: Double? = nil
         let locationPath = sharedContainer!.appendingPathComponent("last_location.txt")
         if FileManager.default.fileExists(atPath: locationPath.path) {
             let location = try? String(contentsOf: locationPath)
             if location != nil {
                 let splits = location!.split(separator: ",")
                 if splits.count == 3 {
-                    let time = Int(splits[3])
+                    let time = Int(splits[2])!
                     let now = Date().timeIntervalSince1970 * 1000
-                    if now - time < 1000 * 60 * 15 {
-                        latitude = Double(splits[0])
-                        longitude = Double(splits[1])
+                    if Int(now) - time < 1000 * 60 * 15 {
+                        latitude = Double(splits[0])!
+                        longitude = Double(splits[1])!
                     }
                 }
             }
@@ -250,6 +250,8 @@ class SettingsNotificationData {
                     return true
                 }
             }
+
+            return false
         }
 
         return true
