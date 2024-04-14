@@ -21,6 +21,7 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
   bool ignoreBatteryOptimizations = false;
   bool locationWhenInUse = false;
   bool locationAlways = false;
+  bool motionSensors = false;
   bool appOptimizations = false;
   bool backgroundActivity = false;
   bool allowAutoLaunch = false;
@@ -34,6 +35,7 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
 
     if (Platform.isAndroid) {
       ignoreBatteryOptimizations = await Permission.ignoreBatteryOptimizations.isGranted;
+      motionSensors = true;
 
       try {
         final result = await Globals.channel.invokeMethod('backgroundData');
@@ -46,6 +48,8 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
       appOptimizations = Globals.prefs.getBool('appOptimizations') ?? false;
       backgroundActivity = Globals.prefs.getBool('backgroundActivity') ?? false;
       allowAutoLaunch = Globals.prefs.getBool('allowAutoLaunch') ?? false;
+    } else {
+      motionSensors = await Permission.sensors.isGranted;
     }
 
     UpdateInfo(UpdateType.ui, {"1"});
@@ -402,6 +406,53 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
               checkSettings();
             },
           ),
+          // motionSensors
+          if (Platform.isIOS)
+            ListTile(
+              leading: const Icon(Icons.motion_photos_on_outlined),
+              title: const Text('Bewegungssensoren'),
+              subtitle: const Text('Erlaubt der App, genauere Positionsabfragen zu stellen.'),
+              trailing: motionSensors ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
+              onTap: () async {
+                if (motionSensors) {
+                  infoToast('Einstellung bereits aktiviert!');
+                  return;
+                }
+
+                var res = await generalDialog(
+                  color: Colors.blue,
+                  title: 'Bewegungssensoren',
+                  content: const Text(
+                    'Durch das Aktivieren der Bewegungssensoren kann die App genauere Positionsabfragen stellen.\n\n'
+                    'Dies erlaubt dem Geofence Feature, genauer zu bestimmen, ob du dich in einem Alarmierungs-Gebiet befindest.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context, false);
+                      },
+                      child: const Text('Abbrechen'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(context, true);
+                      },
+                      child: const Text('Fortfahren'),
+                    ),
+                  ],
+                );
+                if (res != true) return;
+
+                var result = await Permission.sensors.request();
+                if (result.isGranted) {
+                  successToast('Einstellung erfolgreich!');
+                } else {
+                  errorToast('Einstellung fehlgeschlagen!');
+                }
+
+                checkSettings();
+              },
+            ),
         ],
       ),
     );
