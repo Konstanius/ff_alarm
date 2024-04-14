@@ -35,7 +35,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) async {
   Logger.fcm('FCM message received: ${message.data}');
   WidgetsFlutterBinding.ensureInitialized();
-  await Globals.initialize();
+  await Globals.initialize(true);
 
   Map<String, dynamic> data = message.data;
 

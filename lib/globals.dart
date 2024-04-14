@@ -42,9 +42,9 @@ abstract class Globals {
   static late final Prefs prefs;
   static late final AppDatabase db;
 
-  static Future<void> initialize() async {
+  static Future<void> initialize(bool geo) async {
     if (initialized) {
-      await initializeTemporary();
+      await initializeTemporary(geo);
       return;
     }
     initialized = true;
@@ -60,7 +60,7 @@ abstract class Globals {
 
     db = await $FloorAppDatabase.databaseBuilder('database.db').buildBetterPath();
 
-    await initializeTemporary();
+    await initializeTemporary(geo);
   }
 
   static Future<void> initGeoLocator() async {
@@ -147,10 +147,43 @@ abstract class Globals {
             }
           } else if (Platform.isIOS) {
             bg.BackgroundGeolocation.onLocation((bg.Location location) async {
+              await initialize(false);
               String iosPath = (await AppGroupDirectory.getAppGroupDirectory('group.de.jena.feuerwehr.app.ffAlarm'))!.path;
               File file = File("$iosPath/last_location.txt");
               var now = DateTime.now();
               file.writeAsStringSync("${location.coords.latitude},${location.coords.longitude},${now.millisecondsSinceEpoch}");
+
+              var all = SettingsNotificationData.getAll();
+              if (all.isNotEmpty) {
+                bool geofenceActive = false;
+                for (var data in all.values) {
+                  if (data.geofencing.isNotEmpty && data.manualOverride == 1 && data.enabledMode == 3) {
+                    geofenceActive = true;
+                    break;
+                  }
+                }
+
+                if (!geofenceActive) {
+                  return;
+                }
+              } else {
+                return;
+              }
+
+              try {
+                var servers = Globals.registeredServers;
+
+                var futures = <Future>[];
+                for (var server in servers) {
+                  futures.add(
+                    Request('personSetLocation', {'a': location.coords.latitude, 'o': location.coords.longitude, 't': now.millisecondsSinceEpoch}, server).emit(true),
+                  );
+                }
+
+                await Future.wait(futures);
+              } catch (e, s) {
+                Logger.warn('Failed to send location: $e\n$s');
+              }
             });
             bg.BackgroundGeolocation.onHeartbeat((callback) async {
               String iosPath = (await AppGroupDirectory.getAppGroupDirectory('group.de.jena.feuerwehr.app.ffAlarm'))!.path;
@@ -224,8 +257,8 @@ abstract class Globals {
     pausesLocationUpdatesAutomatically: false,
   );
 
-  static Future<void> initializeTemporary() async {
-    await initGeoLocator();
+  static Future<void> initializeTemporary(bool geo) async {
+    if (geo) await initGeoLocator();
 
     String registeredUsers = prefs.getString('registered_users') ?? '[]';
     List<String> users;
@@ -396,8 +429,7 @@ void onServiceStartAndroid(ServiceInstance instance) async {
     await instance.stopSelf();
     return;
   }
-  Globals.filesPath = (await getApplicationSupportDirectory()).path;
-  Globals.prefs = Prefs(identifier: 'main');
+  await Globals.initialize(false);
 
   var all = SettingsNotificationData.getAll();
   if (all.isNotEmpty) {

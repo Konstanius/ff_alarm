@@ -185,9 +185,23 @@ class SettingsNotificationData {
             return true
         }
 
-        // TODO get location
-        var latitude = 0.0
-        var longitude = 0.0
+        var latitude =  null
+        var longitude = null
+        let locationPath = sharedContainer!.appendingPathComponent("last_location.txt")
+        if FileManager.default.fileExists(atPath: locationPath.path) {
+            let location = try? String(contentsOf: locationPath)
+            if location != nil {
+                let splits = location!.split(separator: ",")
+                if splits.count == 3 {
+                    let time = Int(splits[3])
+                    let now = Date().timeIntervalSince1970 * 1000
+                    if now - time < 1000 * 60 * 15 {
+                        latitude = Double(splits[0])
+                        longitude = Double(splits[1])
+                    }
+                }
+            }
+        }
 
         for (_, settings) in includedSettings {
             if settings.shouldNotify(latitude: latitude, longitude: longitude) {

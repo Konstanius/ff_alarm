@@ -27,7 +27,7 @@ void main() async {
     WidgetsFlutterBinding.ensureInitialized();
 
     try {
-      await Globals.initialize();
+      await Globals.initialize(true);
     } catch (e, s) {
       Logger.error('Failed to initialize globals: $e\n$s');
       return;
