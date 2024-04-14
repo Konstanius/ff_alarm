@@ -26,6 +26,7 @@
 		92A7EB672BA228D8002047EF /* notifications.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 92A7EB602BA228D8002047EF /* notifications.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		92A7EB6F2BA22B4E002047EF /* res_alarm_1.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 92A7EB6E2BA22B4E002047EF /* res_alarm_1.mp3 */; };
 		92A7EB702BA22B4E002047EF /* res_alarm_1.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 92A7EB6E2BA22B4E002047EF /* res_alarm_1.mp3 */; };
+		92B8C7E82BCBE802007CC53C /* SettingsNotificationData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92B8C7E72BCBE802007CC53C /* SettingsNotificationData.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
@@ -91,6 +92,7 @@
 		92A7EB642BA228D8002047EF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		92A7EB6D2BA228EE002047EF /* notifications.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = notifications.entitlements; sourceTree = "<group>"; };
 		92A7EB6E2BA22B4E002047EF /* res_alarm_1.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = res_alarm_1.mp3; path = ../../android/app/src/main/res/raw/res_alarm_1.mp3; sourceTree = "<group>"; };
+		92B8C7E72BCBE802007CC53C /* SettingsNotificationData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsNotificationData.swift; sourceTree = "<group>"; };
 		94E7A15F574FF41761872463 /* Pods-notifications.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-notifications.debug.xcconfig"; path = "Target Support Files/Pods-notifications/Pods-notifications.debug.xcconfig"; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
@@ -161,6 +163,7 @@
 				92A7EB6D2BA228EE002047EF /* notifications.entitlements */,
 				92A7EB622BA228D8002047EF /* NotificationService.swift */,
 				9258047B2BAC4BF8009A4240 /* Alarm.swift */,
+				92B8C7E72BCBE802007CC53C /* SettingsNotificationData.swift */,
 				92A7EB642BA228D8002047EF /* Info.plist */,
 			);
 			path = notifications;
@@ -446,6 +449,7 @@
 			files = (
 				92A7EB632BA228D8002047EF /* NotificationService.swift in Sources */,
 				9258047C2BAC4BF8009A4240 /* Alarm.swift in Sources */,
+				92B8C7E82BCBE802007CC53C /* SettingsNotificationData.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

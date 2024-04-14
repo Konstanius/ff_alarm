@@ -31,6 +31,15 @@ class NotificationService: UNNotificationServiceExtension {
         if let bestAttemptContent = bestAttemptContent {
             var finished = false
 
+            bestAttemptContent.title = "Alarmierung (Synchronisierungsfehler)"
+            bestAttemptContent.body = "Eine Alarmierung wurde gesendet. Bitte überprüfe die App auf neue Alarmierungen."
+            let customSound = UNNotificationSound.criticalSoundNamed(UNNotificationSoundName(rawValue: "res_alarm_1.mp3"), withAudioVolume: 1.0)
+            bestAttemptContent.sound = customSound
+
+            if #available(iOSApplicationExtension 15.0, *) {
+                bestAttemptContent.interruptionLevel = .timeSensitive
+            }
+
             defer {
                 if !finished {
                     bestAttemptContent.title = "Alarmierung (Synchronisierungsfehler)"
@@ -61,7 +70,6 @@ class NotificationService: UNNotificationServiceExtension {
 
             let type = bestAttemptContent.userInfo["type"] as! String
 
-            // empty switch on type
             switch type {
             case "alarm":
                 let alarm = Alarm.inflateFromString(input: bestAttemptContent.userInfo["alarm"] as! String)
@@ -71,12 +79,12 @@ class NotificationService: UNNotificationServiceExtension {
                 alarmSoundPath = alarmSoundPath + ".mp3"
 
                 var channelKey = "alarm"
-                // starts with "Test" is test
                 if alarm.type.starts(with: "Test") {
                     channelKey = "test"
                 }
 
-                let alarmOption = alarm.getAlertOption(prefs: prefs!, shouldNotify: true)
+                let shouldNotify = SettingsNotificationData.shouldNotifyForAlarmRegardless(alarm: alarm)
+                let alarmOption = alarm.getAlertOption(shouldNotify: shouldNotify)
                 switch alarmOption {
                 case .alert:
                     bestAttemptContent.sound = UNNotificationSound.criticalSoundNamed(UNNotificationSoundName(rawValue: alarmSoundPath), withAudioVolume: 1.0)
@@ -104,11 +112,10 @@ class NotificationService: UNNotificationServiceExtension {
                 bestAttemptContent.title = alarm.type
                 bestAttemptContent.body = alarm.word
 
-                // set the data
                 bestAttemptContent.userInfo["type"] = "alarm"
                 let alarmData = try! JSONSerialization.data(withJSONObject: alarm.toJson(), options: [])
                 bestAttemptContent.userInfo["alarm"] = String(data: alarmData, encoding: .utf8)
-                bestAttemptContent.userInfo["received"] = String(Date().timeIntervalSince1970)
+                bestAttemptContent.userInfo["received"] = String(Date().timeIntervalSince1970 * 1000)
                 break
             default:
                 break

@@ -52,12 +52,12 @@ class Alarm {
         self.id = json[Alarm.jsonShorts["server"]!] as! String + " " + String(json[Alarm.jsonShorts["id"]!] as! Int)
         self.type = json[Alarm.jsonShorts["type"]!] as! String
         self.word = json[Alarm.jsonShorts["word"]!] as! String
-        self.date = Date(timeIntervalSince1970: TimeInterval(json[Alarm.jsonShorts["date"]!] as! Int))
+        self.date = Date(timeIntervalSince1970: json[Alarm.jsonShorts["date"]!] as! Double / 1000)
         self.number = json[Alarm.jsonShorts["number"]!] as! Int
         self.address = json[Alarm.jsonShorts["address"]!] as! String
         self.notes = json[Alarm.jsonShorts["notes"]!] as! [String]
         self.units = json[Alarm.jsonShorts["units"]!] as! [Int]
-        self.updated = Date(timeIntervalSince1970: TimeInterval(json[Alarm.jsonShorts["updated"]!] as! Int))
+        self.updated = Date(timeIntervalSince1970: json[Alarm.jsonShorts["updated"]!] as! Double / 1000)
         self.responses = {
             var result = [Int: AlarmResponse]()
             let decoded = json[Alarm.jsonShorts["responses"]!] as! [String: Any]
@@ -77,12 +77,12 @@ class Alarm {
             Alarm.jsonShorts["server"]!: tempServer,
             Alarm.jsonShorts["type"]!: type,
             Alarm.jsonShorts["word"]!: word,
-            Alarm.jsonShorts["date"]!: Int(date.timeIntervalSince1970),
+            Alarm.jsonShorts["date"]!: Int(date.timeIntervalSince1970) * 1000,
             Alarm.jsonShorts["number"]!: number,
             Alarm.jsonShorts["address"]!: address,
             Alarm.jsonShorts["notes"]!: notes,
             Alarm.jsonShorts["units"]!: units,
-            Alarm.jsonShorts["updated"]!: Int(updated.timeIntervalSince1970),
+            Alarm.jsonShorts["updated"]!: Int(updated.timeIntervalSince1970) * 1000,
             Alarm.jsonShorts["responses"]!: {
                 var result = [String: Any]()
                 responses.forEach { key, value in
@@ -102,15 +102,15 @@ class Alarm {
         return alarm
     }
 
-    func getAlertOption(prefs: [String: Any], shouldNotify: Bool) -> AlarmOption {
+    func getAlertOption(shouldNotify: Bool) -> AlarmOption {
         let now = Date()
         if date > now.addingTimeInterval(-15 * 60) {
             if word.starts(with: "Test") {
-                if prefs["alarms_testsMuted"] as? Bool == true {
+                if prefs!["alarms_testsMuted"] as? Bool == true {
                     return .silent
                 }
             } else {
-                if prefs["alarms_muted"] as? Bool == true {
+                if prefs!["alarms_muted"] as? Bool == true {
                     return .silent
                 }
             }
@@ -131,7 +131,23 @@ class Alarm {
 
     static func insert(alarm: Alarm) {
         let alarms = Table("Alarm")
+
         let id = Expression<String>("id")
+        let updated = Expression<Int>("updated")
+
+        let existing = try? database!.pluck(alarms.select(id, updated).filter(id == alarm.id))
+        if existing != nil {
+            let existingMillis = existing![updated]
+            let newMillis = Int(alarm.updated.timeIntervalSince1970) * 1000
+            if newMillis <= existingMillis {
+                return
+            }
+
+            Alarm.update(alarm: alarm)
+            return
+        }
+
+
         let type = Expression<String>("type")
         let word = Expression<String>("word")
         let date = Expression<Int>("date")
@@ -140,7 +156,6 @@ class Alarm {
         let notes = Expression<String>("notes")
         let units = Expression<String>("units")
         let responses = Expression<String>("responses")
-        let updated = Expression<Int>("updated")
 
         var jsonEncodedNotes = "[]"
         if let jsonData = try? JSONSerialization.data(withJSONObject: alarm.notes, options: []) {
@@ -162,16 +177,16 @@ class Alarm {
         }
 
         let result = try? database!.run(alarms.insert(
-            id <- alarm.id,
-            type <- alarm.type,
-            word <- alarm.word,
-            date <- Int(alarm.date.timeIntervalSince1970),
-            number <- alarm.number,
-            address <- alarm.address,
-            notes <- jsonEncodedNotes,
-            units <- jsonEncodedUnits,
-            responses <- jsonEncodedResponsesString,
-            updated <- Int(alarm.updated.timeIntervalSince1970)
+                id <- alarm.id,
+                type <- alarm.type,
+                word <- alarm.word,
+                date <- Int(alarm.date.timeIntervalSince1970) * 1000,
+                number <- alarm.number,
+                address <- alarm.address,
+                notes <- jsonEncodedNotes,
+                units <- jsonEncodedUnits,
+                responses <- jsonEncodedResponsesString,
+                updated <- Int(alarm.updated.timeIntervalSince1970) * 1000
         ))
 
         if result == nil {
@@ -181,7 +196,20 @@ class Alarm {
 
     static func update(alarm: Alarm) {
         let alarms = Table("Alarm")
+
         let id = Expression<String>("id")
+        let updated = Expression<Int>("updated")
+
+        let existing = try? database!.pluck(alarms.select(id, updated).filter(id == alarm.id))
+        if existing == nil {
+            insert(alarm: alarm)
+            return
+        }
+
+        if existing![updated] >= Int(alarm.updated.timeIntervalSince1970) * 1000 {
+            return
+        }
+
         let type = Expression<String>("type")
         let word = Expression<String>("word")
         let date = Expression<Int>("date")
@@ -190,7 +218,6 @@ class Alarm {
         let notes = Expression<String>("notes")
         let units = Expression<String>("units")
         let responses = Expression<String>("responses")
-        let updated = Expression<Int>("updated")
 
         var jsonEncodedNotes = "[]"
         if let jsonData = try? JSONSerialization.data(withJSONObject: alarm.notes, options: []) {
@@ -212,15 +239,15 @@ class Alarm {
         }
 
         let result = try? database!.run(alarms.filter(id == alarm.id).update(
-            type <- alarm.type,
-            word <- alarm.word,
-            date <- Int(alarm.date.timeIntervalSince1970),
-            number <- alarm.number,
-            address <- alarm.address,
-            notes <- jsonEncodedNotes,
-            units <- jsonEncodedUnits,
-            responses <- jsonEncodedResponsesString,
-            updated <- Int(alarm.updated.timeIntervalSince1970)
+                type <- alarm.type,
+                word <- alarm.word,
+                date <- Int(alarm.date.timeIntervalSince1970) * 1000,
+                number <- alarm.number,
+                address <- alarm.address,
+                notes <- jsonEncodedNotes,
+                units <- jsonEncodedUnits,
+                responses <- jsonEncodedResponsesString,
+                updated <- Int(alarm.updated.timeIntervalSince1970) * 1000
         ))
     }
 }
