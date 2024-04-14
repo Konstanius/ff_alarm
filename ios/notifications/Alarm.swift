@@ -10,7 +10,7 @@ import SQLite
 import Gzip
 
 class Alarm {
-    var id: Int
+    var id: String
     var type: String
     var word: String
     var date: Date
@@ -21,7 +21,7 @@ class Alarm {
     var responses: [Int: AlarmResponse]
     var updated: Date
 
-    init(id: Int, type: String, word: String, date: Date, number: Int, address: String, notes: [String], units: [Int], responses: [Int: AlarmResponse], updated: Date) {
+    init(id: String, type: String, word: String, date: Date, number: Int, address: String, notes: [String], units: [Int], responses: [Int: AlarmResponse], updated: Date) {
         self.id = id
         self.type = type
         self.word = word
@@ -35,6 +35,7 @@ class Alarm {
     }
 
     static let jsonShorts = [
+        "server": "s",
         "id": "i",
         "type": "t",
         "word": "w",
@@ -48,7 +49,7 @@ class Alarm {
     ]
 
     init(json: [String: Any]) {
-        self.id = json[Alarm.jsonShorts["id"]!] as! Int
+        self.id = json[Alarm.jsonShorts["server"]!] as! String + " " + String(json[Alarm.jsonShorts["id"]!] as! Int)
         self.type = json[Alarm.jsonShorts["type"]!] as! String
         self.word = json[Alarm.jsonShorts["word"]!] as! String
         self.date = Date(timeIntervalSince1970: TimeInterval(json[Alarm.jsonShorts["date"]!] as! Int))
@@ -69,8 +70,11 @@ class Alarm {
     }
 
     func toJson() -> [String: Any] {
+        let tempServer = id.split(separator: " ")[0]
+        let tempId = Int(id.split(separator: " ")[1])!
         return [
-            Alarm.jsonShorts["id"]!: id,
+            Alarm.jsonShorts["id"]!: tempId,
+            Alarm.jsonShorts["server"]!: tempServer,
             Alarm.jsonShorts["type"]!: type,
             Alarm.jsonShorts["word"]!: word,
             Alarm.jsonShorts["date"]!: Int(date.timeIntervalSince1970),
@@ -98,7 +102,7 @@ class Alarm {
         return alarm
     }
 
-    func getAlertOption(prefs: [String: Any]) -> AlarmOption {
+    func getAlertOption(prefs: [String: Any], shouldNotify: Bool) -> AlarmOption {
         let now = Date()
         if date > now.addingTimeInterval(-15 * 60) {
             if word.starts(with: "Test") {
@@ -110,7 +114,8 @@ class Alarm {
                     return .silent
                 }
             }
-            return .alert
+
+            return shouldNotify ? .alert : .silent
         }
         if date > now.addingTimeInterval(-24 * 60 * 60) {
             return .silent
@@ -124,10 +129,9 @@ class Alarm {
         case none
     }
 
-    // insert into sqlite
     static func insert(alarm: Alarm) {
         let alarms = Table("Alarm")
-        let id = Expression<Int>("id")
+        let id = Expression<String>("id")
         let type = Expression<String>("type")
         let word = Expression<String>("word")
         let date = Expression<Int>("date")
@@ -157,8 +161,57 @@ class Alarm {
             jsonEncodedResponsesString = String(data: jsonData, encoding: .utf8)!
         }
 
-        try! database!.run(alarms.insert(
+        let result = try? database!.run(alarms.insert(
             id <- alarm.id,
+            type <- alarm.type,
+            word <- alarm.word,
+            date <- Int(alarm.date.timeIntervalSince1970),
+            number <- alarm.number,
+            address <- alarm.address,
+            notes <- jsonEncodedNotes,
+            units <- jsonEncodedUnits,
+            responses <- jsonEncodedResponsesString,
+            updated <- Int(alarm.updated.timeIntervalSince1970)
+        ))
+
+        if result == nil {
+            update(alarm: alarm)
+        }
+    }
+
+    static func update(alarm: Alarm) {
+        let alarms = Table("Alarm")
+        let id = Expression<String>("id")
+        let type = Expression<String>("type")
+        let word = Expression<String>("word")
+        let date = Expression<Int>("date")
+        let number = Expression<Int>("number")
+        let address = Expression<String>("address")
+        let notes = Expression<String>("notes")
+        let units = Expression<String>("units")
+        let responses = Expression<String>("responses")
+        let updated = Expression<Int>("updated")
+
+        var jsonEncodedNotes = "[]"
+        if let jsonData = try? JSONSerialization.data(withJSONObject: alarm.notes, options: []) {
+            jsonEncodedNotes = String(data: jsonData, encoding: .utf8)!
+        }
+
+        var jsonEncodedUnits = "[]"
+        if let jsonData = try? JSONSerialization.data(withJSONObject: alarm.units, options: []) {
+            jsonEncodedUnits = String(data: jsonData, encoding: .utf8)!
+        }
+
+        var jsonEncodedResponses = [String: Any]()
+        alarm.responses.forEach { key, value in
+            jsonEncodedResponses[String(key)] = value.toJson()
+        }
+        var jsonEncodedResponsesString = "{}"
+        if let jsonData = try? JSONSerialization.data(withJSONObject: jsonEncodedResponses, options: []) {
+            jsonEncodedResponsesString = String(data: jsonData, encoding: .utf8)!
+        }
+
+        let result = try? database!.run(alarms.filter(id == alarm.id).update(
             type <- alarm.type,
             word <- alarm.word,
             date <- Int(alarm.date.timeIntervalSince1970),
@@ -173,38 +226,46 @@ class Alarm {
 }
 
 class AlarmResponse {
-    var note: String?
-    var time: Date?
-    var type: AlarmResponseType
-    var stationId: Int?
+    var note: String
+    var time: Int
+    var responses: [Int: AlarmResponseType]
 
-    init(note: String?, time: Date?, type: AlarmResponseType, stationId: Int?) {
+    init(note: String, time: Int, responses: [Int: AlarmResponseType]) {
         self.note = note
         self.time = time
-        self.type = type
-        self.stationId = stationId
+        self.responses = responses
     }
 
     static let jsonShorts = [
         "note": "n",
         "time": "t",
-        "type": "d",
-        "stationId": "s",
+        "responses": "r",
     ]
 
     init(json: [String: Any]) {
-        self.note = json[AlarmResponse.jsonShorts["note"]!] as? String
-        self.time = json[AlarmResponse.jsonShorts["time"]!] as? Date
-        self.type = AlarmResponseType(rawValue: json[AlarmResponse.jsonShorts["type"]!] as! Int)!
-        self.stationId = json[AlarmResponse.jsonShorts["stationId"]!] as? Int
+        self.note = json[AlarmResponse.jsonShorts["note"]!] as! String
+        self.time = json[AlarmResponse.jsonShorts["time"]!] as! Int
+        self.responses = {
+            var result = [Int: AlarmResponseType]()
+            let decoded = json[AlarmResponse.jsonShorts["responses"]!] as! [String: Any]
+            decoded.forEach { key, value in
+                result[Int(key)!] = AlarmResponseType(rawValue: value as! Int)!
+            }
+            return result
+        }()
     }
 
     func toJson() -> [String: Any] {
         return [
-            AlarmResponse.jsonShorts["note"]!: note ?? NSNull(),
-            AlarmResponse.jsonShorts["time"]!: time ?? NSNull(),
-            AlarmResponse.jsonShorts["type"]!: type.rawValue,
-            AlarmResponse.jsonShorts["stationId"]!: stationId ?? NSNull(),
+            AlarmResponse.jsonShorts["note"]!: note,
+            AlarmResponse.jsonShorts["time"]!: time,
+            AlarmResponse.jsonShorts["responses"]!: {
+                var result = [String: Any]()
+                responses.forEach { key, value in
+                    result[String(key)] = value.rawValue
+                }
+                return result
+            }()
         ]
     }
 
@@ -215,5 +276,6 @@ class AlarmResponse {
         case under15 = 3
         case onCall = 4
         case notReady = 5
+        case notSet = 6
     }
 }
