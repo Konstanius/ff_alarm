@@ -1510,7 +1510,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                       var response = entry.value.responses[station.idNumber];
                       if (response == null) continue;
 
-                      var activeQualifications = person.activeQualifications(alarm.date);
+                      var activeQualifications = person.visibleQualificationsAt(alarm.date);
                       for (var qualification in activeQualifications) {
                         String type = qualification.type;
 
@@ -1677,7 +1677,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                       children: [
                         for (var entry in responsesForSelectedStation)
                           () {
-                            var activeQualifications = entry.key.activeQualifications(alarm.date);
+                            var activeQualifications = entry.key.visibleQualificationsAt(alarm.date);
                             return Card(
                               color: entry.value.responses[station!.idNumber]!.color,
                               clipBehavior: Clip.antiAliasWithSaveLayer,

@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:floor/floor.dart';
 
@@ -37,10 +40,11 @@ class Person {
   /// hardcoded: zf,gf,agt,ma
   List<Qualification> qualifications;
 
-  List<Qualification> activeQualifications(DateTime date) {
+  List<Qualification> visibleQualificationsAt(DateTime date) {
     List<Qualification> active = [];
 
     for (var qualification in qualifications) {
+      if (qualification.type.startsWith("_")) continue;
       if (qualification.start == null && qualification.end == null) continue;
       if (qualification.start == null && qualification.end != null && qualification.end!.isAfter(date)) active.add(qualification);
       if (qualification.start != null && qualification.end == null && qualification.start!.isBefore(date)) active.add(qualification);
@@ -182,6 +186,7 @@ class Qualification {
 
   @override
   String toString() {
+    if (type.contains(':')) throw AckError(HttpStatus.badRequest, "Qualifikationen können nicht ':' enthalten.");
     return "$type:${start?.millisecondsSinceEpoch ?? 0}:${end?.millisecondsSinceEpoch ?? 0}";
   }
 }

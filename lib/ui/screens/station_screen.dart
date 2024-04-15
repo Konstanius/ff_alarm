@@ -85,6 +85,8 @@ class StationPageState extends State<StationPage> with Updates {
     String? localPersonForServer = Globals.localPersonForServer(station!.server);
     bool isAdmin = localPersonForServer != null && station!.adminPersonProperIds.contains(localPersonForServer);
 
+    var now = DateTime.now();
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: true,
@@ -216,6 +218,34 @@ class StationPageState extends State<StationPage> with Updates {
               }(),
             ],
             const SettingsDivider(text: 'Personen'),
+            () {
+              Map<String, int> qualificationsCount = {};
+              for (var person in persons!) {
+                for (var qualification in person.visibleQualificationsAt(now)) {
+                  if (!qualificationsCount.containsKey(qualification.type)) {
+                    qualificationsCount[qualification.type] = 0;
+                  }
+                  qualificationsCount[qualification.type] = qualificationsCount[qualification.type]! + 1;
+                }
+              }
+
+              List<({String type, int count})> qualificationsCountList = [];
+              for (var entry in qualificationsCount.entries) {
+                qualificationsCountList.add((type: entry.key, count: entry.value));
+              }
+              qualificationsCountList.sort((a, b) => a.type.startsWith('_') ? a.type.substring(1).compareTo(b.type.startsWith('_') ? b.type.substring(1) : b.type) : a.type.compareTo(b.type));
+
+              return Card(
+                clipBehavior: Clip.antiAliasWithSaveLayer,
+                elevation: 2,
+                margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                child: Column(
+                  children: [
+                    // TODO
+                  ],
+                ),
+              );
+            }(),
             for (int i = 0; i < persons!.length; i++) ...[
               () {
                 var person = persons![i];
@@ -225,10 +255,46 @@ class StationPageState extends State<StationPage> with Updates {
                   margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
                   child: ListTile(
                     title: Text(person.fullName),
-                    subtitle: Text(() {
-                      var active = person.activeQualifications(DateTime.now());
-                      return active.map((e) => e.type).join(',  ');
-                    }()),
+                    subtitle: RichText(
+                      text: TextSpan(
+                        children: () {
+                          var children = <InlineSpan>[];
+
+                          for (var qualification in person.qualifications) {
+                            Color color = Colors.green;
+                            if (qualification.end != null) {
+                              if (qualification.end!.isBefore(now)) {
+                                color = Colors.grey;
+                              } else if (qualification.end!.difference(now).inDays < 30) {
+                                color = Colors.red;
+                              } else if (qualification.end!.difference(now).inDays < 120) {
+                                color = Colors.orange;
+                              }
+                            }
+
+                            children.add(
+                              TextSpan(
+                                text: () {
+                                  if (qualification.type.startsWith('_')) {
+                                    return qualification.type.substring(1);
+                                  }
+                                  return qualification.type;
+                                }(),
+                                style: TextStyle(
+                                  color: color,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            );
+                            children.add(const TextSpan(text: ',  '));
+                          }
+
+                          if (children.isNotEmpty) children.removeLast();
+
+                          return children;
+                        }(),
+                      ),
+                    ),
                     trailing: () {
                       if (station!.adminPersonProperIds.contains(person.id)) {
                         return const Icon(Icons.admin_panel_settings_outlined);

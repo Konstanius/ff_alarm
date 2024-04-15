@@ -508,8 +508,8 @@ Future<({LatLng? pos, int? lastTime})> backgroundGPSSync(LatLng? previousPos, in
     File file = File(path);
     file.writeAsStringSync("${Globals.lastPosition!.latitude},${Globals.lastPosition!.longitude},${Globals.lastPositionTime!.millisecondsSinceEpoch}");
 
-    int time = DateTime.now().millisecondsSinceEpoch - (lastTime ?? 0);
-    if (previousPos != null && time < 600) {
+    int delay = DateTime.now().millisecondsSinceEpoch - (lastTime ?? 0);
+    if (previousPos != null && delay < 600000) {
       double distance = Geolocator.distanceBetween(previousPos.latitude, previousPos.longitude, Globals.lastPosition!.latitude, Globals.lastPosition!.longitude);
       if (distance < 50) return (pos: previousPos, lastTime: lastTime);
     }
