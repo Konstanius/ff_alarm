@@ -341,7 +341,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                   if (allNotificationSettings.containsKey(station.id)) {
                     return Text(
                       'Zu deiner Position & Zeit:\n'
-                      '${allNotificationSettings[station.id]!.shouldNotify(lastPosition) ? 'EINGESCHALTET' : 'STUMMGESCHALTET'}',
+                      '${allNotificationSettings[station.id]!.shouldNotify(lastPosition) ? 'EINGESCHALTET' : 'ALLE ABSAGEN'}',
                     );
                   } else {
                     return const Text('Nicht konfiguriert');
@@ -477,22 +477,49 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
             },
             trailing: const Icon(Icons.arrow_drop_down_circle_outlined),
           ),
-          ListTile(
-            leading: const Icon(Icons.warning_amber_outlined),
-            title: const Text('Alarme stummschalten'),
-            onTap: () {
+          () {
+            void onChanged() async {
               bool muted = Globals.prefs.getBool('alarms_muted') ?? false;
+              if (!muted) {
+                bool? confirm = await generalDialog(
+                  color: Colors.red,
+                  title: 'Alarme stummschalten',
+                  content: const Text(
+                    'Möchtest Du wirklich alle Alarmierungen stummschalten?\n\n'
+                    'Diese Einstellung wird bei einer Alarmierung deinen Status NICHT automatisch auf "Nicht bereit" setzen.\n\n'
+                    'Nutze dafür die Bereitschaftseinstellungen der jeweiligen Wache(n).',
+                  ),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(false);
+                      },
+                      child: const Text('Nein'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(true);
+                      },
+                      child: const Text('Ja'),
+                    ),
+                  ],
+                );
+                if (confirm != true) return;
+              }
               Globals.prefs.setBool('alarms_muted', !muted);
               if (mounted) setState(() {});
-            },
-            trailing: Switch(
-              value: Globals.prefs.getBool('alarms_muted') ?? false,
-              onChanged: (value) {
-                Globals.prefs.setBool('alarms_muted', value);
-                if (mounted) setState(() {});
-              },
-            ),
-          ),
+            }
+
+            return ListTile(
+              leading: const Icon(Icons.warning_amber_outlined),
+              title: const Text('Alarme stummschalten'),
+              onTap: () => onChanged(),
+              trailing: Switch(
+                value: Globals.prefs.getBool('alarms_muted') ?? false,
+                onChanged: (_) => onChanged(),
+              ),
+            );
+          }(),
           ListTile(
             leading: const Icon(Icons.assignment_turned_in_outlined),
             title: const Text('Tests stummschalten'),

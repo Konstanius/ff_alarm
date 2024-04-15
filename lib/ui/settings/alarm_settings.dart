@@ -366,6 +366,11 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
               if (current.calendar.isNotEmpty) const SizedBox(height: 5),
               ElevatedButton(
                 onPressed: () async {
+                  if (current.calendar.length >= 100) {
+                    errorToast("Maximal 100 Zeiträume möglich");
+                    return;
+                  }
+
                   DateTimeRange? range = await showDateRangePicker(
                     context: context,
                     firstDate: DateTime.now(),
@@ -426,6 +431,11 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
                 if (current.shiftPlan.isNotEmpty) const SizedBox(height: 5),
                 ElevatedButton(
                   onPressed: () async {
+                    if (current.shiftPlan.length >= 100) {
+                      errorToast("Maximal 100 Zeiträume möglich");
+                      return;
+                    }
+
                     ({int day, int start, int end})? result = await showDialog(
                       context: context,
                       builder: (context) {
@@ -688,6 +698,11 @@ class _GeoFenceSelectionWidgetState extends State<GeoFenceSelectionWidget> {
           : FloatingActionButton(
               heroTag: 'addSlider',
               onPressed: () {
+                if (widget.current.geofencing.length >= 100) {
+                  errorToast("Maximal 100 Geofencing-Gebiete möglich");
+                  return;
+                }
+
                 setState(() {
                   addSliderVisible = true;
                 });

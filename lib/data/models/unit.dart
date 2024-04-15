@@ -21,6 +21,7 @@ class Unit {
   String unitDescription;
 
   int status;
+  UnitStatus get statusEnum => UnitStatus.fromInt(status);
 
   List<UnitPosition> positions;
   String get positionsDescription {
@@ -248,6 +249,27 @@ enum UnitStatus {
         return Colors.red;
       case UnitStatus.notAvailable:
         return Colors.grey;
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case UnitStatus.invalid:
+        return 'Ungültiger Status';
+      case UnitStatus.onRadio:
+        return 'Frei über Funk';
+      case UnitStatus.onStation:
+        return 'Auf Wache';
+      case UnitStatus.onRoute:
+        return 'Einsatz übernommen';
+      case UnitStatus.onScene:
+        return 'Am Einsatzort';
+      case UnitStatus.notAvailable:
+        return 'Nicht einsatzbereit';
+      case UnitStatus.toHospital:
+        return 'Patient aufgenommen';
+      case UnitStatus.atHospital:
+        return 'Am Zielort angekommen';
     }
   }
 }

@@ -971,7 +971,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
 
                   Position? pos = alarm.positionFromAddressIfCoordinates;
                   if (pos != null) {
-                    shareString += 'Koordinaten: ${pos.latitude.toStringAsFixed(5)}°N,   ${pos.longitude.toStringAsFixed(5)}°E\n';
+                    shareString += 'Koordinaten: ${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E\n';
                   } else {
                     shareString += 'Adresse: ${alarm.address}\n';
                   }
