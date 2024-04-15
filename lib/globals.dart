@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:app_group_directory/app_group_directory.dart';
 import 'package:background_fetch/background_fetch.dart' as bf;
@@ -120,7 +121,7 @@ abstract class Globals {
       }
 
       var permissionAlways = await Permission.locationAlways.isGranted;
-      if (permissionAlways) {
+      if (permissionAlways && !Globals.isService) {
         // check if any geofence is active
         var all = SettingsNotificationData.getAll();
         bool geofenceActive = false;
@@ -395,6 +396,7 @@ abstract class Globals {
   }
 
   static bool initialized = false;
+  static bool isService = false;
   static bool appStarted = false;
   static bool fastStartBypass = false;
   static bool foreground = false;
@@ -529,6 +531,9 @@ Future<bool> backgroundGPSSync() async {
 
 @pragma('vm:entry-point')
 void onServiceStartAndroid(ServiceInstance instance) async {
+  Globals.isService = true;
+  DartPluginRegistrant.ensureInitialized();
+
   bool locationGranted = await Permission.locationAlways.isGranted;
   if (!locationGranted) {
     await instance.stopSelf();
