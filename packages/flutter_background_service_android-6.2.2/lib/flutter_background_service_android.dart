@@ -72,7 +72,6 @@ class FlutterBackgroundServiceAndroid extends FlutterBackgroundServicePlatform {
 
   StreamSubscription<dynamic>? _eventChannelListener;
   Future<bool> configure({
-    required IosConfiguration iosConfiguration,
     required AndroidConfiguration androidConfiguration,
   }) async {
     _channel.setMethodCallHandler(_handleMethodCall);

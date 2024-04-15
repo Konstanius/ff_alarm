@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:app_group_directory/app_group_directory.dart';
+import 'package:background_fetch/background_fetch.dart' as bf;
 import 'package:ff_alarm/data/database.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/person.dart';
@@ -17,7 +18,6 @@ import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/settings/lifecycle.dart';
 import 'package:ff_alarm/ui/settings/notifications.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
@@ -130,7 +130,6 @@ abstract class Globals {
 
             if (!await service.isRunning()) {
               await service.configure(
-                iosConfiguration: IosConfiguration(autoStart: false),
                 androidConfiguration: AndroidConfiguration(
                   isForegroundMode: true,
                   autoStart: true,
@@ -193,9 +192,84 @@ abstract class Globals {
               file.writeAsStringSync('${DateTime.now().toIso8601String()}: heartbeat\n', mode: FileMode.append);
             });
 
-            bg.BackgroundGeolocation.ready(iosBackgroundConfig).then((bg.State state) {
+            bg.BackgroundGeolocation.ready(iosBackgroundLocationConfig).then((bg.State state) {
               if (!state.enabled) {
                 bg.BackgroundGeolocation.start();
+              }
+            });
+
+            bf.BackgroundFetch.configure(
+              iosBackgroundFetchConfig,
+              (String taskId) async {
+                print('STARTED BACKGROUND FETCH');
+                try {
+                  await initialize(false);
+
+                  String path = '${Globals.filesPath}/last_location.txt';
+                  File file = File(path);
+                  if (!file.existsSync()) {
+                    throw 'File does not exist';
+                  }
+                  String content = file.readAsStringSync();
+                  List<String> parts = content.split(',');
+                  if (parts.length != 3) {
+                    throw 'Invalid content';
+                  }
+
+                  double lat = double.tryParse(parts[0]) ?? 0;
+                  double lon = double.tryParse(parts[1]) ?? 0;
+
+                  try {
+                    var servers = Globals.registeredServers;
+
+                    var futures = <Future>[];
+                    for (var server in servers) {
+                      futures.add(
+                        Request('personSetLocation', {'a': lat, 'o': lon, 't': DateTime.now().millisecondsSinceEpoch}, server).emit(true),
+                      );
+                    }
+
+                    await Future.wait(futures);
+                  } catch (e, s) {
+                    Logger.warn('Failed to send location: $e\n$s');
+                  }
+                  print('FINISHED BACKGROUND FETCH');
+                } catch (e, s) {
+                  Logger.error('Failed to run background fetch: $e\n$s');
+                  print('FAILED TO RUN BACKGROUND FETCH');
+                }
+
+                bf.BackgroundFetch.finish(taskId);
+              },
+              (String taskId) async {
+                bf.BackgroundFetch.finish(taskId);
+              },
+            ).then((int status) {
+              if (status == bf.BackgroundFetch.STATUS_AVAILABLE) {
+                bf.BackgroundFetch.scheduleTask(
+                  bf.TaskConfig(
+                    taskId: 'com.jena.feuerwehr.ffAlarm.backgroundFetch',
+                    delay: 15,
+                    periodic: true,
+                    forceAlarmManager: true,
+                    stopOnTerminate: false,
+                    enableHeadless: true,
+                    startOnBoot: true,
+                    requiredNetworkType: bf.NetworkType.ANY,
+                    requiresBatteryNotLow: false,
+                    requiresCharging: false,
+                    requiresStorageNotLow: false,
+                    requiresDeviceIdle: false,
+                    requiresNetworkConnectivity: true,
+                    type: bf.TaskType.DEFAULT,
+                  ),
+                ).then((bool success) {
+                  if (!success) {
+                    Logger.error('Failed to schedule background fetch');
+
+                    bf.BackgroundFetch.start();
+                  }
+                });
               }
             });
           }
@@ -203,11 +277,13 @@ abstract class Globals {
           if (Platform.isAndroid) {
             // none, stops itself
           } else if (Platform.isIOS) {
-            bg.BackgroundGeolocation.ready(iosBackgroundConfig).then((bg.State state) {
+            bg.BackgroundGeolocation.ready(iosBackgroundLocationConfig).then((bg.State state) {
               if (state.enabled) {
                 bg.BackgroundGeolocation.stop();
               }
             });
+
+            bf.BackgroundFetch.stop();
           }
         }
       }
@@ -239,12 +315,12 @@ abstract class Globals {
     }
   }
 
-  static bg.Config iosBackgroundConfig = bg.Config(
+  static bg.Config iosBackgroundLocationConfig = bg.Config(
     desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
     distanceFilter: 50.0,
     stopTimeout: 5,
-    debug: kDebugMode,
-    logLevel: kDebugMode ? bg.Config.LOG_LEVEL_VERBOSE : bg.Config.LOG_LEVEL_OFF,
+    debug: false,
+    logLevel: bg.Config.LOG_LEVEL_OFF,
     disableElasticity: false,
     disableStopDetection: true,
     disableMotionActivityUpdates: true,
@@ -255,6 +331,18 @@ abstract class Globals {
     allowIdenticalLocations: true,
     heartbeatInterval: 120,
     pausesLocationUpdatesAutomatically: false,
+  );
+
+  static bf.BackgroundFetchConfig iosBackgroundFetchConfig = bf.BackgroundFetchConfig(
+    minimumFetchInterval: 15,
+    stopOnTerminate: false,
+    startOnBoot: true,
+    enableHeadless: true,
+    requiresBatteryNotLow: false,
+    requiresCharging: false,
+    requiresStorageNotLow: false,
+    requiresDeviceIdle: false,
+    requiredNetworkType: bf.NetworkType.ANY,
   );
 
   static Future<void> initializeTemporary(bool geo) async {
@@ -323,6 +411,7 @@ abstract class Globals {
   }
 
   static Map<String, Person> localPersons = {};
+
   static String? localPersonForServer(String server) {
     for (var person in localPersons.values) {
       if (person.server == server) {

@@ -444,7 +444,7 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                 );
                 if (res != true) return;
 
-                var state = await bg.BackgroundGeolocation.ready(Globals.iosBackgroundConfig);
+                var state = await bg.BackgroundGeolocation.ready(Globals.iosBackgroundLocationConfig);
 
                 int result = await bg.BackgroundGeolocation.requestPermission();
                 print(result); // TODO

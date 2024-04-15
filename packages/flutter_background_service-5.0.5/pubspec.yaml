@@ -14,7 +14,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  flutter_background_service_platform_interface: ^5.0.0
+  flutter_background_service_platform_interface:
+    path: ../flutter_background_service_platform_interface-5.0.5
   flutter_background_service_android:
     path: ../flutter_background_service_android-6.2.2
 dev_dependencies:
