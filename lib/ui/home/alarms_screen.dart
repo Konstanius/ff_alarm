@@ -170,14 +170,6 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                                     DropdownButton(
                                       value: filter.responseType ?? (filter.responseNotSet ? -1 : null),
                                       onChanged: (dynamic value) {
-                                        if (value == -1) {
-                                          sbSetState(() {
-                                            filter.responseType = null;
-                                            filter.responseNotSet = true;
-                                          });
-                                          setState(() {});
-                                          return;
-                                        }
                                         sbSetState(() {
                                           filter.responseNotSet = false;
                                           filter.responseType = value;
@@ -194,10 +186,6 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                                             value: type,
                                             child: Text(type.name),
                                           ),
-                                        const DropdownMenuItem<dynamic>(
-                                          value: -1,
-                                          child: Text('Keine'),
-                                        ),
                                       ],
                                     ),
                                   ],
@@ -205,7 +193,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('Station'),
+                                    const Text('Wache'),
                                     DropdownButton<String?>(
                                       value: filter.station,
                                       onChanged: (String? value) {
@@ -257,16 +245,17 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                           ),
                         ),
                         actions: <Widget>[
-                          TextButton(
-                            onPressed: () {
-                              sbSetState(() {
-                                filter = AlarmsFilter();
-                                searchController.clear();
-                              });
-                              setState(() {});
-                            },
-                            child: const Text('Zurücksetzen'),
-                          ),
+                          if (!filter.noFilters)
+                            TextButton(
+                              onPressed: () {
+                                sbSetState(() {
+                                  filter = AlarmsFilter();
+                                  searchController.clear();
+                                });
+                                setState(() {});
+                              },
+                              child: const Text('Zurücksetzen'),
+                            ),
                           TextButton(
                             onPressed: () {
                               Navigator.of(context).pop();

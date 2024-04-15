@@ -7,7 +7,10 @@ import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart';
 import 'package:map_launcher/map_launcher.dart';
 
 class StationPage extends StatefulWidget {
@@ -200,8 +203,8 @@ class StationPageState extends State<StationPage> with Updates {
                     onTap: () {
                       Globals.router.go('/unit', extra: unit.id);
                     },
-                    title: Text(unit.unitCallSign(station!)),
-                    subtitle: Text(unit.unitDescription),
+                    title: Text(unit.unitCallSign(station!), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text("${unit.unitDescription}   ( ${unit.positionsDescription} )"),
                     trailing: () {
                       var status = UnitStatus.fromInt(unit.status);
                       return Text(
@@ -221,7 +224,12 @@ class StationPageState extends State<StationPage> with Updates {
             () {
               Map<String, int> qualificationsCount = {};
               for (var person in persons!) {
-                for (var qualification in person.visibleQualificationsAt(now)) {
+                for (var qualification in person.qualifications) {
+                  if (qualification.start == null) continue;
+                  if (qualification.end != null) {
+                    if (qualification.end!.isBefore(now)) continue;
+                  }
+
                   if (!qualificationsCount.containsKey(qualification.type)) {
                     qualificationsCount[qualification.type] = 0;
                   }
@@ -238,10 +246,303 @@ class StationPageState extends State<StationPage> with Updates {
               return Card(
                 clipBehavior: Clip.antiAliasWithSaveLayer,
                 elevation: 2,
-                margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                margin: const EdgeInsets.only(left: 2, right: 2, bottom: 8),
                 child: Column(
                   children: [
-                    // TODO
+                    const SizedBox(height: 4),
+                    Text(
+                      'Gesamtauflistung',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    RawScrollbar(
+                      thumbVisibility: true,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 5.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Column(
+                                children: [
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    child: Row(
+                                      children: [
+                                        Text(' ', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                                  for (var entry in qualificationsCountList) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            () {
+                                              if (entry.type.startsWith('_')) {
+                                                return entry.type.substring(1);
+                                              }
+                                              return entry.type;
+                                            }(),
+                                            style: const TextStyle(
+                                              color: Colors.blue,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              Column(
+                                children: [
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          'Bereit',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.green,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  for (var entry in qualificationsCountList) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            entry.count.toString(),
+                                            style: const TextStyle(color: Colors.green),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(width: 4),
+                              Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          "< ${DateFormat('dd.MM.').format(now.add(const Duration(days: 120)))}",
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.amber,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  for (var entry in qualificationsCountList) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            () {
+                                              int count = 0;
+                                              for (var person in persons!) {
+                                                for (var qualification in person.visibleQualificationsAt(now)) {
+                                                  if (qualification.type == entry.type &&
+                                                      qualification.end != null &&
+                                                      qualification.end!.difference(now).inDays < 120 &&
+                                                      qualification.end!.isAfter(now)) {
+                                                    count++;
+                                                  }
+                                                }
+                                              }
+                                              return count.toString();
+                                            }(),
+                                            style: const TextStyle(color: Colors.amber),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(width: 4),
+                              Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          "< ${DateFormat('dd.MM.').format(now.add(const Duration(days: 30)))}",
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  for (var entry in qualificationsCountList) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            () {
+                                              int count = 0;
+                                              for (var person in persons!) {
+                                                for (var qualification in person.visibleQualificationsAt(now)) {
+                                                  if (qualification.type == entry.type &&
+                                                      qualification.end != null &&
+                                                      qualification.end!.difference(now).inDays < 30 &&
+                                                      qualification.end!.isAfter(now)) {
+                                                    count++;
+                                                  }
+                                                }
+                                              }
+                                              return count.toString();
+                                            }(),
+                                            style: const TextStyle(color: Colors.red),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(width: 4),
+                              Column(
+                                children: [
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          'Abgel.',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  for (var entry in qualificationsCountList) ...[
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            () {
+                                              int count = 0;
+                                              for (var person in persons!) {
+                                                for (var qualification in person.visibleQualificationsAt(now)) {
+                                                  if (qualification.type == entry.type && qualification.end != null && qualification.end!.isAfter(now)) {
+                                                    count++;
+                                                  }
+                                                }
+                                              }
+                                              return count.toString();
+                                            }(),
+                                            style: const TextStyle(color: Colors.grey),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      // total persons and admins count
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Column(
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    'Gesamt: ',
+                                    style: TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    persons!.length.toString(),
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 16),
+                        const Column(
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    'Administratoren: ',
+                                    style: TextStyle(
+                                      color: Colors.blue,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              child: Row(
+                                children: [
+                                  Text(
+                                    station!.adminPersonProperIds.length.toString(),
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
                   ],
                 ),
               );
@@ -254,7 +555,7 @@ class StationPageState extends State<StationPage> with Updates {
                   elevation: 2,
                   margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
                   child: ListTile(
-                    title: Text(person.fullName),
+                    title: Text(person.fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: RichText(
                       text: TextSpan(
                         children: () {
@@ -312,18 +613,36 @@ class StationPageState extends State<StationPage> with Updates {
   }
 
   @override
-  void onUpdate(UpdateInfo info) {
+  void onUpdate(UpdateInfo info) async {
     if (info.type == UpdateType.station && info.ids.contains(widget.stationId)) {
-      _loadStation();
+      station = await Globals.db.stationDao.getById(widget.stationId);
     }
 
     if (info.type == UpdateType.person) {
-      _loadStation();
+      persons = await Globals.db.personDao.getWhereIn(station!.personProperIds);
+      persons!.sort((a, b) {
+        if (station!.adminPersonProperIds.contains(a.id)) return -1;
+        if (station!.adminPersonProperIds.contains(b.id)) return 1;
+        return a.fullName.compareTo(b.fullName);
+      });
     }
 
     if (info.type == UpdateType.unit) {
-      _loadStation();
+      units = await Globals.db.unitDao.getWhereStationIn(station!.idNumber, station!.server);
+      units!.sort((a, b) => a.unitCallSign(station!).compareTo(b.unitCallSign(station!)));
+
+      String? localPersonForServer = Globals.localPersonForServer(station!.server);
+      bool admin = localPersonForServer != null && station!.adminPersonProperIds.contains(localPersonForServer);
+      if (admin) {
+        try {
+          units = await UnitInterface.fetchForStationAsAdmin(station!.server, station!.idNumber);
+          units!.sort((a, b) => a.unitCallSign(station!).compareTo(b.unitCallSign(station!)));
+        } catch (e, s) {
+          Logger.error('Failed to fetch units for station as admin: $e\n$s');
+        }
+      }
     }
+    if (mounted) setState(() {});
   }
 
   static List<Widget> getStationDisplay(Station station, BuildContext context, {Widget? thirdRow}) {

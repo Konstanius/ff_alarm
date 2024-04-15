@@ -1241,7 +1241,10 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                               if (person.hasQualification("ma", alarm.date)) ma++;
                                             }
 
-                                            return Text('$zf / $gf / $other / ${element.persons.length} (AGT: $agt, Ma: $ma)');
+                                            String zfString = '';
+                                            if (zf > 0) zfString = '$zf / ';
+
+                                            return Text('$zfString$gf / $other / ${element.persons.length} (AGT: $agt, Ma: $ma)');
                                           }(),
                                         ],
                                       ),

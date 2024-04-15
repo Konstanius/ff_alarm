@@ -137,6 +137,8 @@ class ListQualificationConverter extends TypeConverter<List<Qualification>, Stri
         Logger.error('Failed to parse qualification: $split');
       }
     }
+
+    result.sort((a, b) => a.type.startsWith('_') ? a.type.substring(1).compareTo(b.type.startsWith('_') ? b.type.substring(1) : b.type) : a.type.compareTo(b.type));
     return result;
   }
 

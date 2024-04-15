@@ -23,6 +23,33 @@ class Unit {
   int status;
 
   List<UnitPosition> positions;
+  String get positionsDescription {
+    int zf = 0;
+    int gf = 0;
+    int other = capacity;
+    int total = capacity;
+
+    for (var position in positions) {
+      if (position == UnitPosition.zf) {
+        zf++;
+        other--;
+      }
+      if (position == UnitPosition.gf) {
+        gf++;
+        other--;
+      }
+    }
+
+    if (gf == 0 && zf == 0 && positions.contains(UnitPosition.atf)) {
+      other--;
+      gf++;
+    }
+
+    String text = '$gf / $other / $total';
+    if (zf > 0) text = '$zf / $text';
+
+    return text;
+  }
 
   int capacity;
 
