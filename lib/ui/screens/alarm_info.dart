@@ -1411,6 +1411,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                       positionsNotifier: informationNotifier,
                                     )
                                   : const Card(
+                                      clipBehavior: Clip.antiAliasWithSaveLayer,
                                       color: Colors.grey,
                                       child: Center(
                                         child: Text('Karte wird geladen....', style: TextStyle(color: Colors.black)),

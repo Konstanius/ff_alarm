@@ -12,8 +12,10 @@ import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/main.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/home.dart';
-import 'package:ff_alarm/ui/popups/alarm_info.dart';
-import 'package:ff_alarm/ui/popups/login_screen.dart';
+import 'package:ff_alarm/ui/screens/alarm_info.dart';
+import 'package:ff_alarm/ui/screens/login_screen.dart';
+import 'package:ff_alarm/ui/screens/station_screen.dart';
+import 'package:ff_alarm/ui/screens/unit_screen.dart';
 import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/settings/lifecycle.dart';
 import 'package:ff_alarm/ui/settings/notifications.dart';
@@ -73,6 +75,7 @@ abstract class Globals {
         lastPosition = null;
         lastPositionTime = null;
         Globals.positionSubscription?.cancel();
+        Globals.positionSubscription = null;
         throw 'Location service is disabled';
       }
 
@@ -81,6 +84,7 @@ abstract class Globals {
         lastPosition = null;
         lastPositionTime = null;
         Globals.positionSubscription?.cancel();
+        Globals.positionSubscription = null;
         throw 'Location permission is denied';
       }
 
@@ -465,6 +469,20 @@ abstract class Globals {
             },
             builder: (BuildContext context, GoRouterState state) => const LoginScreen(),
           ),
+          GoRoute(
+            path: 'station',
+            builder: (BuildContext context, GoRouterState state) {
+              final String stationId = state.extra! as String;
+              return StationPage(stationId: stationId);
+            },
+          ),
+          GoRoute(
+            path: 'unit',
+            builder: (BuildContext context, GoRouterState state) {
+              final String unitId = state.extra! as String;
+              return UnitPage(unitId: unitId);
+            },
+          ),
         ],
       ),
     ],
@@ -475,22 +493,17 @@ abstract class Globals {
 /// Serverside treats a position as unreliable after 10 minutes
 Future<bool> backgroundGPSSync() async {
   try {
-    var location = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high, timeLimit: const Duration(seconds: 12));
-    if (Globals.lastPosition != null && Globals.lastPositionTime != null) {
-      if (DateTime.now().difference(Globals.lastPositionTime!) < const Duration(minutes: 5)) {
-        double distance = Geolocator.distanceBetween(Globals.lastPosition!.latitude, Globals.lastPosition!.longitude, location.latitude, location.longitude);
-        if (distance < 50) {
-          return true;
-        }
-      }
+    if (Globals.lastPositionTime?.isBefore(DateTime.now().subtract(const Duration(minutes: 1))) ?? true) {
+      var location = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high, timeLimit: const Duration(seconds: 12));
+      Globals.lastPosition = location;
+      Globals.lastPositionTime = DateTime.now();
     }
 
-    Globals.lastPosition = location;
-    Globals.lastPositionTime = DateTime.now();
+    if (Globals.lastPosition == null) return true;
 
     String path = '${Globals.filesPath}/last_location.txt';
     File file = File(path);
-    file.writeAsStringSync("${location.latitude},${location.longitude},${Globals.lastPositionTime!.millisecondsSinceEpoch}");
+    file.writeAsStringSync("${Globals.lastPosition!.latitude},${Globals.lastPosition!.longitude},${Globals.lastPositionTime!.millisecondsSinceEpoch}");
 
     try {
       var servers = Globals.registeredServers;
@@ -498,7 +511,7 @@ Future<bool> backgroundGPSSync() async {
       var futures = <Future>[];
       for (var server in servers) {
         futures.add(
-          Request('personSetLocation', {'a': location.latitude, 'o': location.longitude, 't': Globals.lastPositionTime!.millisecondsSinceEpoch}, server).emit(true),
+          Request('personSetLocation', {'a': Globals.lastPosition!.latitude, 'o': Globals.lastPosition!.longitude, 't': Globals.lastPositionTime!.millisecondsSinceEpoch}, server).emit(true),
         );
       }
 
@@ -509,7 +522,7 @@ Future<bool> backgroundGPSSync() async {
 
     return true;
   } catch (e, s) {
-    Logger.error('Failed to initialize service: $e\n$s');
+    Logger.error('Failed to get location: $e\n$s');
     return true;
   }
 }
@@ -521,7 +534,7 @@ void onServiceStartAndroid(ServiceInstance instance) async {
     await instance.stopSelf();
     return;
   }
-  await Globals.initialize(false);
+  await Globals.initialize(true);
 
   var all = SettingsNotificationData.getAll();
   if (all.isNotEmpty) {

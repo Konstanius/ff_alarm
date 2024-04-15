@@ -51,6 +51,14 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
     loadStation();
     setupListener({UpdateType.station, UpdateType.ui});
 
+    if (Globals.positionSubscription == null) {
+      Permission.location.isGranted.then((bool granted) {
+        if (Globals.positionSubscription == null && granted) {
+          Globals.initGeoLocator();
+        }
+      });
+    }
+
     current = SettingsNotificationData.loadForStation(widget.stationId);
     onEntry = SettingsNotificationData.loadForStation(widget.stationId);
 
@@ -508,6 +516,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
                                 initialZoom: 11.5,
                               )
                             : const Card(
+                                clipBehavior: Clip.antiAliasWithSaveLayer,
                                 color: Colors.grey,
                                 child: Center(
                                   child: Text('Karte wird geladen....', style: TextStyle(color: Colors.black)),
@@ -682,6 +691,7 @@ class _GeoFenceSelectionWidgetState extends State<GeoFenceSelectionWidget> {
                     var min = max / 50;
                     if (value < min) value = min.toInt() + 1;
                     return Card(
+                      clipBehavior: Clip.antiAliasWithSaveLayer,
                       child: Column(
                         children: [
                           Text("Radius: ${value.toInt()}m"),

@@ -65,24 +65,39 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
         itemBuilder: (BuildContext context, int index) {
           var station = stations[index];
           var stationUnits = units.where((u) => u.stationProperId == station.id).toList();
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.all(8),
+          return Card(
+            clipBehavior: Clip.antiAliasWithSaveLayer,
+            margin: const EdgeInsets.only(bottom: 8),
+            elevation: 1,
+            child: ListTile(
+              onTap: () {
+                Globals.router.go('/station', extra: station.id);
+              },
+              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+              title: Padding(
+                padding: const EdgeInsets.only(bottom: 4, left: 10),
                 child: Text(
-                  station.name,
-                  style: const TextStyle(fontSize: 20),
+                  "${station.name} (${station.prefix} ${station.area} ${station.stationNumber})",
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-              ListView.builder(
+              subtitle: ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: stationUnits.length,
                 itemBuilder: (BuildContext context, int index) {
                   var unit = stationUnits[index];
                   return Card(
+                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                    elevation: 8,
+                    margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
                     child: ListTile(
+                      onTap: () {
+                        Globals.router.go('/unit', extra: unit.id);
+                      },
                       title: Text(unit.unitCallSign(station)),
                       subtitle: Text(unit.unitDescription),
                       trailing: () {
@@ -93,7 +108,7 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
                   );
                 },
               ),
-            ],
+            ),
           );
         },
       ),
