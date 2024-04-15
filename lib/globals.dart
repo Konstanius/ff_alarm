@@ -27,6 +27,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
@@ -493,7 +494,7 @@ abstract class Globals {
 
 /// Refreshes every 5 minutes, if position changed by 50 meters or more
 /// Serverside treats a position as unreliable after 10 minutes
-Future<bool> backgroundGPSSync() async {
+Future<LatLng?> backgroundGPSSync(LatLng? previousPos) async {
   try {
     if (Globals.lastPositionTime?.isBefore(DateTime.now().subtract(const Duration(minutes: 1))) ?? true) {
       var location = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high, timeLimit: const Duration(seconds: 12));
@@ -501,11 +502,17 @@ Future<bool> backgroundGPSSync() async {
       Globals.lastPositionTime = DateTime.now();
     }
 
-    if (Globals.lastPosition == null) return true;
+    if (Globals.lastPosition == null) return null;
 
     String path = '${Globals.filesPath}/last_location.txt';
     File file = File(path);
     file.writeAsStringSync("${Globals.lastPosition!.latitude},${Globals.lastPosition!.longitude},${Globals.lastPositionTime!.millisecondsSinceEpoch}");
+
+    if (previousPos != null) {
+      double distance = Geolocator.distanceBetween(previousPos.latitude, previousPos.longitude, Globals.lastPosition!.latitude, Globals.lastPosition!.longitude);
+      int time = DateTime.now().difference(Globals.lastPositionTime!).inSeconds;
+      if (distance < 50 && time < 600) return previousPos;
+    }
 
     try {
       var servers = Globals.registeredServers;
@@ -522,10 +529,12 @@ Future<bool> backgroundGPSSync() async {
       Logger.warn('Failed to send location: $e\n$s');
     }
 
-    return true;
+    return LatLng(Globals.lastPosition!.latitude, Globals.lastPosition!.longitude);
   } catch (e, s) {
     Logger.error('Failed to get location: $e\n$s');
-    return true;
+
+    if (previousPos != null) return previousPos;
+    return null;
   }
 }
 
@@ -560,8 +569,9 @@ void onServiceStartAndroid(ServiceInstance instance) async {
     return;
   }
 
+  LatLng? previousPos;
   while (true) {
-    await backgroundGPSSync();
+    previousPos = await backgroundGPSSync(previousPos);
 
     int delay = 60;
     while (delay > 0) {

@@ -943,7 +943,7 @@ class SettingsNotificationData {
       }
 
       DateTime now = DateTime.now();
-      if (anyGeofencing && Globals.lastPositionTime == null || Globals.lastPositionTime!.isBefore(now.subtract(const Duration(minutes: 10))) || Globals.lastPosition == null) {
+      if (anyGeofencing && Globals.lastPositionTime == null || Globals.lastPositionTime!.isBefore(now.subtract(const Duration(minutes: 15))) || Globals.lastPosition == null) {
         try {
           String path = '${Globals.filesPath}/last_location.txt';
           File file = File(path);
@@ -954,7 +954,7 @@ class SettingsNotificationData {
               double lon = double.tryParse(parts[1]) ?? 0;
               int time = int.tryParse(parts[2]) ?? 0;
               DateTime lastTime = DateTime.fromMillisecondsSinceEpoch(time);
-              if (lastTime.isAfter(now.subtract(const Duration(minutes: 10))) && lat != 0 && lon != 0) {
+              if (lastTime.isAfter(now.subtract(const Duration(minutes: 15))) && lat != 0 && lon != 0) {
                 Globals.lastPosition = Position(
                   latitude: lat,
                   longitude: lon,
