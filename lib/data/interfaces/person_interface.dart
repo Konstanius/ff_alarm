@@ -61,4 +61,30 @@ abstract class PersonInterface {
 
     UpdateInfo(UpdateType.person, updatedIds);
   }
+
+  static Future<({String key, int personId})> create({
+    required int stationId,
+    required String firstName,
+    required String lastName,
+    required DateTime birthday,
+    required List<int> allowedUnits,
+    required List<Qualification> qualifications,
+    required String server,
+  }) async {
+    Map<String, dynamic> data = {
+      'stationId': stationId,
+      'firstName': firstName,
+      'lastName': lastName,
+      'birthday': birthday.millisecondsSinceEpoch,
+      'allowedUnits': allowedUnits,
+      'qualifications': qualifications.map((e) => e.toString()).toList(),
+    };
+
+    Request response = await Request('personCreate', data, server).emit(true);
+
+    String key = response.ackData!['key'];
+    int id = response.ackData!['id'];
+
+    return (key: key, personId: id);
+  }
 }

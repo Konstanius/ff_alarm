@@ -97,7 +97,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `Unit` (`id` TEXT NOT NULL, `stationId` INTEGER NOT NULL, `unitType` INTEGER NOT NULL, `unitIdentifier` INTEGER NOT NULL, `unitDescription` TEXT NOT NULL, `status` INTEGER NOT NULL, `positions` TEXT NOT NULL, `capacity` INTEGER NOT NULL, `updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `Person` (`id` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `allowedUnits` TEXT NOT NULL, `qualifications` TEXT NOT NULL, `updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `Person` (`id` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `birthday` INTEGER NOT NULL, `allowedUnits` TEXT NOT NULL, `qualifications` TEXT NOT NULL, `updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
 
         await callback?.onCreate?.call(database, version);
       },
@@ -243,14 +243,14 @@ class _$AlarmDao extends AlarmDao {
   @override
   Future<void> deleteByPrefix(String id) async {
     await _queryAdapter.queryNoReturn(
-        'DELETE FROM Alarm WHERE id LIKE ?1||" %"',
+        'DELETE FROM Alarm WHERE id LIKE ?1||\" %\"',
         arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Alarm WHERE id LIKE ?1||"%"',
+        'SELECT COUNT(*) FROM Alarm WHERE id LIKE ?1||\"%\"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [prefix]);
   }
@@ -385,14 +385,14 @@ class _$StationDao extends StationDao {
   @override
   Future<void> deleteByPrefix(String id) async {
     await _queryAdapter.queryNoReturn(
-        'DELETE FROM Station WHERE id LIKE ?1||" %"',
+        'DELETE FROM Station WHERE id LIKE ?1||\" %\"',
         arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Station WHERE id LIKE ?1||"%"',
+        'SELECT COUNT(*) FROM Station WHERE id LIKE ?1||\"%\"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [prefix]);
   }
@@ -525,14 +525,14 @@ class _$UnitDao extends UnitDao {
   @override
   Future<void> deleteByPrefix(String id) async {
     await _queryAdapter.queryNoReturn(
-        'DELETE FROM Unit WHERE id LIKE ?1||" %"',
+        'DELETE FROM Unit WHERE id LIKE ?1||\" %\"',
         arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Unit WHERE id LIKE ?1||"%"',
+        'SELECT COUNT(*) FROM Unit WHERE id LIKE ?1||\"%\"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [prefix]);
   }
@@ -565,6 +565,7 @@ class _$PersonDao extends PersonDao {
                   'id': item.id,
                   'firstName': item.firstName,
                   'lastName': item.lastName,
+                  'birthday': _dateTimeConverter.encode(item.birthday),
                   'allowedUnits': _listIntConverter.encode(item.allowedUnits),
                   'qualifications':
                       _listQualificationConverter.encode(item.qualifications),
@@ -578,6 +579,7 @@ class _$PersonDao extends PersonDao {
                   'id': item.id,
                   'firstName': item.firstName,
                   'lastName': item.lastName,
+                  'birthday': _dateTimeConverter.encode(item.birthday),
                   'allowedUnits': _listIntConverter.encode(item.allowedUnits),
                   'qualifications':
                       _listQualificationConverter.encode(item.qualifications),
@@ -591,6 +593,7 @@ class _$PersonDao extends PersonDao {
                   'id': item.id,
                   'firstName': item.firstName,
                   'lastName': item.lastName,
+                  'birthday': _dateTimeConverter.encode(item.birthday),
                   'allowedUnits': _listIntConverter.encode(item.allowedUnits),
                   'qualifications':
                       _listQualificationConverter.encode(item.qualifications),
@@ -616,6 +619,7 @@ class _$PersonDao extends PersonDao {
             id: row['id'] as String,
             firstName: row['firstName'] as String,
             lastName: row['lastName'] as String,
+            birthday: _dateTimeConverter.decode(row['birthday'] as int),
             allowedUnits:
                 _listIntConverter.decode(row['allowedUnits'] as String),
             qualifications: _listQualificationConverter
@@ -641,6 +645,7 @@ class _$PersonDao extends PersonDao {
             id: row['id'] as String,
             firstName: row['firstName'] as String,
             lastName: row['lastName'] as String,
+            birthday: _dateTimeConverter.decode(row['birthday'] as int),
             allowedUnits:
                 _listIntConverter.decode(row['allowedUnits'] as String),
             qualifications: _listQualificationConverter
@@ -652,14 +657,14 @@ class _$PersonDao extends PersonDao {
   @override
   Future<void> deleteByPrefix(String id) async {
     await _queryAdapter.queryNoReturn(
-        'DELETE FROM Person WHERE id LIKE ?1||" %"',
+        'DELETE FROM Person WHERE id LIKE ?1||\" %\"',
         arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Person WHERE id LIKE ?1||"%"',
+        'SELECT COUNT(*) FROM Person WHERE id LIKE ?1||\"%\"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [prefix]);
   }

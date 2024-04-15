@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:ff_alarm/data/interfaces/alarm_interface.dart';
@@ -11,10 +12,12 @@ import 'package:ff_alarm/server/realtime.dart';
 import 'package:ff_alarm/ui/home/alarms_screen.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/home/units_screen.dart';
+import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 import 'package:loader_overlay/loader_overlay.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class FFAlarmApp extends StatelessWidget {
   const FFAlarmApp({super.key});
@@ -59,6 +62,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   Timer? _timer;
 
+  static int lastUpdate = DateTime.now().millisecondsSinceEpoch;
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
@@ -71,6 +76,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       AwesomeNotifications().cancelNotificationsByChannelKey('test');
       resetAndroidNotificationVolume();
 
+      if (lastUpdate + 10000 > DateTime.now().millisecondsSinceEpoch) {
+        Globals.foreground = state == AppLifecycleState.resumed;
+        return;
+      }
       RealTimeListener.initAll();
 
       PersonInterface.fetchAll();
@@ -103,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     () async {
       badgeSettings.value = await SettingsScreenState.getBadLifeCycle() + await SettingsScreenState.getBadNotificationsAmount();
 
-      if (Globals.localPersons.isEmpty || badgeSettings.value == 0) return;
+      if (Globals.localPersons.isEmpty) return;
 
       showPermissionsPopup();
     }();
@@ -247,18 +256,58 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       if (info.ids.contains("3")) {
         int bad = await SettingsScreenState.getBadLifeCycle() + await SettingsScreenState.getBadNotificationsAmount();
         badgeSettings.value = bad;
-        if (Globals.localPersons.isNotEmpty && badgeSettings.value > 0) {
+        if (Globals.localPersons.isNotEmpty) {
           showPermissionsPopup();
         }
       }
     }
   }
 
-  void showPermissionsPopup() {
-    generalDialog(
+  void showPermissionsPopup() async {
+    if (badgeSettings.value > 0) {
+      await generalDialog(
+        color: Colors.red,
+        title: badgeSettings.value > 1 ? 'Aktionen erforderlich' : 'Aktion erforderlich',
+        content: const Text('Die Einstellungen und Berechtigungen der App auf deinem Handy sind nicht vollständig. Bitte überprüfe die Einstellungen.'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Ignorieren'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              tabController.index = 2;
+            },
+            child: const Text('Einstellungen'),
+          ),
+        ],
+      );
+    }
+
+    var settings = SettingsNotificationData.getAll();
+    bool anyGeofencing = false;
+    for (var data in settings.values) {
+      if (data.enabledMode == 3 && data.geofencing.isNotEmpty && data.manualOverride == 1) {
+        anyGeofencing = true;
+        break;
+      }
+    }
+    if (!anyGeofencing) return;
+
+    bool granted = await Permission.locationAlways.isGranted;
+    if (granted && Platform.isIOS) {
+      granted = await Permission.sensors.isGranted;
+    }
+
+    if (granted) return;
+
+    await generalDialog(
       color: Colors.red,
-      title: badgeSettings.value > 1 ? 'Aktionen erforderlich' : 'Aktion erforderlich',
-      content: const Text('Die Einstellungen und Berechtigungen der App auf deinem Handy sind nicht vollständig. Bitte überprüfe die Einstellungen.'),
+      title: 'Aktion erforderlich',
+      content: const Text('Die App benötigt Zugriff auf deinen Standort, um Geofencing zu verwenden. Bitte erlaube den Zugriff in den Einstellungen.'),
       actions: <Widget>[
         TextButton(
           onPressed: () {
@@ -267,9 +316,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           child: const Text('Ignorieren'),
         ),
         TextButton(
-          onPressed: () {
+          onPressed: () async {
             Navigator.of(context).pop();
-            tabController.index = 2;
+
+            Globals.router.go('/lifecycle');
           },
           child: const Text('Einstellungen'),
         ),

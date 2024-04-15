@@ -18,6 +18,7 @@ import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/settings/lifecycle.dart';
 import 'package:ff_alarm/ui/settings/notifications.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
+import 'package:ff_alarm/ui/utils/versioning.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
@@ -59,6 +60,8 @@ abstract class Globals {
     prefs = Prefs(identifier: 'main');
 
     db = await $FloorAppDatabase.databaseBuilder('database.db').buildBetterPath();
+
+    await Versioning.upgradeDatabase();
 
     await initializeTemporary(geo);
   }

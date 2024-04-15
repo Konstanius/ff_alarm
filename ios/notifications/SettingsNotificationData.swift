@@ -195,7 +195,7 @@ class SettingsNotificationData {
                 if splits.count == 3 {
                     let time = Int(splits[2])!
                     let now = Date().timeIntervalSince1970 * 1000
-                    if Int(now) - time < 1000 * 60 * 15 {
+                    if Int(now) - time < 1000 * 60 * 20 {
                         latitude = Double(splits[0])!
                         longitude = Double(splits[1])!
                     }

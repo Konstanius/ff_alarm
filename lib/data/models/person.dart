@@ -15,6 +15,8 @@ class Person {
 
   String get fullName => "$firstName $lastName";
 
+  DateTime birthday;
+
   List<int> allowedUnits;
   List<String> get allowedUnitProperIds => allowedUnits.map((e) => "$server $e").toList();
 
@@ -68,6 +70,7 @@ class Person {
     required this.id,
     required this.firstName,
     required this.lastName,
+    required this.birthday,
     required this.allowedUnits,
     required this.qualifications,
     required this.updated,
@@ -78,6 +81,7 @@ class Person {
     "id": "i",
     "firstName": "f",
     "lastName": "l",
+    "birthday": "b",
     "allowedUnits": "au",
     "qualifications": "q",
     "updated": "up",
@@ -88,6 +92,7 @@ class Person {
       id: "${json[jsonShorts["server"]]} ${json[jsonShorts["id"]]}",
       firstName: json[jsonShorts["firstName"]],
       lastName: json[jsonShorts["lastName"]],
+      birthday: DateTime.fromMillisecondsSinceEpoch(json[jsonShorts["birthday"]]),
       allowedUnits: List<int>.from(json[jsonShorts["allowedUnits"]]),
       qualifications: (json[jsonShorts["qualifications"]] as List).map((e) => Qualification.fromString(e)).toList(),
       updated: json[jsonShorts["updated"]],
