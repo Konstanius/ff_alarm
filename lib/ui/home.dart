@@ -80,6 +80,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         Globals.foreground = state == AppLifecycleState.resumed;
         return;
       }
+      lastUpdate = DateTime.now().millisecondsSinceEpoch;
       RealTimeListener.initAll();
 
       PersonInterface.fetchAll();

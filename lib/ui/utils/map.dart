@@ -38,6 +38,9 @@ class _MapPageState extends State<MapPage> {
           subdomains: const ['a', 'b', 'c'],
           keepBuffer: 10,
           panBuffer: 2,
+          additionalOptions: const {
+            "keep-alive": "true",
+          },
         ),
         ValueListenableBuilder(
           valueListenable: widget.positionsNotifier,

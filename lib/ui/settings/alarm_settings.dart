@@ -9,6 +9,7 @@ import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
+import 'package:ff_alarm/ui/screens/station_screen.dart';
 import 'package:ff_alarm/ui/settings/lifecycle.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/format.dart';
@@ -105,17 +106,43 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
   }
 
   void setCurrentPosition() {
+    var pos = station?.position;
+    bool containedStation = false;
+    for (var item in positionsNotifier.value) {
+      if (item.id == "station") {
+        containedStation = true;
+        if (pos == null) break;
+        item.position = Formats.positionToLatLng(pos);
+        break;
+      }
+    }
+
+    if (!containedStation && pos != null) {
+      positionsNotifier.value.add(
+        MapPos(
+          id: 'station',
+          position: Formats.positionToLatLng(pos),
+          name: 'Wache',
+          widget: const PulseIcon(
+            pulseColor: Colors.blue,
+            icon: Icons.home,
+            pulseCount: 2,
+          ),
+        ),
+      );
+    }
+
     if (Globals.lastPosition != null) {
-      bool contained = false;
+      bool containedSelf = false;
       for (var item in positionsNotifier.value) {
         if (item.id == "self") {
-          contained = true;
+          containedSelf = true;
           item.position = Formats.positionToLatLng(Globals.lastPosition!);
           break;
         }
       }
 
-      if (!contained) {
+      if (!containedSelf) {
         positionsNotifier.value.add(
           MapPos(
             id: 'self',
@@ -129,6 +156,8 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
           ),
         );
       }
+
+
     } else {
       positionsNotifier.value.removeWhere((element) => element.id == "self");
     }
@@ -146,6 +175,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
 
   Future<void> loadStation() async {
     station = await Globals.db.stationDao.getById(widget.stationId);
+    setCurrentPosition();
     if (!mounted) return;
     setState(() {
       loading = false;
@@ -278,9 +308,24 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
         body: ListView(
           padding: const EdgeInsets.all(8),
           children: [
-            ListTile(
-              title: const Text("Wache"),
-              subtitle: Text(station.name),
+            ...StationPageState.getStationDisplay(
+              station,
+              context,
+              thirdRow: notify
+                  ? const Row(
+                      children: [
+                        Icon(Icons.notifications_active, color: Colors.green),
+                        SizedBox(width: 5),
+                        Text("Alarmierung aktiviert", style: TextStyle(color: Colors.green)),
+                      ],
+                    )
+                  : const Row(
+                      children: [
+                        Icon(Icons.notifications_off, color: Colors.red),
+                        SizedBox(width: 5),
+                        Text("Automatische Absage", style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
             ),
             const SettingsDivider(text: "Alarmierungs-Einstellungen"),
             Center(
@@ -539,7 +584,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
                             );
 
                             // delete all notifiers
-                            positionsNotifier.value.removeWhere((element) => element.id != "self");
+                            positionsNotifier.value.removeWhere((element) => element.id != "self" && element.id != "station");
 
                             for (int i = 0; i < current.geofencing.length; i++) {
                               var position = current.geofencing[i];

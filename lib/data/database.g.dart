@@ -538,6 +538,27 @@ class _$UnitDao extends UnitDao {
   }
 
   @override
+  Future<List<Unit>> getWhereStationIn(
+    int stationId,
+    String prefix,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM Unit WHERE stationId = ?1 AND id LIKE ?2||\"%\"',
+        mapper: (Map<String, Object?> row) => Unit(
+            id: row['id'] as String,
+            stationId: row['stationId'] as int,
+            unitType: row['unitType'] as int,
+            unitIdentifier: row['unitIdentifier'] as int,
+            unitDescription: row['unitDescription'] as String,
+            status: row['status'] as int,
+            positions:
+                _listUnitPositionConverter.decode(row['positions'] as String),
+            capacity: row['capacity'] as int,
+            updated: row['updated'] as int),
+        arguments: [stationId, prefix]);
+  }
+
+  @override
   Future<void> inserts(Unit unit) async {
     await _unitInsertionAdapter.insert(unit, OnConflictStrategy.replace);
   }
@@ -667,6 +688,27 @@ class _$PersonDao extends PersonDao {
         'SELECT COUNT(*) FROM Person WHERE id LIKE ?1||\"%\"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
         arguments: [prefix]);
+  }
+
+  @override
+  Future<List<Person>> getWhereIn(List<String> ids) async {
+    const offset = 1;
+    final _sqliteVariablesForIds =
+        Iterable<String>.generate(ids.length, (i) => '?${i + offset}')
+            .join(',');
+    return _queryAdapter.queryList(
+        'SELECT * FROM Person WHERE id IN (' + _sqliteVariablesForIds + ')',
+        mapper: (Map<String, Object?> row) => Person(
+            id: row['id'] as String,
+            firstName: row['firstName'] as String,
+            lastName: row['lastName'] as String,
+            birthday: _dateTimeConverter.decode(row['birthday'] as int),
+            allowedUnits:
+                _listIntConverter.decode(row['allowedUnits'] as String),
+            qualifications: _listQualificationConverter
+                .decode(row['qualifications'] as String),
+            updated: row['updated'] as int),
+        arguments: [...ids]);
   }
 
   @override

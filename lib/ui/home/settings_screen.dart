@@ -120,7 +120,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
     super.build(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: const Text('Einstellungen'),
       ),
       body: ListView(
         padding: const EdgeInsets.all(8),
@@ -332,7 +332,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
             for (var station in stations!)
               ListTile(
                 leading: allNotificationSettings.containsKey(station.id) ? const Icon(Icons.settings_outlined) : const Icon(Icons.question_mark_outlined),
-                title: Text("${station.name} (${station.prefix} ${station.area} ${station.stationNumber})"),
+                title: Text(station.descriptiveName),
                 subtitle: () {
                   LatLng? lastPosition;
                   if (Globals.lastPosition != null) {

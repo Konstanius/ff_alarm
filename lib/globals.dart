@@ -324,23 +324,23 @@ abstract class Globals {
     }
   }
 
-  static bg.Config iosBackgroundLocationConfig = bg.Config(
-    desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
-    distanceFilter: 50.0,
-    stopTimeout: 5,
-    debug: false,
-    logLevel: bg.Config.LOG_LEVEL_OFF,
-    disableElasticity: false,
-    disableStopDetection: true,
-    disableMotionActivityUpdates: true,
-    disableLocationAuthorizationAlert: true,
-    preventSuspend: true,
-    startOnBoot: true,
-    stopOnTerminate: false,
-    allowIdenticalLocations: true,
-    heartbeatInterval: 120,
-    pausesLocationUpdatesAutomatically: false,
-  );
+  static bg.Config get iosBackgroundLocationConfig => bg.Config(
+        desiredAccuracy: bg.Config.DESIRED_ACCURACY_HIGH,
+        distanceFilter: 50.0,
+        stopTimeout: 5,
+        debug: false,
+        logLevel: bg.Config.LOG_LEVEL_OFF,
+        disableElasticity: false,
+        disableStopDetection: true,
+        disableMotionActivityUpdates: true,
+        disableLocationAuthorizationAlert: true,
+        preventSuspend: true,
+        startOnBoot: true,
+        stopOnTerminate: false,
+        allowIdenticalLocations: true,
+        heartbeatInterval: 120,
+        pausesLocationUpdatesAutomatically: false,
+      );
 
   static bf.BackgroundFetchConfig iosBackgroundFetchConfig = bf.BackgroundFetchConfig(
     minimumFetchInterval: 15,
@@ -494,7 +494,7 @@ abstract class Globals {
 
 /// Refreshes every 5 minutes, if position changed by 50 meters or more
 /// Serverside treats a position as unreliable after 10 minutes
-Future<LatLng?> backgroundGPSSync(LatLng? previousPos) async {
+Future<({LatLng? pos, int? lastTime})> backgroundGPSSync(LatLng? previousPos, int? lastTime) async {
   try {
     if (Globals.lastPositionTime?.isBefore(DateTime.now().subtract(const Duration(minutes: 1))) ?? true) {
       var location = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high, timeLimit: const Duration(seconds: 12));
@@ -502,16 +502,16 @@ Future<LatLng?> backgroundGPSSync(LatLng? previousPos) async {
       Globals.lastPositionTime = DateTime.now();
     }
 
-    if (Globals.lastPosition == null) return null;
+    if (Globals.lastPosition == null) return (pos: previousPos, lastTime: lastTime);
 
     String path = '${Globals.filesPath}/last_location.txt';
     File file = File(path);
     file.writeAsStringSync("${Globals.lastPosition!.latitude},${Globals.lastPosition!.longitude},${Globals.lastPositionTime!.millisecondsSinceEpoch}");
 
-    if (previousPos != null) {
+    int time = DateTime.now().millisecondsSinceEpoch - (lastTime ?? 0);
+    if (previousPos != null && time < 600) {
       double distance = Geolocator.distanceBetween(previousPos.latitude, previousPos.longitude, Globals.lastPosition!.latitude, Globals.lastPosition!.longitude);
-      int time = DateTime.now().difference(Globals.lastPositionTime!).inSeconds;
-      if (distance < 50 && time < 600) return previousPos;
+      if (distance < 50) return (pos: previousPos, lastTime: lastTime);
     }
 
     try {
@@ -529,12 +529,10 @@ Future<LatLng?> backgroundGPSSync(LatLng? previousPos) async {
       Logger.warn('Failed to send location: $e\n$s');
     }
 
-    return LatLng(Globals.lastPosition!.latitude, Globals.lastPosition!.longitude);
+    return (pos: LatLng(Globals.lastPosition!.latitude, Globals.lastPosition!.longitude), lastTime: Globals.lastPositionTime!.millisecondsSinceEpoch);
   } catch (e, s) {
     Logger.error('Failed to get location: $e\n$s');
-
-    if (previousPos != null) return previousPos;
-    return null;
+    return (pos: previousPos, lastTime: lastTime);
   }
 }
 
@@ -570,8 +568,11 @@ void onServiceStartAndroid(ServiceInstance instance) async {
   }
 
   LatLng? previousPos;
+  int? previousTime;
   while (true) {
-    previousPos = await backgroundGPSSync(previousPos);
+    var result = await backgroundGPSSync(previousPos, previousTime);
+    previousPos = result.pos;
+    previousTime = result.lastTime;
 
     int delay = 60;
     while (delay > 0) {

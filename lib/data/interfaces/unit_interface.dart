@@ -61,4 +61,15 @@ abstract class UnitInterface {
 
     UpdateInfo(UpdateType.unit, updatedIds);
   }
+
+  static Future<List<Unit>> fetchForStationAsAdmin(String server, int stationId) async {
+    Request response = await Request('unitGetForStation', {'stationId': stationId}, server).emit(true);
+
+    List<Unit> units = [];
+    for (Map<String, dynamic> unit in response.ackData!['units']) {
+      units.add(Unit.fromJson(unit));
+    }
+
+    return units;
+  }
 }

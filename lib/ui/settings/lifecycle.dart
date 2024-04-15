@@ -444,11 +444,10 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                 );
                 if (res != true) return;
 
-                var state = await bg.BackgroundGeolocation.ready(Globals.iosBackgroundLocationConfig);
+                var state = await bg.BackgroundGeolocation.ready(Globals.iosBackgroundLocationConfig..disableMotionActivityUpdates = false);
 
                 int result = await bg.BackgroundGeolocation.requestPermission();
-                print(result); // TODO
-                if (result == 1) {
+                if (result == bg.ProviderChangeEvent.AUTHORIZATION_STATUS_ALWAYS) {
                   successToast('Einstellung erfolgreich!');
                   if (!state.enabled) {
                     await bg.BackgroundGeolocation.start();

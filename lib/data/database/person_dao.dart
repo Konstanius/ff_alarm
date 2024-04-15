@@ -26,4 +26,7 @@ abstract class PersonDao {
 
   @Query('SELECT COUNT(*) FROM Person WHERE id LIKE :prefix||"%"')
   Future<int?> getAmountWithPrefix(String prefix);
+
+  @Query('SELECT * FROM Person WHERE id IN (:ids)')
+  Future<List<Person>> getWhereIn(List<String> ids);
 }

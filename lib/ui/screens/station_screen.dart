@@ -1,4 +1,14 @@
+import 'package:ff_alarm/data/interfaces/unit_interface.dart';
+import 'package:ff_alarm/data/models/person.dart';
+import 'package:ff_alarm/data/models/station.dart';
+import 'package:ff_alarm/data/models/unit.dart';
+import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/log/logger.dart';
+import 'package:ff_alarm/ui/home/settings_screen.dart';
+import 'package:ff_alarm/ui/utils/toasts.dart';
+import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
+import 'package:map_launcher/map_launcher.dart';
 
 class StationPage extends StatefulWidget {
   const StationPage({super.key, required this.stationId});
@@ -6,12 +16,309 @@ class StationPage extends StatefulWidget {
   final String stationId;
 
   @override
-  State<StationPage> createState() => _StationPageState();
+  State<StationPage> createState() => StationPageState();
 }
 
-class _StationPageState extends State<StationPage> {
+class StationPageState extends State<StationPage> with Updates {
+  bool loading = true;
+  Station? station;
+  List<Person>? persons;
+  List<Unit>? units;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStation();
+
+    setupListener({UpdateType.station, UpdateType.person, UpdateType.unit});
+  }
+
+  void _loadStation() async {
+    try {
+      station = await Globals.db.stationDao.getById(widget.stationId);
+
+      persons = await Globals.db.personDao.getWhereIn(station!.personProperIds);
+      persons!.sort((a, b) {
+        if (station!.adminPersonProperIds.contains(a.id)) return -1;
+        if (station!.adminPersonProperIds.contains(b.id)) return 1;
+        return a.fullName.compareTo(b.fullName);
+      });
+
+      units = await Globals.db.unitDao.getWhereStationIn(station!.idNumber, station!.server);
+      units!.sort((a, b) => a.unitCallSign(station!).compareTo(b.unitCallSign(station!)));
+
+      String? localPersonForServer = Globals.localPersonForServer(station!.server);
+      bool admin = localPersonForServer != null && station!.adminPersonProperIds.contains(localPersonForServer);
+      if (admin) {
+        try {
+          units = await UnitInterface.fetchForStationAsAdmin(station!.server, station!.idNumber);
+          units!.sort((a, b) => a.unitCallSign(station!).compareTo(b.unitCallSign(station!)));
+        } catch (e, s) {
+          Logger.error('Failed to fetch units for station as admin: $e\n$s');
+        }
+      }
+    } catch (e) {
+      station = null;
+      persons = null;
+      units = null;
+    } finally {
+      setState(() {
+        loading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    if (loading) return const SizedBox();
+
+    if (station == null || persons == null || units == null) {
+      return Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: true,
+          title: const Text('Wache'),
+        ),
+        body: const Center(child: Text("Wache konnte nicht geladen werden")),
+      );
+    }
+
+    String? localPersonForServer = Globals.localPersonForServer(station!.server);
+    bool isAdmin = localPersonForServer != null && station!.adminPersonProperIds.contains(localPersonForServer);
+
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: true,
+        title: const Text('Wache'),
+        actions: [
+          if (isAdmin) ...[
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () {
+                // TODO
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.person_add_outlined),
+              onPressed: () {
+                // TODO
+              },
+            ),
+          ],
+        ],
+      ),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          children: [
+            ...getStationDisplay(station!, context),
+            const SizedBox(height: 8),
+            Card(
+              elevation: 4,
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              child: InkWell(
+                onTap: () async {
+                  if (station!.position == null) {
+                    errorToast('Keine Koordinaten vorhanden');
+                    return;
+                  }
+
+                  var maps = await MapLauncher.installedMaps;
+                  if (maps.isNotEmpty) {
+                    await MapLauncher.showMarker(
+                      mapType: MapType.google,
+                      title: station!.descriptiveName,
+                      coords: Coords(station!.position!.latitude, station!.position!.longitude),
+                    );
+                  } else {
+                    errorToast('Keine Karten-App gefunden');
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.location_on_outlined),
+                      const SizedBox(width: 8),
+                      Flexible(child: Text(station!.address)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Card(
+              elevation: 4,
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              child: InkWell(
+                onTap: () async {
+                  if (station!.position == null) {
+                    errorToast('Keine Koordinaten vorhanden');
+                    return;
+                  }
+
+                  var maps = await MapLauncher.installedMaps;
+                  if (maps.isNotEmpty) {
+                    await MapLauncher.showMarker(
+                      mapType: MapType.google,
+                      title: station!.descriptiveName,
+                      coords: Coords(station!.position!.latitude, station!.position!.longitude),
+                    );
+                  } else {
+                    errorToast('Keine Karten-App gefunden');
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      if (station!.position != null) const Icon(Icons.gps_fixed_outlined) else const Icon(Icons.gps_off_outlined),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(() {
+                          if (station!.position == null) return 'Keine Koordinaten vorhanden';
+                          var pos = station!.position!;
+                          return '${pos.latitude.toStringAsFixed(5)}°N,   ${pos.longitude.toStringAsFixed(5)}°E';
+                        }()),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SettingsDivider(text: 'Einheiten'),
+            for (int i = 0; i < units!.length; i++) ...[
+              () {
+                var unit = units![i];
+                return Card(
+                  clipBehavior: Clip.antiAliasWithSaveLayer,
+                  elevation: 2,
+                  margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                  child: ListTile(
+                    onTap: () {
+                      Globals.router.go('/unit', extra: unit.id);
+                    },
+                    title: Text(unit.unitCallSign(station!)),
+                    subtitle: Text(unit.unitDescription),
+                    trailing: () {
+                      var status = UnitStatus.fromInt(unit.status);
+                      return Text(
+                        status.value.toString(),
+                        style: TextStyle(
+                          color: status.color,
+                          fontWeight: FontWeight.bold,
+                          fontSize: kDefaultFontSize * 1.6,
+                        ),
+                      );
+                    }(),
+                  ),
+                );
+              }(),
+            ],
+            const SettingsDivider(text: 'Personen'),
+            for (int i = 0; i < persons!.length; i++) ...[
+              () {
+                var person = persons![i];
+                return Card(
+                  clipBehavior: Clip.antiAliasWithSaveLayer,
+                  elevation: 2,
+                  margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                  child: ListTile(
+                    title: Text(person.fullName),
+                    subtitle: Text(() {
+                      var active = person.activeQualifications(DateTime.now());
+                      return active.map((e) => e.type).join(',  ');
+                    }()),
+                    trailing: () {
+                      if (station!.adminPersonProperIds.contains(person.id)) {
+                        return const Icon(Icons.admin_panel_settings_outlined);
+                      }
+                      return const SizedBox();
+                    }(),
+                  ),
+                );
+              }(),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void onUpdate(UpdateInfo info) {
+    if (info.type == UpdateType.station && info.ids.contains(widget.stationId)) {
+      _loadStation();
+    }
+
+    if (info.type == UpdateType.person) {
+      _loadStation();
+    }
+
+    if (info.type == UpdateType.unit) {
+      _loadStation();
+    }
+  }
+
+  static List<Widget> getStationDisplay(Station station, BuildContext context, {Widget? thirdRow}) {
+    return [
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Card(
+          margin: const EdgeInsets.all(0),
+          elevation: 100,
+          clipBehavior: Clip.antiAliasWithSaveLayer,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.width / 2,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          station.name,
+                          style: TextStyle(
+                            fontSize: MediaQuery.of(context).size.width / (station.name.length > 20 ? 15 : station.name.length),
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                      Flexible(
+                        child: Text(
+                          station.descriptiveNameShort,
+                          style: const TextStyle(fontSize: kDefaultFontSize * 1.2),
+                        ),
+                      ),
+                      if (thirdRow != null) thirdRow,
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text(
+            'Quelle: ${() {
+              var uri = Uri.tryParse('http${station.server}');
+              if (uri == null) return 'http${station.server}';
+              return uri.host;
+            }()}',
+            style: const TextStyle(fontSize: kDefaultFontSize * 0.7),
+          ),
+        ],
+      ),
+    ];
   }
 }

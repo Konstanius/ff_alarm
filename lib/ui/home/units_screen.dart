@@ -57,7 +57,7 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
     super.build(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Units'),
+        title: const Text('Wachen & Einheiten'),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(8),
@@ -68,7 +68,7 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
           return Card(
             clipBehavior: Clip.antiAliasWithSaveLayer,
             margin: const EdgeInsets.only(bottom: 8),
-            elevation: 1,
+            elevation: 10,
             child: ListTile(
               onTap: () {
                 Globals.router.go('/station', extra: station.id);
@@ -77,7 +77,7 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
               title: Padding(
                 padding: const EdgeInsets.only(bottom: 4, left: 10),
                 child: Text(
-                  "${station.name} (${station.prefix} ${station.area} ${station.stationNumber})",
+                  station.descriptiveName,
                   style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -92,7 +92,7 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
                   var unit = stationUnits[index];
                   return Card(
                     clipBehavior: Clip.antiAliasWithSaveLayer,
-                    elevation: 8,
+                    elevation: 2,
                     margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
                     child: ListTile(
                       onTap: () {
@@ -102,7 +102,14 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
                       subtitle: Text(unit.unitDescription),
                       trailing: () {
                         var status = UnitStatus.fromInt(unit.status);
-                        return Icon(status.icon, color: status.color);
+                        return Text(
+                          status.value.toString(),
+                          style: TextStyle(
+                            color: status.color,
+                            fontWeight: FontWeight.bold,
+                            fontSize: kDefaultFontSize * 1.6,
+                          ),
+                        );
                       }(),
                     ),
                   );

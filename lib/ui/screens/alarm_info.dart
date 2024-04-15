@@ -362,7 +362,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
               elevation: selectedStation == station.id ? 5 : 0,
               child: ListTile(
                 splashColor: Colors.blue,
-                title: Text("${station.name} (${station.prefix} ${station.area} ${station.stationNumber})"),
+                title: Text(station.descriptiveName),
                 subtitle: () {
                   var stationPosition = station.position;
 
@@ -656,7 +656,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 elevation: selectedStation == station.id ? 5 : 0,
                 child: ListTile(
                   splashColor: Colors.blue,
-                  title: Text("${station.name} (${station.prefix} ${station.area} ${station.stationNumber})"),
+                  title: Text(station.descriptiveName),
                   subtitle: () {
                     var stationPosition = station.position;
 
@@ -971,7 +971,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
 
                   Position? pos = alarm.positionFromAddressIfCoordinates;
                   if (pos != null) {
-                    shareString += 'Koordinaten: ${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}\n';
+                    shareString += 'Koordinaten: ${pos.latitude.toStringAsFixed(5)}°N,   ${pos.longitude.toStringAsFixed(5)}°E\n';
                   } else {
                     shareString += 'Adresse: ${alarm.address}\n';
                   }
@@ -1213,7 +1213,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                   child: Column(
                                     children: [
                                       Text(
-                                        '${element.station.name} (${element.station.prefix} ${element.station.area} ${element.station.stationNumber})',
+                                        element.station.descriptiveName,
                                         style: Theme.of(context).textTheme.titleMedium,
                                       ),
                                       const SizedBox(height: 5),

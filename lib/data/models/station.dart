@@ -11,6 +11,8 @@ class Station {
   int get idNumber => int.parse(id.split(' ')[1]);
 
   String name;
+  String get descriptiveName => "$name ($prefix $area $stationNumber)";
+  String get descriptiveNameShort => "$prefix $area $stationNumber";
 
   String area;
 
