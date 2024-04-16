@@ -222,22 +222,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   // regenerate FCM token to prevent old servers from sending notifications to the outdated token
                   // TODO possibly do this in another way
-                  try {
-                    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-                    await FirebaseMessaging.instance.deleteToken();
-                    String? token = await FirebaseMessaging.instance.getToken();
-                    if (token != null) {
-                      Globals.prefs.setString('fcm_token', token);
-                    } else {
-                      Globals.prefs.remove('fcm_token');
-                    }
-                  } catch (e, s) {
-                    Logger.error('LoginScreen: $e, $s');
-                    errorToast('Google-Server konnten nicht kontaktiert werden');
-                    Globals.context!.loaderOverlay.hide();
-                    setState(() {});
-                    return;
-                  }
+                  // try {
+                  //   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+                  //   await FirebaseMessaging.instance.deleteToken();
+                  //   String? token = await FirebaseMessaging.instance.getToken();
+                  //   if (token != null) {
+                  //     Globals.prefs.setString('fcm_token', token);
+                  //   } else {
+                  //     Globals.prefs.remove('fcm_token');
+                  //   }
+                  // } catch (e, s) {
+                  //   Logger.error('LoginScreen: $e, $s');
+                  //   errorToast('Google-Server konnten nicht kontaktiert werden');
+                  //   Globals.context!.loaderOverlay.hide();
+                  //   setState(() {});
+                  //   return;
+                  // }
 
                   ({String token, int sessionId, Person person}) result;
                   try {

@@ -228,7 +228,7 @@ class SettingsNotificationData {
         }
 
         if enabledMode == 0 {
-            return false
+            return true
         }
 
         if enabledMode == 1 || enabledMode == 2 {

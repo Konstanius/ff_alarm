@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/notifications/awn_init.dart';
@@ -57,9 +58,16 @@ void main() async {
 
     // lock to portrait mode
     try {
-      await SystemChrome.setPreferredOrientations(<DeviceOrientation>[DeviceOrientation.portraitUp]);
+      SystemChrome.setPreferredOrientations(<DeviceOrientation>[DeviceOrientation.portraitUp]);
     } catch (e, s) {
       Logger.error('Failed to lock to portrait mode: $e\n$s');
+    }
+
+    // set global badge counter to 0
+    try {
+      AwesomeNotifications().resetGlobalBadge();
+    } catch (e, s) {
+      Logger.error('Failed to set application switcher description: $e\n$s');
     }
 
     runApp(const FFAlarmApp());

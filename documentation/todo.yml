@@ -1,5 +1,6 @@
 Alarmierungstöne:
   - Android Ton ändert sich nicht (Channel cant be edited)
+  - Mehr Töne, in höherer Qualität (kein Hintergrundrauschen)
 
 Distanzen:
   - Distance Matrix API
@@ -14,3 +15,6 @@ Allgemein:
 
 Bereitschaft:
   - Swift Background Fetch not working properly yet (might be due to it taking days before it triggers regularly)
+
+Kleinnotizen:
+  - Badge zurücksetzen, wenn App geöffnet wird

@@ -34,3 +34,10 @@ off & background: notification, sound, navigation
 off & terminated: notification, sound, navigation
 off & background & other app: notification, sound, navigation
 off & terminated & other app: notification, sound, navigation
+
+PHONE TESTS:
+    - Realme XT (Android 11) -> works
+    - Huawei P9 Lite (Android 7) -> works, opens alarm when on and on disabled?, instantly dismisses sound when app open
+    - Neffos X1 (Android 7) -> works, sometimes bugs so that sound never stops?!?
+    - King Kong 3 (Android 8) -> doesn't mute with Bereitschaftseinstellung, opens alarm when on and on disabled?
+    - iPhone 6s (iOS 15.7.9) -> works
