@@ -12,7 +12,7 @@ abstract class Logger {
     }
     log(toLog, type: type, color: color);
   }
-  
+
   static void black(dynamic text) {
     if (!kDebugMode) return;
     logSegmentedBuffers(text, type: LogType.primary, color: LogColor.black);

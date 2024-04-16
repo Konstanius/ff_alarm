@@ -9,6 +9,7 @@ import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/notifications/awn_init.dart';
+import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/map.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
@@ -371,7 +372,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                     if (unit.stationProperId == station.id) dispatchedUnits.add(unit);
                   }
 
-                  dispatchedUnits.sort((a, b) => a.unitCallSign(station).compareTo(b.unitCallSign(station)));
+                  dispatchedUnits.sort((a, b) => a.callSign(station).compareTo(b.callSign(station)));
 
                   List<int> responses = [
                     0, // onStation
@@ -449,10 +450,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                             ),
                         ],
                       ),
-                      const SizedBox(height: 5),
-                      const Divider(height: 20),
-                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text('Antworten:', style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center)]),
-                      const SizedBox(height: 5),
+                      const SettingsDivider(text: 'Antworten'),
                       Row(
                         mainAxisSize: MainAxisSize.max,
                         children: [
@@ -530,16 +528,13 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                           ),
                         ],
                       ),
-                      const SizedBox(height: 5),
-                      const Divider(height: 20),
-                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text('Alarmierte Einheiten:', style: Theme.of(context).textTheme.titleMedium)]),
-                      const SizedBox(height: 5),
+                      const SettingsDivider(text: 'Alarmierte Einheiten'),
                       for (var unit in dispatchedUnits)
                         Row(
                           mainAxisSize: MainAxisSize.max,
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Text(unit.unitCallSign(station)),
+                            Text(unit.callSign(station)),
                             const SizedBox(width: 5),
                             Text(unit.unitDescription),
                           ],
@@ -665,7 +660,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                       if (unit.stationProperId == station.id) dispatchedUnits.add(unit);
                     }
 
-                    dispatchedUnits.sort((a, b) => a.unitCallSign(station).compareTo(b.unitCallSign(station)));
+                    dispatchedUnits.sort((a, b) => a.callSign(station).compareTo(b.callSign(station)));
 
                     List<int> responses = [
                       0, // onStation
@@ -743,10 +738,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                               ),
                           ],
                         ),
-                        const SizedBox(height: 5),
-                        const Divider(height: 20),
-                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text('Antworten:', style: Theme.of(context).textTheme.titleMedium, textAlign: TextAlign.center)]),
-                        const SizedBox(height: 5),
+                        const SettingsDivider(text: 'Antworten'),
                         Row(
                           mainAxisSize: MainAxisSize.max,
                           children: [
@@ -824,16 +816,13 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                             ),
                           ],
                         ),
-                        const SizedBox(height: 5),
-                        const Divider(height: 20),
-                        Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text('Alarmierte Einheiten:', style: Theme.of(context).textTheme.titleMedium)]),
-                        const SizedBox(height: 5),
+                        const SettingsDivider(text: 'Alarmierte Einheiten'),
                         for (var unit in dispatchedUnits)
                           Row(
                             mainAxisSize: MainAxisSize.max,
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
-                              Text(unit.unitCallSign(station)),
+                              Text(unit.callSign(station)),
                               const SizedBox(width: 5),
                               Text(unit.unitDescription),
                             ],
@@ -989,7 +978,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                         }
                       }
                       if (station != null) {
-                        shareString += '  - ${unit.unitCallSign(station)}: ${unit.unitDescription}\n';
+                        shareString += '  - ${unit.callSign(station)}: ${unit.unitDescription}\n';
                       }
                     }
                   }
@@ -1068,7 +1057,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                     children: [
                       // General information (time, type, word, address, notes)
                       ...genericAlarmInfo(),
-                      if (ownResponse != null) const Divider(height: 12),
+                      if (ownResponse != null) const Divider(height: 12, color: Colors.blue),
                       if (ownResponse != null) const SizedBox(height: 4),
                       if (ownResponse != null)
                         Column(
@@ -1164,8 +1153,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                           ],
                         ),
                       // Alarmed units / stations and responding amount of people
-                      if (data != null && alarm.units.isNotEmpty) const Divider(height: 20),
-                      if (data != null && alarm.units.isNotEmpty) Text('Alarmierte Einheiten:', style: Theme.of(context).textTheme.titleMedium),
+                      if (data != null && alarm.units.isNotEmpty) const SettingsDivider(text: 'Alarmierte Einheiten'),
                       if (data != null && alarm.units.isNotEmpty)
                         () {
                           List<({Station station, List<Unit> units, List<Person> persons})> stationUnits = [];
@@ -1174,7 +1162,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                             for (var unit in data!.units) {
                               if (unit.stationId == station.idNumber) dispatchedUnits.add(unit);
                             }
-                            units.sort((a, b) => a.unitCallSign(station).compareTo(b.unitCallSign(station)));
+                            units.sort((a, b) => a.callSign(station).compareTo(b.callSign(station)));
 
                             List<Person> persons = [];
                             for (var person in data!.persons) {
@@ -1208,13 +1196,24 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
                                   ),
-                                  margin: const EdgeInsets.all(8),
-                                  elevation: 5,
+                                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                                  elevation: 10,
                                   child: Column(
                                     children: [
-                                      Text(
-                                        element.station.descriptiveName,
-                                        style: Theme.of(context).textTheme.titleMedium,
+                                      const SizedBox(height: 5),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              element.station.descriptiveName,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: kDefaultFontSize * 1.4,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                       const SizedBox(height: 5),
                                       Row(
@@ -1244,61 +1243,47 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                             String zfString = '';
                                             if (zf > 0) zfString = '$zf / ';
 
-                                            return Text('$zfString$gf / $other / ${element.persons.length} (AGT: $agt, Ma: $ma)');
+                                            return Text('$zfString$gf / $other / ${element.persons.length}  (AGT: $agt, Ma: $ma)');
                                           }(),
                                         ],
                                       ),
                                       const SizedBox(height: 5),
                                       for (var unit in element.units)
                                         Card(
-                                          color: Theme.of(context).focusColor,
                                           clipBehavior: Clip.antiAliasWithSaveLayer,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          margin: const EdgeInsets.all(8),
-                                          elevation: 5,
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              mainAxisAlignment: MainAxisAlignment.start,
+                                          elevation: 2,
+                                          margin: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 4),
+                                          child: ListTile(
+                                            title: Row(
                                               children: [
-                                                () {
-                                                  int zf = 0;
-                                                  int gf = 0;
-                                                  int other = unit.capacity;
-                                                  int total = unit.capacity;
-
-                                                  for (var position in unit.positions) {
-                                                    if (position == UnitPosition.zf) {
-                                                      zf++;
-                                                      other--;
-                                                    }
-                                                    if (position == UnitPosition.gf) {
-                                                      gf++;
-                                                      other--;
-                                                    }
-                                                  }
-
-                                                  if (gf == 0 && zf == 0 && unit.positions.contains(UnitPosition.atf)) {
-                                                    other--;
-                                                    gf++;
-                                                  }
-
-                                                  String text = '$gf / $other / $total';
-                                                  if (zf > 0) text = '$zf / $text';
-
-                                                  return Row(
-                                                    children: [
-                                                      Text("${unit.unitCallSign(element.station)} ($text)"),
-                                                    ],
-                                                  );
-                                                }(),
-                                                const SizedBox(height: 5),
-                                                Text(unit.unitDescription),
+                                                Flexible(
+                                                  child: Text(
+                                                    unit.callSign(element.station),
+                                                    style: const TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: kDefaultFontSize * 1.2,
+                                                    ),
+                                                  ),
+                                                ),
                                               ],
                                             ),
+                                            subtitle: Row(
+                                              children: [
+                                                Flexible(child: Text("${unit.unitDescription}  ( ${unit.positionsDescription} )")),
+                                              ],
+                                            ),
+                                            trailing: () {
+                                              if (!relevantLocalPerson.allowedUnitProperIds.contains(unit.id) && alarm.date.isBefore(DateTime.now().subtract(const Duration(hours: 1)))) return null;
+                                              var status = UnitStatus.fromInt(unit.status);
+                                              return Text(
+                                                status.value.toString(),
+                                                style: TextStyle(
+                                                  color: status.color,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: kDefaultFontSize * 1.6,
+                                                ),
+                                              );
+                                            }(),
                                           ),
                                         ),
                                     ],
@@ -1308,7 +1293,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                           );
                         }(),
                       // External map app controls
-                      if (data != null && alarm.units.isNotEmpty) const Divider(height: 20),
+                      if (data != null && alarm.units.isNotEmpty) const Divider(height: 20, color: Colors.blue),
                       if (station != null)
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -1952,7 +1937,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
           ),
         ),
       ),
-      if (alarm.notes.isNotEmpty) const Divider(height: 12),
+      if (alarm.notes.isNotEmpty) const Divider(height: 12, color: Colors.blue),
       if (alarm.notes.isNotEmpty)
         InkWell(
           onTap: () {

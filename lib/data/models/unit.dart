@@ -95,7 +95,7 @@ class Unit {
     );
   }
 
-  String unitCallSign(Station station) {
+  String callSign(Station station) {
     return "${station.prefix} ${station.area} ${station.stationNumber}-$unitType-$unitIdentifier";
   }
 
@@ -130,7 +130,7 @@ class Unit {
       stationMap[station.id] = station;
     }
 
-    units.sort((a, b) => a.unitCallSign(stationMap[a.stationProperId]!).compareTo(b.unitCallSign(stationMap[a.stationProperId]!)));
+    units.sort((a, b) => a.callSign(stationMap[a.stationProperId]!).compareTo(b.callSign(stationMap[a.stationProperId]!)));
 
     return units;
   }

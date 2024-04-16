@@ -138,7 +138,7 @@ class _UnitPageState extends State<UnitPage> with Updates {
                             ),
                             Flexible(
                               child: Text(
-                                unit!.unitCallSign(station!),
+                                unit!.callSign(station!),
                                 style: const TextStyle(fontSize: kDefaultFontSize * 1.2),
                               ),
                             ),

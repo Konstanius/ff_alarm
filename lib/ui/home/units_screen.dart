@@ -79,7 +79,7 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
                 child: Text(
                   station.descriptiveName,
                   style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: kDefaultFontSize * 1.4,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -98,8 +98,14 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
                       onTap: () {
                         Globals.router.go('/unit', extra: unit.id);
                       },
-                      title: Text(unit.unitCallSign(station)),
-                      subtitle: Text(unit.unitDescription),
+                      title: Text(
+                        unit.callSign(station),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: kDefaultFontSize * 1.2,
+                        ),
+                      ),
+                      subtitle: Text("${unit.unitDescription}  ( ${unit.positionsDescription} )"),
                       trailing: () {
                         var status = UnitStatus.fromInt(unit.status);
                         return Text(

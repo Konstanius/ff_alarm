@@ -574,23 +574,25 @@ class SettingsDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8),
-      child: Stack(
+      child: Row(
         children: [
-          const Positioned.fill(
-            child: Center(
-              child: Divider(
-                color: Colors.blue,
-                thickness: 1.5,
-              ),
+          const Expanded(
+            child: Divider(
+              color: Colors.blue,
+              thickness: 1.5,
             ),
           ),
-          Center(
-            child: Container(
-              color: Theme.of(context).colorScheme.background,
-              child: Text(
-                '  $text  ',
-                style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.blue),
-              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.blue),
+            ),
+          ),
+          const Expanded(
+            child: Divider(
+              color: Colors.blue,
+              thickness: 1.5,
             ),
           ),
         ],

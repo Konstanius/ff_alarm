@@ -156,8 +156,6 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
           ),
         );
       }
-
-
     } else {
       positionsNotifier.value.removeWhere((element) => element.id == "self");
     }
