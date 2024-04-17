@@ -27,7 +27,7 @@ abstract class AlarmInterface {
 
   static Future<void> fetchAllForServerSilent(String server) async {
     DateTime archiveDate = DateTime.now().subtract(const Duration(days: 90));
-    List<Alarm> serverAlarms = await Globals.db.alarmDao.getWithPrefix(server, archiveDate.millisecondsSinceEpoch);
+    List<Alarm> serverAlarms = await Globals.db.alarmDao.getWithServer(server, archiveDate.millisecondsSinceEpoch);
     await fetchAllForServer(server, serverAlarms);
   }
 

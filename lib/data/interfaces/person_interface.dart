@@ -19,7 +19,7 @@ abstract class PersonInterface {
   }
 
   static Future<void> fetchAllForServerSilent(String server) async {
-    List<Person> serverPersons = await Globals.db.personDao.getWithPrefix(server);
+    List<Person> serverPersons = await Globals.db.personDao.getWithServer(server);
     await fetchAllForServer(server, serverPersons);
   }
 

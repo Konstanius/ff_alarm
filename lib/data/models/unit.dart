@@ -179,7 +179,7 @@ class Unit {
     UpdateInfo(UpdateType.unit, {unitId});
   }
 
-  static Future<int?> getAmount(String server) => Globals.db.unitDao.getAmountWithPrefix(server);
+  static Future<int?> getAmount(String server) => Globals.db.unitDao.getAmountWithServer(server);
 }
 
 enum UnitPosition {

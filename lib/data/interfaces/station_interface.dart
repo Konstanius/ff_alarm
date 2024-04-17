@@ -19,7 +19,7 @@ abstract class StationInterface {
   }
 
   static Future<void> fetchAllForServerSilent(String server) async {
-    List<Station> serverStations = await Globals.db.stationDao.getWithPrefix(server);
+    List<Station> serverStations = await Globals.db.stationDao.getWithServer(server);
     await fetchAllForServer(server, serverStations);
   }
 

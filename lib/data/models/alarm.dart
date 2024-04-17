@@ -251,7 +251,7 @@ class Alarm {
     UpdateInfo(UpdateType.alarm, {alarmId});
   }
 
-  static Future<int?> getAmount(String server) => Globals.db.alarmDao.getAmountWithPrefix(server);
+  static Future<int?> getAmount(String server) => Globals.db.alarmDao.getAmountWithServer(server);
 }
 
 enum AlarmOption {

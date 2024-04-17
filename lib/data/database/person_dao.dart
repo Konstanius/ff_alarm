@@ -22,13 +22,13 @@ abstract class PersonDao {
   Future<List<Person>> getWithLowerIdThan(String id, int limit);
 
   @Query('DELETE FROM Person WHERE id LIKE :id||" %"')
-  Future<void> deleteByPrefix(String id);
+  Future<void> deleteByServer(String id);
 
-  @Query('SELECT COUNT(*) FROM Person WHERE id LIKE :prefix||"%"')
-  Future<int?> getAmountWithPrefix(String prefix);
+  @Query('SELECT COUNT(*) FROM Person WHERE id LIKE :server||" %"')
+  Future<int?> getAmountWithServer(String server);
 
-  @Query('SELECT * FROM Person WHERE id LIKE :prefix||"%"')
-  Future<List<Person>> getWithPrefix(String prefix);
+  @Query('SELECT * FROM Person WHERE id LIKE :server||" %"')
+  Future<List<Person>> getWithServer(String server);
 
   @Query('SELECT * FROM Person WHERE id IN (:ids)')
   Future<List<Person>> getWhereIn(List<String> ids);

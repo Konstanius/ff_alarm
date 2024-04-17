@@ -19,7 +19,7 @@ abstract class UnitInterface {
   }
 
   static Future<void> fetchAllForServerSilent(String server) async {
-    List<Unit> serverUnits = await Globals.db.unitDao.getWithPrefix(server);
+    List<Unit> serverUnits = await Globals.db.unitDao.getWithServer(server);
     await fetchAllForServer(server, serverUnits);
   }
 

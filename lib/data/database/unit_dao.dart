@@ -22,17 +22,17 @@ abstract class UnitDao {
   Future<List<Unit>> getWithLowerIdThan(String id, int limit);
 
   @Query('DELETE FROM Unit WHERE id LIKE :id||" %"')
-  Future<void> deleteByPrefix(String id);
+  Future<void> deleteByServer(String id);
 
-  @Query('SELECT COUNT(*) FROM Unit WHERE id LIKE :prefix||"%"')
-  Future<int?> getAmountWithPrefix(String prefix);
+  @Query('SELECT COUNT(*) FROM Unit WHERE id LIKE :server||" %"')
+  Future<int?> getAmountWithServer(String server);
 
-  @Query('SELECT * FROM Unit WHERE stationId = :stationId AND id LIKE :prefix||"%"')
-  Future<List<Unit>> getWhereStationIn(int stationId, String prefix);
+  @Query('SELECT * FROM Unit WHERE stationId = :stationId AND id LIKE :server||" %"')
+  Future<List<Unit>> getWhereStationIn(int stationId, String server);
 
-  @Query('SELECT * FROM Unit WHERE id LIKE :prefix||"%"')
-  Future<List<Unit>> getWithPrefix(String prefix);
+  @Query('SELECT * FROM Unit WHERE id LIKE :server||" %"')
+  Future<List<Unit>> getWithServer(String server);
 
-  @Query('SELECT * FROM Unit WHERE id LIKE :prefix||"%" AND calLSign LIKE :callSign')
-  Future<List<Unit>> getWithPrefixAndCallSign(String prefix, String callSign);
+  @Query('SELECT * FROM Unit WHERE id LIKE :server||" %" AND calLSign LIKE :callSign')
+  Future<List<Unit>> getWithServerAndCallSign(String server, String callSign);
 }

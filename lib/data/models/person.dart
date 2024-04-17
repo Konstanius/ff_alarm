@@ -166,7 +166,7 @@ class Person {
     UpdateInfo(UpdateType.person, {personId});
   }
 
-  static Future<int?> getAmount(String server) => Globals.db.personDao.getAmountWithPrefix(server);
+  static Future<int?> getAmount(String server) => Globals.db.personDao.getAmountWithServer(server);
 }
 
 class Qualification {

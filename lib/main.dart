@@ -104,10 +104,10 @@ Future<void> logout(String server) async {
     Logger.error('Failed to disconnect socket: $e\n$s');
   }
 
-  await Globals.db.alarmDao.deleteByPrefix("$server ");
-  await Globals.db.personDao.deleteByPrefix("$server ");
-  await Globals.db.stationDao.deleteByPrefix("$server ");
-  await Globals.db.unitDao.deleteByPrefix("$server ");
+  await Globals.db.alarmDao.deleteByServer(server);
+  await Globals.db.personDao.deleteByServer(server);
+  await Globals.db.stationDao.deleteByServer(server);
+  await Globals.db.unitDao.deleteByServer(server);
 
   if (users.isEmpty) {
     while (true) {

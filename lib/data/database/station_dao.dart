@@ -22,11 +22,11 @@ abstract class StationDao {
   Future<List<Station>> getWithLowerIdThan(String id, int limit);
 
   @Query('DELETE FROM Station WHERE id LIKE :id||" %"')
-  Future<void> deleteByPrefix(String id);
+  Future<void> deleteByServer(String id);
 
-  @Query('SELECT COUNT(*) FROM Station WHERE id LIKE :prefix||"%"')
-  Future<int?> getAmountWithPrefix(String prefix);
+  @Query('SELECT COUNT(*) FROM Station WHERE id LIKE :server||" %"')
+  Future<int?> getAmountWithServer(String server);
 
-  @Query('SELECT * FROM Station WHERE id LIKE :prefix||"%"')
-  Future<List<Station>> getWithPrefix(String prefix);
+  @Query('SELECT * FROM Station WHERE id LIKE :server||" %"')
+  Future<List<Station>> getWithServer(String server);
 }

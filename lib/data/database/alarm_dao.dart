@@ -22,11 +22,11 @@ abstract class AlarmDao {
   Future<List<Alarm>> getWithLowerIdThan(String id, int limit);
 
   @Query('DELETE FROM Alarm WHERE id LIKE :id||" %"')
-  Future<void> deleteByPrefix(String id);
+  Future<void> deleteByServer(String id);
 
-  @Query('SELECT COUNT(*) FROM Alarm WHERE id LIKE :prefix||"%"')
-  Future<int?> getAmountWithPrefix(String prefix);
+  @Query('SELECT COUNT(*) FROM Alarm WHERE id LIKE :server||" %"')
+  Future<int?> getAmountWithServer(String server);
 
-  @Query('SELECT * FROM Alarm WHERE id LIKE :prefix||"%" AND date > :date')
-  Future<List<Alarm>> getWithPrefix(String prefix, int date);
+  @Query('SELECT * FROM Alarm WHERE id LIKE :server||" %" AND date > :date')
+  Future<List<Alarm>> getWithServer(String server, int date);
 }

@@ -156,5 +156,5 @@ class Station {
     UpdateInfo(UpdateType.station, {stationId});
   }
 
-  static Future<int?> getAmount(String server) => Globals.db.stationDao.getAmountWithPrefix(server);
+  static Future<int?> getAmount(String server) => Globals.db.stationDao.getAmountWithServer(server);
 }

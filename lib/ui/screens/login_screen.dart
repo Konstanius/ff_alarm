@@ -200,10 +200,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   setState(() {});
 
                   // delete all data relevant to this server
-                  await Globals.db.alarmDao.deleteByPrefix(server);
-                  await Globals.db.personDao.deleteByPrefix(server);
-                  await Globals.db.stationDao.deleteByPrefix(server);
-                  await Globals.db.unitDao.deleteByPrefix(server);
+                  await Globals.db.alarmDao.deleteByServer(server);
+                  await Globals.db.personDao.deleteByServer(server);
+                  await Globals.db.stationDao.deleteByServer(server);
+                  await Globals.db.unitDao.deleteByServer(server);
 
                   var allResponses = SettingsNotificationData.getAll();
                   Set<String> toRemove = {};

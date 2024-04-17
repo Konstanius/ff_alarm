@@ -241,27 +241,27 @@ class _$AlarmDao extends AlarmDao {
   }
 
   @override
-  Future<void> deleteByPrefix(String id) async {
+  Future<void> deleteByServer(String id) async {
     await _queryAdapter.queryNoReturn(
         'DELETE FROM Alarm WHERE id LIKE ?1||\" %\"',
         arguments: [id]);
   }
 
   @override
-  Future<int?> getAmountWithPrefix(String prefix) async {
+  Future<int?> getAmountWithServer(String server) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Alarm WHERE id LIKE ?1||\"%\"',
+        'SELECT COUNT(*) FROM Alarm WHERE id LIKE ?1||\" %\"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
-        arguments: [prefix]);
+        arguments: [server]);
   }
 
   @override
-  Future<List<Alarm>> getWithPrefix(
-    String prefix,
+  Future<List<Alarm>> getWithServer(
+    String server,
     int date,
   ) async {
     return _queryAdapter.queryList(
-        'SELECT * FROM Alarm WHERE id LIKE ?1||\"%\" AND date > ?2',
+        'SELECT * FROM Alarm WHERE id LIKE ?1||\" %\" AND date > ?2',
         mapper: (Map<String, Object?> row) => Alarm(
             id: row['id'] as String,
             type: row['type'] as String,
@@ -274,7 +274,7 @@ class _$AlarmDao extends AlarmDao {
             responses: _mapIntAlarmResponseConverter
                 .decode(row['responses'] as String),
             updated: row['updated'] as int),
-        arguments: [prefix, date]);
+        arguments: [server, date]);
   }
 
   @override
@@ -405,24 +405,24 @@ class _$StationDao extends StationDao {
   }
 
   @override
-  Future<void> deleteByPrefix(String id) async {
+  Future<void> deleteByServer(String id) async {
     await _queryAdapter.queryNoReturn(
         'DELETE FROM Station WHERE id LIKE ?1||\" %\"',
         arguments: [id]);
   }
 
   @override
-  Future<int?> getAmountWithPrefix(String prefix) async {
+  Future<int?> getAmountWithServer(String server) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Station WHERE id LIKE ?1||\"%\"',
+        'SELECT COUNT(*) FROM Station WHERE id LIKE ?1||\" %\"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
-        arguments: [prefix]);
+        arguments: [server]);
   }
 
   @override
-  Future<List<Station>> getWithPrefix(String prefix) async {
+  Future<List<Station>> getWithServer(String server) async {
     return _queryAdapter.queryList(
-        'SELECT * FROM Station WHERE id LIKE ?1||\"%\"',
+        'SELECT * FROM Station WHERE id LIKE ?1||\" %\"',
         mapper: (Map<String, Object?> row) => Station(
             id: row['id'] as String,
             name: row['name'] as String,
@@ -435,7 +435,7 @@ class _$StationDao extends StationDao {
             persons: _listIntConverter.decode(row['persons'] as String),
             adminPersons:
                 _listIntConverter.decode(row['adminPersons'] as String)),
-        arguments: [prefix]);
+        arguments: [server]);
   }
 
   @override
@@ -559,27 +559,27 @@ class _$UnitDao extends UnitDao {
   }
 
   @override
-  Future<void> deleteByPrefix(String id) async {
+  Future<void> deleteByServer(String id) async {
     await _queryAdapter.queryNoReturn(
         'DELETE FROM Unit WHERE id LIKE ?1||\" %\"',
         arguments: [id]);
   }
 
   @override
-  Future<int?> getAmountWithPrefix(String prefix) async {
+  Future<int?> getAmountWithServer(String server) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Unit WHERE id LIKE ?1||\"%\"',
+        'SELECT COUNT(*) FROM Unit WHERE id LIKE ?1||\" %\"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
-        arguments: [prefix]);
+        arguments: [server]);
   }
 
   @override
   Future<List<Unit>> getWhereStationIn(
     int stationId,
-    String prefix,
+    String server,
   ) async {
     return _queryAdapter.queryList(
-        'SELECT * FROM Unit WHERE stationId = ?1 AND id LIKE ?2||\"%\"',
+        'SELECT * FROM Unit WHERE stationId = ?1 AND id LIKE ?2||\" %\"',
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
             stationId: row['stationId'] as int,
@@ -590,12 +590,13 @@ class _$UnitDao extends UnitDao {
                 _listUnitPositionConverter.decode(row['positions'] as String),
             capacity: row['capacity'] as int,
             updated: row['updated'] as int),
-        arguments: [stationId, prefix]);
+        arguments: [stationId, server]);
   }
 
   @override
-  Future<List<Unit>> getWithPrefix(String prefix) async {
-    return _queryAdapter.queryList('SELECT * FROM Unit WHERE id LIKE ?1||\"%\"',
+  Future<List<Unit>> getWithServer(String server) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM Unit WHERE id LIKE ?1||\" %\"',
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
             stationId: row['stationId'] as int,
@@ -606,16 +607,16 @@ class _$UnitDao extends UnitDao {
                 _listUnitPositionConverter.decode(row['positions'] as String),
             capacity: row['capacity'] as int,
             updated: row['updated'] as int),
-        arguments: [prefix]);
+        arguments: [server]);
   }
 
   @override
-  Future<List<Unit>> getWithPrefixAndCallSign(
-    String prefix,
+  Future<List<Unit>> getWithServerAndCallSign(
+    String server,
     String callSign,
   ) async {
     return _queryAdapter.queryList(
-        'SELECT * FROM Unit WHERE id LIKE ?1||\"%\" AND calLSign LIKE ?2',
+        'SELECT * FROM Unit WHERE id LIKE ?1||\" %\" AND calLSign LIKE ?2',
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
             stationId: row['stationId'] as int,
@@ -626,7 +627,7 @@ class _$UnitDao extends UnitDao {
                 _listUnitPositionConverter.decode(row['positions'] as String),
             capacity: row['capacity'] as int,
             updated: row['updated'] as int),
-        arguments: [prefix, callSign]);
+        arguments: [server, callSign]);
   }
 
   @override
@@ -747,24 +748,24 @@ class _$PersonDao extends PersonDao {
   }
 
   @override
-  Future<void> deleteByPrefix(String id) async {
+  Future<void> deleteByServer(String id) async {
     await _queryAdapter.queryNoReturn(
         'DELETE FROM Person WHERE id LIKE ?1||\" %\"',
         arguments: [id]);
   }
 
   @override
-  Future<int?> getAmountWithPrefix(String prefix) async {
+  Future<int?> getAmountWithServer(String server) async {
     return _queryAdapter.query(
-        'SELECT COUNT(*) FROM Person WHERE id LIKE ?1||\"%\"',
+        'SELECT COUNT(*) FROM Person WHERE id LIKE ?1||\" %\"',
         mapper: (Map<String, Object?> row) => row.values.first as int,
-        arguments: [prefix]);
+        arguments: [server]);
   }
 
   @override
-  Future<List<Person>> getWithPrefix(String prefix) async {
+  Future<List<Person>> getWithServer(String server) async {
     return _queryAdapter.queryList(
-        'SELECT * FROM Person WHERE id LIKE ?1||\"%\"',
+        'SELECT * FROM Person WHERE id LIKE ?1||\" %\"',
         mapper: (Map<String, Object?> row) => Person(
             id: row['id'] as String,
             firstName: row['firstName'] as String,
@@ -775,7 +776,7 @@ class _$PersonDao extends PersonDao {
             qualifications: _listQualificationConverter
                 .decode(row['qualifications'] as String),
             updated: row['updated'] as int),
-        arguments: [prefix]);
+        arguments: [server]);
   }
 
   @override
