@@ -228,27 +228,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
       canPop: !hasChanges(),
       onPopInvoked: (bool didPop) {
         if (didPop) return;
-
-        generalDialog(
-          color: Colors.blue,
-          title: "Änderungen verwerfen",
-          content: const Text("Möchtest Du deine Änderungen verwerfen?"),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("Abbrechen"),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-              },
-              child: const Text("Verwerfen"),
-            ),
-          ],
-        );
+        discardDialog(context);
       },
       child: Scaffold(
         appBar: AppBar(
@@ -256,7 +236,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
         ),
         floatingActionButton: hasChanges()
             ? FloatingActionButton(
-                heroTag: 'save',
+                heroTag: 'alarmSave',
                 onPressed: () async {
                   bool? confirm = await generalDialog(
                     color: Colors.blue,
@@ -694,7 +674,7 @@ class _GeoFenceSelectionWidgetState extends State<GeoFenceSelectionWidget> {
       floatingActionButton: addSliderVisible
           ? null
           : FloatingActionButton(
-              heroTag: 'addSlider',
+              heroTag: 'geofenceAddSlider',
               onPressed: () {
                 if (widget.current.geofencing.length >= 100) {
                   errorToast("Maximal 100 Geofencing-Gebiete möglich");

@@ -89,12 +89,6 @@ class _UnitPageState extends State<UnitPage> with Updates {
         actions: [
           if (isAdmin) ...[
             IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () {
-                // TODO
-              },
-            ),
-            IconButton(
               icon: const Icon(Icons.person_add_outlined),
               onPressed: () {
                 // TODO
@@ -229,7 +223,19 @@ class _UnitPageState extends State<UnitPage> with Updates {
                 ),
               ),
             ),
-            ...StationPageState.getPersonsDisplay(station!, context, persons!, now),
+            ...StationPageState.getPersonsDisplay(
+              station!,
+              context,
+              persons!,
+              now,
+              (person) {
+                if (!isAdmin) {
+                  Globals.router.go('/person', extra: person.id);
+                  return;
+                }
+                // TODO
+              },
+            ),
           ],
         ),
       ),

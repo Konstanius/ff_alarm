@@ -95,7 +95,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `Station` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `area` TEXT NOT NULL, `prefix` TEXT NOT NULL, `stationNumber` INTEGER NOT NULL, `address` TEXT NOT NULL, `coordinates` TEXT NOT NULL, `persons` TEXT NOT NULL, `adminPersons` TEXT NOT NULL, `updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `Unit` (`id` TEXT NOT NULL, `stationId` INTEGER NOT NULL, `callSign` TEXT NOT NULL, `unitDescription` TEXT NOT NULL, `status` INTEGER NOT NULL, `positions` TEXT NOT NULL, `capacity` INTEGER NOT NULL, `updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `Unit` (`id` TEXT NOT NULL, `tetraId` TEXT NOT NULL, `stationId` INTEGER NOT NULL, `callSign` TEXT NOT NULL, `unitDescription` TEXT NOT NULL, `status` INTEGER NOT NULL, `positions` TEXT NOT NULL, `capacity` INTEGER NOT NULL, `updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `Person` (`id` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `birthday` INTEGER NOT NULL, `allowedUnits` TEXT NOT NULL, `qualifications` TEXT NOT NULL, `updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
 
@@ -464,6 +464,7 @@ class _$UnitDao extends UnitDao {
             'Unit',
             (Unit item) => <String, Object?>{
                   'id': item.id,
+                  'tetraId': item.tetraId,
                   'stationId': item.stationId,
                   'callSign': item.callSign,
                   'unitDescription': item.unitDescription,
@@ -479,6 +480,7 @@ class _$UnitDao extends UnitDao {
             ['id'],
             (Unit item) => <String, Object?>{
                   'id': item.id,
+                  'tetraId': item.tetraId,
                   'stationId': item.stationId,
                   'callSign': item.callSign,
                   'unitDescription': item.unitDescription,
@@ -494,6 +496,7 @@ class _$UnitDao extends UnitDao {
             ['id'],
             (Unit item) => <String, Object?>{
                   'id': item.id,
+                  'tetraId': item.tetraId,
                   'stationId': item.stationId,
                   'callSign': item.callSign,
                   'unitDescription': item.unitDescription,
@@ -521,6 +524,7 @@ class _$UnitDao extends UnitDao {
     return _queryAdapter.query('SELECT * FROM Unit WHERE id = ?1',
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
+            tetraId: row['tetraId'] as String,
             stationId: row['stationId'] as int,
             callSign: row['callSign'] as String,
             unitDescription: row['unitDescription'] as String,
@@ -547,6 +551,7 @@ class _$UnitDao extends UnitDao {
         'SELECT * FROM Unit WHERE id < ?1 ORDER BY id DESC LIMIT ?2',
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
+            tetraId: row['tetraId'] as String,
             stationId: row['stationId'] as int,
             callSign: row['callSign'] as String,
             unitDescription: row['unitDescription'] as String,
@@ -582,6 +587,7 @@ class _$UnitDao extends UnitDao {
         'SELECT * FROM Unit WHERE stationId = ?1 AND id LIKE ?2||\" %\"',
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
+            tetraId: row['tetraId'] as String,
             stationId: row['stationId'] as int,
             callSign: row['callSign'] as String,
             unitDescription: row['unitDescription'] as String,
@@ -599,6 +605,7 @@ class _$UnitDao extends UnitDao {
         'SELECT * FROM Unit WHERE id LIKE ?1||\" %\"',
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
+            tetraId: row['tetraId'] as String,
             stationId: row['stationId'] as int,
             callSign: row['callSign'] as String,
             unitDescription: row['unitDescription'] as String,
@@ -619,6 +626,7 @@ class _$UnitDao extends UnitDao {
         'SELECT * FROM Unit WHERE id LIKE ?1||\" %\" AND calLSign LIKE ?2',
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
+            tetraId: row['tetraId'] as String,
             stationId: row['stationId'] as int,
             callSign: row['callSign'] as String,
             unitDescription: row['unitDescription'] as String,

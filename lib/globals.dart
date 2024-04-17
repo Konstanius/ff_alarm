@@ -15,6 +15,7 @@ import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/home.dart';
 import 'package:ff_alarm/ui/screens/alarm_info.dart';
 import 'package:ff_alarm/ui/screens/login_screen.dart';
+import 'package:ff_alarm/ui/screens/person_screen.dart';
 import 'package:ff_alarm/ui/screens/station_screen.dart';
 import 'package:ff_alarm/ui/screens/unit_screen.dart';
 import 'package:ff_alarm/ui/settings/alarm_settings.dart';
@@ -486,6 +487,13 @@ abstract class Globals {
               return UnitPage(unitId: unitId);
             },
           ),
+          GoRoute(
+            path: 'person',
+            builder: (BuildContext context, GoRouterState state) {
+              final String personId = state.extra! as String;
+              return PersonPage(personId: personId);
+            },
+          ),
         ],
       ),
     ],
@@ -497,7 +505,7 @@ abstract class Globals {
 Future<({LatLng? pos, int? lastTime})> backgroundGPSSync(LatLng? previousPos, int? lastTime) async {
   try {
     if (Globals.lastPositionTime?.isBefore(DateTime.now().subtract(const Duration(minutes: 1))) ?? true) {
-      var location = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high, timeLimit: const Duration(seconds: 12));
+      var location = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high, timeLimit: const Duration(seconds: 30));
       Globals.lastPosition = location;
       Globals.lastPositionTime = DateTime.now();
     }

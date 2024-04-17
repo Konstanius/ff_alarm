@@ -6,6 +6,7 @@ abstract class Versioning {
   static const List<int> versions = [
     3,
     4,
+    6,
   ];
 
   static final List<Function> upgrades = [
@@ -13,6 +14,12 @@ abstract class Versioning {
     () async {
       /// Added column "birthday" of type int to table "Person"
       await Globals.db.database.execute('ALTER TABLE [Person] ADD COLUMN birthday INTEGER NOT NULL DEFAULT 0;');
+      await Globals.db.database.execute('UPDATE [Person] SET updated = 0;');
+    },
+    () async {
+      /// Added column "tetraId" of type String to table "Unit"
+      await Globals.db.database.execute('ALTER TABLE [Unit] ADD COLUMN tetraId TEXT NOT NULL DEFAULT "";');
+      await Globals.db.database.execute('UPDATE [Unit] SET updated = 0;');
     },
   ];
 

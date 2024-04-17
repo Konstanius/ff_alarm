@@ -11,6 +11,8 @@ class Unit {
   String get server => id.split(' ')[0];
   int get idNumber => int.parse(id.split(' ')[1]);
 
+  String tetraId;
+
   int stationId;
   String get stationProperId => "$server $stationId";
 
@@ -78,6 +80,7 @@ class Unit {
 
   Unit({
     required this.id,
+    required this.tetraId,
     required this.stationId,
     required this.callSign,
     required this.unitDescription,
@@ -89,19 +92,21 @@ class Unit {
 
   static const Map<String, String> jsonShorts = {
     "server": "s",
+    "tetraId": "t",
     "id": "i",
     "stationId": "si",
-    "callSign": "cs",
-    "unitDescription": "ud",
+    "callSign": "c",
+    "unitDescription": "d",
     "status": "st",
-    "positions": "po",
+    "positions": "p",
     "capacity": "ca",
-    "updated": "up",
+    "updated": "u",
   };
 
   factory Unit.fromJson(Map<String, dynamic> json) {
     return Unit(
       id: "${json[jsonShorts["server"]]!} ${json[jsonShorts["id"]]!}",
+      tetraId: json[jsonShorts["tetraId"]],
       stationId: json[jsonShorts["stationId"]],
       callSign: json[jsonShorts["callSign"]],
       unitDescription: json[jsonShorts["unitDescription"]],

@@ -8,10 +8,13 @@ Distanzen:
   - (möglicherweise)
 
 Allgemein:
-  - externe TETRA API Anbindung
-  - Web Admin Panel
-  - Einsatzmonitor via Raspberry Pi ODER Android TV App
+  - externe TETRA API aufbauen
+  - Web Admin Panel aufbauen
+  - Einsatzmonitor via Raspberry Pi ODER Android TV App -> https://github.com/ardera/flutter-pi
   - Alarmierungstest für einzelne Personen (Nur FCM Zustellung verifizieren)
+
+Backend:
+  - SSL setup manual / with certbot
 
 Bereitschaft:
   - Swift Background Fetch not working properly yet (might be due to it taking days before it triggers regularly)

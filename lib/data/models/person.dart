@@ -20,8 +20,12 @@ class Person {
 
   DateTime birthday;
 
+  /// The ids of the units that this user is allowed to operate
+  /// If an integer is negative, that means the user has been removed from the unit, and the id shall not be added to the list, when the unit is changed to or from the station
+  /// If the integer is positive, that means the user should be alarmed for the unit
+  /// If the integer is not present, the unit is not associated with the user in any way, and therefore the user should not be alarmed for it
   List<int> allowedUnits;
-  List<String> get allowedUnitProperIds => allowedUnits.map((e) => "$server $e").toList();
+  List<String> get allowedUnitProperIds => allowedUnits.where((element) => element > 0).map((e) => "$server $e").toList();
 
   /// Qualifications Format:
   /// "quali":"startMillis/null":"endMillis/null",...

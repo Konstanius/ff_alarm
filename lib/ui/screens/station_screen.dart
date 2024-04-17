@@ -5,6 +5,9 @@ import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
+import 'package:ff_alarm/ui/screens/person_manage.dart';
+import 'package:ff_alarm/ui/utils/dialogs.dart';
+import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
@@ -95,15 +98,65 @@ class StationPageState extends State<StationPage> with Updates {
         actions: [
           if (isAdmin) ...[
             IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () {
-                // TODO
-              },
-            ),
-            IconButton(
               icon: const Icon(Icons.person_add_outlined),
               onPressed: () {
-                // TODO
+                generalDialog(
+                  color: Colors.blue,
+                  title: 'Person hinzufügen',
+                  content: Column(
+                    children: [
+                      Card(
+                        elevation: 4,
+                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        child: InkWell(
+                          onTap: () {
+                            // TODO
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Icon(Icons.person_search_outlined),
+                                SizedBox(width: 8),
+                                Flexible(child: Text('Person suchen')),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Card(
+                        elevation: 4,
+                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => PersonManageScreen(stationId: station!.id)));
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Icon(Icons.person_add_outlined),
+                                SizedBox(width: 8),
+                                Flexible(child: Text('Person erstellen')),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Schließen'),
+                    ),
+                  ],
+                );
               },
             ),
           ],
@@ -254,7 +307,129 @@ class StationPageState extends State<StationPage> with Updates {
                 );
               }(),
             ],
-            ...getPersonsDisplay(station!, context, persons!, now),
+            ...getPersonsDisplay(
+              station!,
+              context,
+              persons!,
+              now,
+              (person) {
+                if (!isAdmin) {
+                  Globals.router.go('/person', extra: person.id);
+                  return;
+                }
+
+                generalDialog(
+                  color: Colors.blue,
+                  title: person.fullName,
+                  content: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Geboren: ${DateFormat('dd.MM.yyyy').format(person.birthday)}',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Card(
+                        elevation: 4,
+                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        child: InkWell(
+                          onTap: () {
+                            Globals.router.go('/person', extra: person.id);
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Icon(Icons.info_outlined),
+                                SizedBox(width: 8),
+                                Flexible(child: Text('Details anzeigen')),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Card(
+                        elevation: 4,
+                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => PersonManageScreen(stationId: station!.id, person: person)));
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Icon(Icons.edit_outlined),
+                                SizedBox(width: 8),
+                                Flexible(child: Text('Bearbeiten')),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (person.id != localPersonForServer)
+                        Card(
+                          elevation: 4,
+                          clipBehavior: Clip.antiAliasWithSaveLayer,
+                          child: InkWell(
+                            onTap: () {
+                              // TODO
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  Icon(Icons.person_remove_outlined),
+                                  SizedBox(width: 8),
+                                  Flexible(child: Text('Aus Wache entfernen')),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (person.id != localPersonForServer)
+                        Card(
+                          elevation: 4,
+                          clipBehavior: Clip.antiAliasWithSaveLayer,
+                          child: InkWell(
+                            onTap: () {
+                              // TODO
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  if (station!.adminPersonProperIds.contains(person.id)) const Icon(Icons.remove_moderator_outlined) else const Icon(Icons.admin_panel_settings_outlined),
+                                  const SizedBox(width: 8),
+                                  if (station!.adminPersonProperIds.contains(person.id)) const Flexible(child: Text('Admin entfernen')) else const Flexible(child: Text('Zum Admin machen')),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Schließen'),
+                    ),
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),
@@ -356,7 +531,7 @@ class StationPageState extends State<StationPage> with Updates {
     ];
   }
 
-  static List<Widget> getPersonsDisplay(Station station, BuildContext context, List<Person> persons, DateTime now) {
+  static List<Widget> getPersonsDisplay(Station station, BuildContext context, List<Person> persons, DateTime now, Function(Person person) onTap) {
     return [
       const SettingsDivider(text: 'Personen'),
       () {
@@ -687,6 +862,7 @@ class StationPageState extends State<StationPage> with Updates {
             elevation: 2,
             margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
             child: ListTile(
+              onTap: () => onTap(person),
               title: Text(
                 person.fullName,
                 style: const TextStyle(
