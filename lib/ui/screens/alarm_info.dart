@@ -87,7 +87,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
 
     fetchAlarmDetails();
 
-    setupListener({UpdateType.alarm, UpdateType.ui});
+    setupListener({UpdateType.alarm, UpdateType.ui, UpdateType.station, UpdateType.unit, UpdateType.person});
 
     clickTimer = Timer.periodic(const Duration(milliseconds: 10), (Timer timer) async {
       if (timerBusy) return;
@@ -386,7 +386,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
           if (unit.stationProperId == station.id) dispatchedUnits.add(unit);
         }
 
-        dispatchedUnits.sort((a, b) => a.callSign(station).compareTo(b.callSign(station)));
+        dispatchedUnits.sort((a, b) => a.callSign.compareTo(b.callSign));
 
         List<int> responses = [
           0, // onStation
@@ -769,7 +769,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 }
               }
               if (station != null) {
-                shareString += '  - ${unit.callSign(station)}: ${unit.unitDescription}\n';
+                shareString += '  - ${unit.callSign}: ${unit.unitDescription}\n';
               }
             }
           }
@@ -1004,7 +1004,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                             for (var unit in data!.units) {
                               if (unit.stationId == station.idNumber) dispatchedUnits.add(unit);
                             }
-                            units.sort((a, b) => a.callSign(station).compareTo(b.callSign(station)));
+                            units.sort((a, b) => a.callSign.compareTo(b.callSign));
 
                             List<Person> persons = [];
                             for (var person in data!.persons) {
@@ -1100,7 +1100,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                               children: [
                                                 Flexible(
                                                   child: Text(
-                                                    unit.callSign(element.station),
+                                                    unit.callSign,
                                                     style: const TextStyle(
                                                       fontWeight: FontWeight.bold,
                                                       fontSize: kDefaultFontSize * 1.2,
@@ -1699,6 +1699,34 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
           });
         });
       }
+    } else if (info.type != UpdateType.alarm && data != null) {
+      bool proceed = false;
+      if (info.type == UpdateType.station) {
+        for (var station in data!.stations) {
+          if (info.ids.contains(station.id)) {
+            proceed = true;
+            break;
+          }
+        }
+      } else if (info.type == UpdateType.unit) {
+        for (var unit in data!.units) {
+          if (info.ids.contains(unit.id)) {
+            proceed = true;
+            break;
+          }
+        }
+      } else if (info.type == UpdateType.person) {
+        for (var person in data!.persons) {
+          if (info.ids.contains(person.id)) {
+            proceed = true;
+            break;
+          }
+        }
+      }
+
+      if (!proceed) return;
+
+      fetchAlarmDetails();
     }
   }
 

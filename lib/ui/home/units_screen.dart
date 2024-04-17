@@ -112,7 +112,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
               }
             : null,
         title: Text(
-          unit.callSign(station),
+          unit.callSign,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: kDefaultFontSize * 1.2,

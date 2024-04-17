@@ -46,14 +46,14 @@ class StationPageState extends State<StationPage> with Updates {
       });
 
       units = await Globals.db.unitDao.getWhereStationIn(station!.idNumber, station!.server);
-      units!.sort((a, b) => a.callSign(station!).compareTo(b.callSign(station!)));
+      units!.sort((a, b) => a.callSign.compareTo(b.callSign));
 
       String? localPersonForServer = Globals.localPersonForServer(station!.server);
       bool admin = localPersonForServer != null && station!.adminPersonProperIds.contains(localPersonForServer);
       if (admin) {
         try {
           units = await UnitInterface.fetchForStationAsAdmin(station!.server, station!.idNumber);
-          units!.sort((a, b) => a.callSign(station!).compareTo(b.callSign(station!)));
+          units!.sort((a, b) => a.callSign.compareTo(b.callSign));
         } catch (e, s) {
           Logger.error('Failed to fetch units for station as admin: $e\n$s');
         }
@@ -202,7 +202,7 @@ class StationPageState extends State<StationPage> with Updates {
                       Globals.router.go('/unit', extra: unit.id);
                     },
                     title: Text(
-                      unit.callSign(station!),
+                      unit.callSign,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: kDefaultFontSize * 1.3,
@@ -278,14 +278,14 @@ class StationPageState extends State<StationPage> with Updates {
 
     if (info.type == UpdateType.unit) {
       units = await Globals.db.unitDao.getWhereStationIn(station!.idNumber, station!.server);
-      units!.sort((a, b) => a.callSign(station!).compareTo(b.callSign(station!)));
+      units!.sort((a, b) => a.callSign.compareTo(b.callSign));
 
       String? localPersonForServer = Globals.localPersonForServer(station!.server);
       bool admin = localPersonForServer != null && station!.adminPersonProperIds.contains(localPersonForServer);
       if (admin) {
         try {
           units = await UnitInterface.fetchForStationAsAdmin(station!.server, station!.idNumber);
-          units!.sort((a, b) => a.callSign(station!).compareTo(b.callSign(station!)));
+          units!.sort((a, b) => a.callSign.compareTo(b.callSign));
         } catch (e, s) {
           Logger.error('Failed to fetch units for station as admin: $e\n$s');
         }

@@ -14,9 +14,29 @@ class Unit {
   int stationId;
   String get stationProperId => "$server $stationId";
 
-  int unitType;
+  /// Callsign should match regex:
+  /// ^\S+\s+\S+(?:\s+\S+)*\s+\d+-\d+-\d+$
+  /// Florian Jena 5-43-1
+  String callSign;
+  static final RegExp callSignRegex = RegExp(r"^\S+\s+\S+(?:\s+\S+)*\s+\d+-\d+-\d+$");
 
-  int unitIdentifier;
+  ({String prefix, String area, int stationIdentifier, int unitType, int unitIndex})? get unitInformation {
+    List<String> splits = callSign.split(' ');
+    if (splits.length < 3) return null;
+    List<String> stationSplits = splits.last.split('-');
+    if (stationSplits.length != 3) return null;
+
+    String prefix = splits[0];
+    String area = splits.sublist(1, splits.length - 1).join(' ');
+
+    int? stationIdentifier = int.tryParse(stationSplits[0]);
+    int? unitType = int.tryParse(stationSplits[1]);
+    int? unitIndex = int.tryParse(stationSplits[2]);
+
+    if (stationIdentifier == null || unitType == null || unitIndex == null) return null;
+
+    return (prefix: prefix, area: area, stationIdentifier: stationIdentifier, unitType: unitType, unitIndex: unitIndex);
+  }
 
   String unitDescription;
 
@@ -59,8 +79,7 @@ class Unit {
   Unit({
     required this.id,
     required this.stationId,
-    required this.unitType,
-    required this.unitIdentifier,
+    required this.callSign,
     required this.unitDescription,
     required this.status,
     required this.positions,
@@ -72,8 +91,7 @@ class Unit {
     "server": "s",
     "id": "i",
     "stationId": "si",
-    "unitType": "ut",
-    "unitIdentifier": "ui",
+    "callSign": "cs",
     "unitDescription": "ud",
     "status": "st",
     "positions": "po",
@@ -85,18 +103,13 @@ class Unit {
     return Unit(
       id: "${json[jsonShorts["server"]]!} ${json[jsonShorts["id"]]!}",
       stationId: json[jsonShorts["stationId"]],
-      unitType: json[jsonShorts["unitType"]],
-      unitIdentifier: json[jsonShorts["unitIdentifier"]],
+      callSign: json[jsonShorts["callSign"]],
       unitDescription: json[jsonShorts["unitDescription"]],
       status: json[jsonShorts["status"]],
       positions: List<UnitPosition>.from(json[jsonShorts["positions"]].map((e) => UnitPosition.values[e])),
       capacity: json[jsonShorts["capacity"]],
       updated: json[jsonShorts["updated"]],
     );
-  }
-
-  String callSign(Station station) {
-    return "${station.prefix} ${station.area} ${station.stationNumber}-$unitType-$unitIdentifier";
   }
 
   static Future<List<Unit>> getBatched({
@@ -130,7 +143,7 @@ class Unit {
       stationMap[station.id] = station;
     }
 
-    units.sort((a, b) => a.callSign(stationMap[a.stationProperId]!).compareTo(b.callSign(stationMap[a.stationProperId]!)));
+    units.sort((a, b) => a.callSign.compareTo(b.callSign));
 
     return units;
   }

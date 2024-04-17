@@ -95,7 +95,7 @@ class _$AppDatabase extends AppDatabase {
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `Station` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `area` TEXT NOT NULL, `prefix` TEXT NOT NULL, `stationNumber` INTEGER NOT NULL, `address` TEXT NOT NULL, `coordinates` TEXT NOT NULL, `persons` TEXT NOT NULL, `adminPersons` TEXT NOT NULL, `updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `Unit` (`id` TEXT NOT NULL, `stationId` INTEGER NOT NULL, `unitType` INTEGER NOT NULL, `unitIdentifier` INTEGER NOT NULL, `unitDescription` TEXT NOT NULL, `status` INTEGER NOT NULL, `positions` TEXT NOT NULL, `capacity` INTEGER NOT NULL, `updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
+            'CREATE TABLE IF NOT EXISTS `Unit` (`id` TEXT NOT NULL, `stationId` INTEGER NOT NULL, `callSign` TEXT NOT NULL, `unitDescription` TEXT NOT NULL, `status` INTEGER NOT NULL, `positions` TEXT NOT NULL, `capacity` INTEGER NOT NULL, `updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
         await database.execute(
             'CREATE TABLE IF NOT EXISTS `Person` (`id` TEXT NOT NULL, `firstName` TEXT NOT NULL, `lastName` TEXT NOT NULL, `birthday` INTEGER NOT NULL, `allowedUnits` TEXT NOT NULL, `qualifications` TEXT NOT NULL, `updated` INTEGER NOT NULL, PRIMARY KEY (`id`))');
 
@@ -465,8 +465,7 @@ class _$UnitDao extends UnitDao {
             (Unit item) => <String, Object?>{
                   'id': item.id,
                   'stationId': item.stationId,
-                  'unitType': item.unitType,
-                  'unitIdentifier': item.unitIdentifier,
+                  'callSign': item.callSign,
                   'unitDescription': item.unitDescription,
                   'status': item.status,
                   'positions':
@@ -481,8 +480,7 @@ class _$UnitDao extends UnitDao {
             (Unit item) => <String, Object?>{
                   'id': item.id,
                   'stationId': item.stationId,
-                  'unitType': item.unitType,
-                  'unitIdentifier': item.unitIdentifier,
+                  'callSign': item.callSign,
                   'unitDescription': item.unitDescription,
                   'status': item.status,
                   'positions':
@@ -497,8 +495,7 @@ class _$UnitDao extends UnitDao {
             (Unit item) => <String, Object?>{
                   'id': item.id,
                   'stationId': item.stationId,
-                  'unitType': item.unitType,
-                  'unitIdentifier': item.unitIdentifier,
+                  'callSign': item.callSign,
                   'unitDescription': item.unitDescription,
                   'status': item.status,
                   'positions':
@@ -525,8 +522,7 @@ class _$UnitDao extends UnitDao {
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
             stationId: row['stationId'] as int,
-            unitType: row['unitType'] as int,
-            unitIdentifier: row['unitIdentifier'] as int,
+            callSign: row['callSign'] as String,
             unitDescription: row['unitDescription'] as String,
             status: row['status'] as int,
             positions:
@@ -552,8 +548,7 @@ class _$UnitDao extends UnitDao {
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
             stationId: row['stationId'] as int,
-            unitType: row['unitType'] as int,
-            unitIdentifier: row['unitIdentifier'] as int,
+            callSign: row['callSign'] as String,
             unitDescription: row['unitDescription'] as String,
             status: row['status'] as int,
             positions:
@@ -588,8 +583,7 @@ class _$UnitDao extends UnitDao {
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
             stationId: row['stationId'] as int,
-            unitType: row['unitType'] as int,
-            unitIdentifier: row['unitIdentifier'] as int,
+            callSign: row['callSign'] as String,
             unitDescription: row['unitDescription'] as String,
             status: row['status'] as int,
             positions:
@@ -605,8 +599,7 @@ class _$UnitDao extends UnitDao {
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
             stationId: row['stationId'] as int,
-            unitType: row['unitType'] as int,
-            unitIdentifier: row['unitIdentifier'] as int,
+            callSign: row['callSign'] as String,
             unitDescription: row['unitDescription'] as String,
             status: row['status'] as int,
             positions:
@@ -614,6 +607,26 @@ class _$UnitDao extends UnitDao {
             capacity: row['capacity'] as int,
             updated: row['updated'] as int),
         arguments: [prefix]);
+  }
+
+  @override
+  Future<List<Unit>> getWithPrefixAndCallSign(
+    String prefix,
+    String callSign,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM Unit WHERE id LIKE ?1||\"%\" AND calLSign LIKE ?2',
+        mapper: (Map<String, Object?> row) => Unit(
+            id: row['id'] as String,
+            stationId: row['stationId'] as int,
+            callSign: row['callSign'] as String,
+            unitDescription: row['unitDescription'] as String,
+            status: row['status'] as int,
+            positions:
+                _listUnitPositionConverter.decode(row['positions'] as String),
+            capacity: row['capacity'] as int,
+            updated: row['updated'] as int),
+        arguments: [prefix, callSign]);
   }
 
   @override

@@ -32,4 +32,7 @@ abstract class UnitDao {
 
   @Query('SELECT * FROM Unit WHERE id LIKE :prefix||"%"')
   Future<List<Unit>> getWithPrefix(String prefix);
+
+  @Query('SELECT * FROM Unit WHERE id LIKE :prefix||"%" AND calLSign LIKE :callSign')
+  Future<List<Unit>> getWithPrefixAndCallSign(String prefix, String callSign);
 }

@@ -11,7 +11,7 @@ abstract class Versioning {
   static final List<Function> upgrades = [
     () async {},
     () async {
-      // Added column "birthday" of type int to table "Person"
+      /// Added column "birthday" of type int to table "Person"
       await Globals.db.database.execute('ALTER TABLE [Person] ADD COLUMN birthday INTEGER NOT NULL DEFAULT 0;');
     },
   ];
@@ -21,6 +21,8 @@ abstract class Versioning {
     int currentVersion = int.tryParse(packageInfo.buildNumber) ?? 0;
     int lastVersion = Globals.prefs.getInt('db_version') ?? currentVersion;
 
+    Logger.ok('Current database version: $lastVersion');
+
     for (int i = 0; i < versions.length; i++) {
       if (lastVersion < versions[i] && currentVersion >= versions[i]) {
         await upgrades[i]();
@@ -29,5 +31,7 @@ abstract class Versioning {
         Logger.ok('Upgraded database to version ${versions[i]}');
       }
     }
+
+    Globals.prefs.setInt('db_version', currentVersion);
   }
 }

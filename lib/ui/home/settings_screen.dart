@@ -327,7 +327,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
           ),
           const SettingsDivider(text: 'Bereitschaft'),
           if (stations == null)
-            const CircularProgressIndicator()
+            const SizedBox()
           else ...[
             for (var station in stations!)
               ListTile(
