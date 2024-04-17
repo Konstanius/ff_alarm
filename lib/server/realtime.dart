@@ -54,6 +54,8 @@ class RealTimeListener {
     UnitInterface.fetchAllForServerSilent(server);
   }
 
+  static const List<int> pingBytes = [123, 34, 116, 34, 58, 34, 112, 105, 110, 103, 34, 125]; // {"t":"ping"}
+
   Future<void> init() async {
     if (!Globals.foreground) {
       try {
@@ -72,7 +74,6 @@ class RealTimeListener {
 
         reFetch();
       } else {
-        const List<int> pingBytes = [123, 34, 116, 34, 58, 34, 112, 105, 110, 103, 34, 125]; // {"t":"ping"}
         socket?.addUtf8Text(pingBytes);
       }
       return;
