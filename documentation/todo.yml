@@ -16,5 +16,13 @@ Allgemein:
 Bereitschaft:
   - Swift Background Fetch not working properly yet (might be due to it taking days before it triggers regularly)
 
-Kleinnotizen:
-  - Badge zurücksetzen, wenn App geöffnet wird
+Sonstige Features:
+  - Umfragen, Termine, Personalmangel, Einsatzberichte
+  - Realtime Chat
+  - Datei Speicher
+  - Formulare zur Meldung von Sonstigem
+  - Bildschirm Helligkeit auf Alarmbildschirm bei Alarmierung erhöhen auf 100%
+
+  - Pager-Integration
+  - FAX-Integration
+  - Statistiken

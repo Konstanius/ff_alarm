@@ -10,6 +10,7 @@ import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/notifications/awn_init.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
+import 'package:ff_alarm/ui/home/units_screen.dart';
 import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/map.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
@@ -312,6 +313,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
             AppBar(
               backgroundColor: Colors.transparent,
               title: const Text('Alarmierung'),
+              actions: getActionsList(false),
             ),
           ],
         ),
@@ -319,7 +321,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
       body: ListView(
         padding: const EdgeInsets.all(8),
         children: <Widget>[
-          // direct large no button
           Row(
             children: [
               Expanded(
@@ -348,210 +349,214 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
               ),
             ],
           ),
+          ...genericAlarmInfo(),
+          const SettingsDivider(text: 'Wachenauswahl'),
           for (var station in stations)
-            // required to display:
-            // name
-            // address
-            // dispatched units of station
-            // distance (coordinates)
-            // amount of ppl that said yes
             Card(
               clipBehavior: Clip.antiAliasWithSaveLayer,
               color: selectedStation == station.id ? Colors.blue : Theme.of(context).focusColor,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               margin: const EdgeInsets.all(8),
               elevation: selectedStation == station.id ? 5 : 0,
-              child: ListTile(
-                splashColor: Colors.blue,
-                title: Text(station.descriptiveName),
-                subtitle: () {
-                  var stationPosition = station.position;
+              child: stationCard(station),
+            ),
+        ],
+      ),
+    );
+  }
 
-                  var dispatchedUnits = <Unit>[];
-                  for (var unit in units) {
-                    if (unit.stationProperId == station.id) dispatchedUnits.add(unit);
-                  }
+  Widget stationCard(Station station) {
+    return ListTile(
+      splashColor: Colors.blue,
+      title: Row(
+        children: [
+          Flexible(
+            child: Text(
+              station.descriptiveName,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+      subtitle: () {
+        var stationPosition = station.position;
 
-                  dispatchedUnits.sort((a, b) => a.callSign(station).compareTo(b.callSign(station)));
+        var dispatchedUnits = <Unit>[];
+        for (var unit in units) {
+          if (unit.stationProperId == station.id) dispatchedUnits.add(unit);
+        }
 
-                  List<int> responses = [
-                    0, // onStation
-                    0, // under5
-                    0, // under10
-                    0, // under15
-                    0, // onCall
-                    0, // notReady
-                    0, // notResponded
-                  ];
-                  if (data == null || alarm.units.isEmpty) {
-                    for (var person in station.persons) {
-                      if (alarm.responses.containsKey(person)) {
-                        var response = alarm.responses[person]!;
+        dispatchedUnits.sort((a, b) => a.callSign(station).compareTo(b.callSign(station)));
 
-                        if (response.responses.containsKey(station.idNumber)) {
-                          responses[response.responses[station.idNumber]!.index]++;
-                        } else {
-                          responses[6]++;
-                        }
-                      } else {
-                        responses[6]++;
-                      }
-                    }
-                  } else {
-                    for (var person in data!.persons) {
-                      // check intersection for units
-                      bool hasUnit = false;
-                      for (var unit in dispatchedUnits) {
-                        if (person.allowedUnitProperIds.contains(unit.id)) {
-                          hasUnit = true;
-                          break;
-                        }
-                      }
-                      if (!hasUnit) continue;
+        List<int> responses = [
+          0, // onStation
+          0, // under5
+          0, // under10
+          0, // under15
+          0, // onCall
+          0, // notReady
+          0, // notResponded
+        ];
+        if (data == null || alarm.units.isEmpty) {
+          for (var person in station.persons) {
+            if (alarm.responses.containsKey(person)) {
+              var response = alarm.responses[person]!;
 
-                      if (alarm.responses.containsKey(person.idNumber)) {
-                        var response = alarm.responses[person.idNumber]!;
+              if (response.responses.containsKey(station.idNumber)) {
+                responses[response.responses[station.idNumber]!.index]++;
+              } else {
+                responses[6]++;
+              }
+            } else {
+              responses[6]++;
+            }
+          }
+        } else {
+          for (var person in data!.persons) {
+            bool hasUnit = false;
+            for (var unit in dispatchedUnits) {
+              if (person.allowedUnitProperIds.contains(unit.id)) {
+                hasUnit = true;
+                break;
+              }
+            }
+            if (!hasUnit) continue;
 
-                        if (response.responses.containsKey(station.idNumber)) {
-                          responses[response.responses[station.idNumber]!.index]++;
-                        } else {
-                          responses[6]++;
-                        }
-                      } else {
-                        responses[6]++;
-                      }
-                    }
-                  }
+            if (alarm.responses.containsKey(person.idNumber)) {
+              var response = alarm.responses[person.idNumber]!;
 
-                  return Column(
+              if (response.responses.containsKey(station.idNumber)) {
+                responses[response.responses[station.idNumber]!.index]++;
+              } else {
+                responses[6]++;
+              }
+            } else {
+              responses[6]++;
+            }
+          }
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Expanded(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 15),
+                      const SizedBox(width: 5),
+                      Flexible(child: Text(station.address, softWrap: true)),
+                    ],
+                  ),
+                ),
+                if (stationPosition != null && Globals.lastPosition != null)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.route_outlined, size: 15),
+                      const SizedBox(width: 5),
+                      Text(Formats.distanceBetween(Globals.lastPosition!, stationPosition)),
+                    ],
+                  ),
+              ],
+            ),
+            const SettingsDivider(text: 'Antworten'),
+            Row(
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisSize: MainAxisSize.max,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Expanded(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.location_on_outlined, size: 15),
-                                const SizedBox(width: 5),
-                                Flexible(child: Text(station.address, softWrap: true)),
-                              ],
-                            ),
-                          ),
-                          if (stationPosition != null && Globals.lastPosition != null)
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.route_outlined, size: 15),
-                                const SizedBox(width: 5),
-                                Text(Formats.distanceBetween(Globals.lastPosition!, stationPosition)),
-                              ],
-                            ),
+                          Icon(Icons.circle, color: AlarmResponseType.onStation.color),
+                          const SizedBox(width: 5),
+                          Text('(vor Ort) ${responses[0]}'),
                         ],
                       ),
-                      const SettingsDivider(text: 'Antworten'),
                       Row(
-                        mainAxisSize: MainAxisSize.max,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.circle, color: AlarmResponseType.onStation.color),
-                                    const SizedBox(width: 5),
-                                    Text('(vor Ort) ${responses[0]}'),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.circle, color: AlarmResponseType.under10.color),
-                                    const SizedBox(width: 5),
-                                    Text('(<10 min) ${responses[2]}'),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.circle, color: AlarmResponseType.onCall.color),
-                                    const SizedBox(width: 5),
-                                    Text('(Abruf) ${responses[4]}'),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.circle, color: Colors.grey),
-                                    const SizedBox(width: 5),
-                                    Text('(Unklar) ${responses[6]}'),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.circle, color: AlarmResponseType.under5.color),
-                                    const SizedBox(width: 5),
-                                    Text('(<5 min) ${responses[1]}'),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.circle, color: AlarmResponseType.under15.color),
-                                    const SizedBox(width: 5),
-                                    Text('(<15 min) ${responses[3]}'),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.circle, color: AlarmResponseType.notReady.color),
-                                    const SizedBox(width: 5),
-                                    Text('(Nein) ${responses[5]}'),
-                                  ],
-                                ),
-                                const Row(mainAxisSize: MainAxisSize.min, children: [Text('')]),
-                              ],
-                            ),
-                          ),
+                          Icon(Icons.circle, color: AlarmResponseType.under10.color),
+                          const SizedBox(width: 5),
+                          Text('(<10 min) ${responses[2]}'),
                         ],
                       ),
-                      const SettingsDivider(text: 'Alarmierte Einheiten'),
-                      for (var unit in dispatchedUnits)
-                        Row(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.start,
-                          children: [
-                            Text(unit.callSign(station)),
-                            const SizedBox(width: 5),
-                            Text(unit.unitDescription),
-                          ],
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.circle, color: AlarmResponseType.onCall.color),
+                          const SizedBox(width: 5),
+                          Text('(Abruf) ${responses[4]}'),
+                        ],
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.circle, color: Colors.grey),
+                          const SizedBox(width: 5),
+                          Text('(Unklar) ${responses[6]}'),
+                        ],
+                      ),
                     ],
-                  );
-                }(),
-                onTap: () {
-                  setState(() {
-                    selectedStation = station.id;
-                  });
-                },
-              ),
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.circle, color: AlarmResponseType.under5.color),
+                          const SizedBox(width: 5),
+                          Text('(<5 min) ${responses[1]}'),
+                        ],
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.circle, color: AlarmResponseType.under15.color),
+                          const SizedBox(width: 5),
+                          Text('(<15 min) ${responses[3]}'),
+                        ],
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.circle, color: AlarmResponseType.notReady.color),
+                          const SizedBox(width: 5),
+                          Text('(Nein) ${responses[5]}'),
+                        ],
+                      ),
+                      const Row(mainAxisSize: MainAxisSize.min, children: [Text('')]),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ...genericAlarmInfo(),
-        ],
-      ),
+            const SettingsDivider(text: 'Alarmierte Einheiten'),
+            for (var unit in dispatchedUnits)
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 4),
+                child: UnitsScreenState.unitCard(unit, station, const EdgeInsets.only(), false),
+              ),
+          ],
+        );
+      }(),
+      onTap: selectedStation == station.id
+          ? null
+          : () {
+              setState(() {
+                selectedStation = station.id;
+              });
+            },
     );
   }
 
@@ -576,6 +581,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
             AppBar(
               backgroundColor: Colors.transparent,
               title: const Text('Alarmierung'),
+              actions: getActionsList(false),
             ),
           ],
         ),
@@ -585,13 +591,36 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
           padding: const EdgeInsets.all(8),
           children: <Widget>[
             if (stations.length > 1)
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    selectedStation = null;
-                  });
-                },
-                child: const Text('Zurück zur Wachenauswahl'),
+              Card(
+                clipBehavior: Clip.antiAliasWithSaveLayer,
+                margin: const EdgeInsets.all(0),
+                elevation: 10,
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      selectedStation = null;
+                    });
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            'Zurück zur Wachenauswahl',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             const SizedBox(height: 20),
             Row(
@@ -620,8 +649,9 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 clickField(AlarmResponseType.notReady),
               ],
             ),
-            const SizedBox(height: 28),
+            const SettingsDivider(text: 'Alarmdetails'),
             ...genericAlarmInfo(),
+            const SettingsDivider(text: 'Ausgewählte Wache'),
             () {
               Station? st;
               if (selectedStation != null) {
@@ -648,189 +678,8 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 color: Theme.of(context).focusColor,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 margin: const EdgeInsets.all(8),
-                elevation: selectedStation == station.id ? 5 : 0,
-                child: ListTile(
-                  splashColor: Colors.blue,
-                  title: Text(station.descriptiveName),
-                  subtitle: () {
-                    var stationPosition = station.position;
-
-                    var dispatchedUnits = <Unit>[];
-                    for (var unit in units) {
-                      if (unit.stationProperId == station.id) dispatchedUnits.add(unit);
-                    }
-
-                    dispatchedUnits.sort((a, b) => a.callSign(station).compareTo(b.callSign(station)));
-
-                    List<int> responses = [
-                      0, // onStation
-                      0, // under5
-                      0, // under10
-                      0, // under15
-                      0, // onCall
-                      0, // notReady
-                      0, // notResponded
-                    ];
-                    if (data == null || alarm.units.isEmpty) {
-                      for (var person in station.persons) {
-                        if (alarm.responses.containsKey(person)) {
-                          var response = alarm.responses[person]!;
-
-                          if (response.responses.containsKey(station.idNumber)) {
-                            responses[response.responses[station.idNumber]!.index]++;
-                          } else {
-                            responses[6]++;
-                          }
-                        } else {
-                          responses[6]++;
-                        }
-                      }
-                    } else {
-                      for (var person in data!.persons) {
-                        // check intersection for units
-                        bool hasUnit = false;
-                        for (var unit in dispatchedUnits) {
-                          if (person.allowedUnitProperIds.contains(unit.id)) {
-                            hasUnit = true;
-                            break;
-                          }
-                        }
-                        if (!hasUnit) continue;
-
-                        if (alarm.responses.containsKey(person.idNumber)) {
-                          var response = alarm.responses[person.idNumber]!;
-
-                          if (response.responses.containsKey(station.idNumber)) {
-                            responses[response.responses[station.idNumber]!.index]++;
-                          } else {
-                            responses[6]++;
-                          }
-                        } else {
-                          responses[6]++;
-                        }
-                      }
-                    }
-
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.max,
-                          children: [
-                            Expanded(
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.location_on_outlined, size: 15),
-                                  const SizedBox(width: 5),
-                                  Flexible(child: Text(station.address, softWrap: true)),
-                                ],
-                              ),
-                            ),
-                            if (stationPosition != null && Globals.lastPosition != null)
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.route_outlined, size: 15),
-                                  const SizedBox(width: 5),
-                                  Text(Formats.distanceBetween(Globals.lastPosition!, stationPosition)),
-                                ],
-                              ),
-                          ],
-                        ),
-                        const SettingsDivider(text: 'Antworten'),
-                        Row(
-                          mainAxisSize: MainAxisSize.max,
-                          children: [
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.circle, color: AlarmResponseType.onStation.color),
-                                      const SizedBox(width: 5),
-                                      Text('(vor Ort) ${responses[0]}'),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.circle, color: AlarmResponseType.under10.color),
-                                      const SizedBox(width: 5),
-                                      Text('(<10 min) ${responses[2]}'),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.circle, color: AlarmResponseType.onCall.color),
-                                      const SizedBox(width: 5),
-                                      Text('(Abruf) ${responses[4]}'),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.circle, color: Colors.grey),
-                                      const SizedBox(width: 5),
-                                      Text('(Unklar) ${responses[6]}'),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.circle, color: AlarmResponseType.under5.color),
-                                      const SizedBox(width: 5),
-                                      Text('(<5 min) ${responses[1]}'),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.circle, color: AlarmResponseType.under15.color),
-                                      const SizedBox(width: 5),
-                                      Text('(<15 min) ${responses[3]}'),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.circle, color: AlarmResponseType.notReady.color),
-                                      const SizedBox(width: 5),
-                                      Text('(Nein) ${responses[5]}'),
-                                    ],
-                                  ),
-                                  const Row(mainAxisSize: MainAxisSize.min, children: [Text('')]),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SettingsDivider(text: 'Alarmierte Einheiten'),
-                        for (var unit in dispatchedUnits)
-                          Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Text(unit.callSign(station)),
-                              const SizedBox(width: 5),
-                              Text(unit.unitDescription),
-                            ],
-                          ),
-                      ],
-                    );
-                  }(),
-                ),
+                elevation: 5,
+                child: stationCard(station),
               );
             }()
           ],
@@ -854,35 +703,82 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
         onTapCancel: () {
           clickIndices.remove(type);
         },
-        child: Pulsator(
-          style: PulseStyle(color: type.color),
-          count: 3,
-          duration: const Duration(seconds: 6),
-          repeat: 0,
-          startFromScratch: true,
-          autoStart: true,
-          fit: PulseFit.cover,
-          child: Container(
-            width: MediaQuery.of(context).size.width / 3,
-            height: MediaQuery.of(context).size.width / 3,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: type.color,
-            ),
-            child: Center(
-              child: Text(
-                upper,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 20,
-                ),
+        child: Container(
+          width: MediaQuery.of(context).size.width / 3,
+          height: MediaQuery.of(context).size.width / 3,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: type.color.withOpacity(0.5),
+            border: Border.all(color: type.color, width: 2),
+          ),
+          child: Center(
+            child: Text(
+              upper,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
               ),
             ),
           ),
         ),
       ),
     );
+  }
+
+  List<Widget> getActionsList(bool invert) {
+    return [
+      AnimatedRotation(
+        duration: alarmDetailsBusy ? const Duration(milliseconds: 5000) : Duration.zero,
+        turns: alarmDetailsBusy ? 10 : 0,
+        curve: Curves.linear,
+        child: IconButton(
+          tooltip: 'Aktualisieren',
+          icon: Icon(Icons.refresh_outlined, color: invert ? Colors.black : Colors.white),
+          onPressed: () {
+            fetchAlarmDetails();
+          },
+        ),
+      ),
+      IconButton(
+        tooltip: 'Teilen',
+        icon: Icon(Icons.share_outlined, color: invert ? Colors.black : Colors.white),
+        onPressed: () async {
+          String shareString = 'Alarm: ${alarm.type}\n';
+          shareString += 'Stichwort: ${alarm.word}\n';
+          shareString += 'Datum: ${Formats.dateTime(alarm.date)}\n\n';
+
+          Position? pos = alarm.positionFromAddressIfCoordinates;
+          if (pos != null) {
+            shareString += 'Koordinaten: ${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E\n';
+          } else {
+            shareString += 'Adresse: ${alarm.address}\n';
+          }
+
+          shareString += 'Notizen: ${alarm.notes.join('\n')}\n\n';
+
+          if (data != null) {
+            shareString += 'Einheiten:\n';
+            for (var unit in data!.units) {
+              Station? station;
+              for (var s in data!.stations) {
+                if (s.idNumber == unit.stationId) {
+                  station = s;
+                  break;
+                }
+              }
+              if (station != null) {
+                shareString += '  - ${unit.callSign(station)}: ${unit.unitDescription}\n';
+              }
+            }
+          }
+
+          await Share.share(shareString);
+        },
+      ),
+      const SizedBox(width: 10),
+    ];
   }
 
   Widget alarmMonitorScreen() {
@@ -935,59 +831,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
             ),
             backgroundColor: selectedStationOwnResponseType?.color ?? Colors.white,
             title: const Text('Alarmierung', style: TextStyle(color: Colors.black)),
-            actions: [
-              // refresh button
-              AnimatedRotation(
-                duration: alarmDetailsBusy ? const Duration(milliseconds: 5000) : Duration.zero,
-                turns: alarmDetailsBusy ? 10 : 0,
-                curve: Curves.linear,
-                child: IconButton(
-                  tooltip: 'Aktualisieren',
-                  icon: const Icon(Icons.refresh, color: Colors.black),
-                  onPressed: () {
-                    fetchAlarmDetails();
-                  },
-                ),
-              ),
-              // share button
-              IconButton(
-                tooltip: 'Teilen',
-                icon: const Icon(Icons.share, color: Colors.black),
-                onPressed: () async {
-                  String shareString = 'Alarm: ${alarm.type}\n';
-                  shareString += 'Stichwort: ${alarm.word}\n';
-                  shareString += 'Datum: ${Formats.dateTime(alarm.date)}\n\n';
-
-                  Position? pos = alarm.positionFromAddressIfCoordinates;
-                  if (pos != null) {
-                    shareString += 'Koordinaten: ${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E\n';
-                  } else {
-                    shareString += 'Adresse: ${alarm.address}\n';
-                  }
-
-                  shareString += 'Notizen: ${alarm.notes.join('\n')}\n\n';
-
-                  if (data != null) {
-                    shareString += 'Einheiten:\n';
-                    for (var unit in data!.units) {
-                      Station? station;
-                      for (var s in data!.stations) {
-                        if (s.idNumber == unit.stationId) {
-                          station = s;
-                          break;
-                        }
-                      }
-                      if (station != null) {
-                        shareString += '  - ${unit.callSign(station)}: ${unit.unitDescription}\n';
-                      }
-                    }
-                  }
-
-                  await Share.share(shareString);
-                },
-              ),
-              const SizedBox(width: 10),
-            ],
+            actions: getActionsList(true),
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(kDefaultFontSize * 2),
               child: Column(
@@ -1055,31 +899,29 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                   child: ListView(
                     padding: const EdgeInsets.all(12),
                     children: [
-                      // General information (time, type, word, address, notes)
                       ...genericAlarmInfo(),
                       if (ownResponse != null) const Divider(height: 12, color: Colors.blue),
-                      if (ownResponse != null) const SizedBox(height: 4),
                       if (ownResponse != null)
                         Column(
                           children: [
-                            if (station != null)
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  const Icon(Icons.home_outlined),
-                                  const SizedBox(width: 8),
-                                  Flexible(child: Text('Deine Wachenzusage: ${station.name}, um ${DateFormat('HH:mm').format(ownResponse.time)}')),
-                                ],
-                              )
-                            else
-                              const Row(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Icon(Icons.cancel_outlined),
-                                  SizedBox(width: 8),
-                                  Flexible(child: Text('Du hast dich von dieser Alarmierung abgemeldet')),
-                                ],
+                            Card(
+                              elevation: 10,
+                              clipBehavior: Clip.antiAliasWithSaveLayer,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    if (station != null) const Icon(Icons.home_outlined) else const Icon(Icons.cancel_outlined),
+                                    const SizedBox(width: 8),
+                                    if (station != null)
+                                      Flexible(child: Text('Deine Wachenzusage: ${station.name}, um ${DateFormat('HH:mm').format(ownResponse.time)}'))
+                                    else
+                                      const Text('Du hast dich von dieser Alarmierung abgemeldet'),
+                                  ],
+                                ),
                               ),
+                            ),
                             if (alarm.units.isNotEmpty) const SizedBox(height: 8),
                             if (alarm.units.isNotEmpty)
                               Row(
@@ -1152,7 +994,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                               ),
                           ],
                         ),
-                      // Alarmed units / stations and responding amount of people
+                      if (ownResponse != null && !(data != null && alarm.units.isNotEmpty)) const Divider(height: 12, color: Colors.blue),
                       if (data != null && alarm.units.isNotEmpty) const SettingsDivider(text: 'Alarmierte Einheiten'),
                       if (data != null && alarm.units.isNotEmpty)
                         () {
@@ -1292,7 +1134,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                             ],
                           );
                         }(),
-                      // External map app controls
                       if (data != null && alarm.units.isNotEmpty) const Divider(height: 20, color: Colors.blue),
                       if (station != null)
                         Row(
@@ -1385,7 +1226,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                           ],
                         ),
                       const SizedBox(height: 8),
-                      // Map of the alarm
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: Stack(
@@ -1467,6 +1307,10 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 /// - Nach wie viel Zeit welche Funktion wie viele hat
                 SafeArea(
                   child: () {
+                    if (alarm.units.isEmpty) {
+                      return const Center(child: Text('Diese Alarmierung ist ein Test'));
+                    }
+
                     if (data == null) return const Center(child: CircularProgressIndicator());
 
                     if (station == null) {
@@ -1634,6 +1478,10 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 /// - Karte mit live Position aller Personen, die positiv geantwortet haben
                 SafeArea(
                   child: () {
+                    if (alarm.units.isEmpty) {
+                      return const Center(child: Text('Diese Alarmierung ist ein Test'));
+                    }
+
                     if (data == null) return const Center(child: CircularProgressIndicator());
 
                     if (station == null) {
@@ -1649,7 +1497,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                       }
                     }
 
-                    // sort by response.index, if same by name
                     responsesForSelectedStation.sort((a, b) {
                       var aResponse = a.value.responses[station!.idNumber]!;
                       var bResponse = b.value.responses[station.idNumber]!;
@@ -1813,7 +1660,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
       }
     } else if (info.type == UpdateType.ui) {
       if (info.ids.contains("2") && Globals.lastPosition != null) {
-        // update pos in both maps
         bool foundInInfo = false;
         for (var pos in informationNotifier.value) {
           if (pos.id == 'self') {
@@ -1858,101 +1704,120 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
 
   List<Widget> genericAlarmInfo() {
     return [
-      InkWell(
-        onTap: () {
-          Clipboard.setData(ClipboardData(text: Formats.dateTime(alarm.date)));
-          successToast('Uhrzeit kopiert');
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const Icon(Icons.access_time),
-              const SizedBox(width: 8),
-              Text(Formats.dateTime(alarm.date)),
-              const SizedBox(width: 15),
-              () {
-                DateTime now = DateTime.now();
-                Duration difference = now.difference(alarm.date);
+      Card(
+        elevation: 10,
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        child: InkWell(
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: Formats.dateTime(alarm.date)));
+            successToast('Uhrzeit kopiert');
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const Icon(Icons.access_time),
+                const SizedBox(width: 8),
+                Text(Formats.dateTime(alarm.date)),
+                const SizedBox(width: 15),
+                () {
+                  DateTime now = DateTime.now();
+                  Duration difference = now.difference(alarm.date);
 
-                if (difference.inMinutes < 1) {
-                  return const Text('(Jetzt)');
-                } else if (difference.inMinutes < 60) {
-                  return Text('(vor ${difference.inMinutes} min)');
-                } else if (difference.inHours < 3) {
-                  return Text('(vor ${difference.inHours} h, ${difference.inMinutes % 60} min)');
-                } else if (difference.inHours < 24) {
-                  return Text('(vor ${difference.inHours} h)');
-                } else {
-                  return Text('(vor ${difference.inDays} d)');
-                }
-              }(),
-            ],
+                  if (difference.inMinutes < 1) {
+                    return const Text('(Jetzt)');
+                  } else if (difference.inMinutes < 60) {
+                    return Text('(vor ${difference.inMinutes} min)');
+                  } else if (difference.inHours < 3) {
+                    return Text('(vor ${difference.inHours} h, ${difference.inMinutes % 60} min)');
+                  } else if (difference.inHours < 24) {
+                    return Text('(vor ${difference.inHours} h)');
+                  } else {
+                    return Text('(vor ${difference.inDays} d)');
+                  }
+                }(),
+              ],
+            ),
           ),
         ),
       ),
-      InkWell(
-        onTap: () {
-          Clipboard.setData(ClipboardData(text: '${alarm.type} - ${alarm.word}'));
-          successToast('Typ und Stichwort kopiert');
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const Icon(Icons.info_outlined),
-              const SizedBox(width: 8),
-              Flexible(child: Text('${alarm.type} - ${alarm.word}')),
-            ],
+      Card(
+        elevation: 10,
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        child: InkWell(
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: '${alarm.type} - ${alarm.word}'));
+            successToast('Typ und Stichwort kopiert');
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outlined),
+                const SizedBox(width: 8),
+                Flexible(child: Text('${alarm.type} - ${alarm.word}')),
+              ],
+            ),
           ),
         ),
       ),
-      InkWell(
-        onTap: () {
-          Clipboard.setData(ClipboardData(text: alarm.address));
-          successToast('Adresse kopiert');
-        },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              const Icon(Icons.location_on_outlined),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  () {
-                    var pos = alarm.positionFromAddressIfCoordinates;
-                    if (pos != null) {
-                      return '${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}';
-                    } else {
-                      return alarm.address;
-                    }
-                  }(),
+      Card(
+        elevation: 10,
+        clipBehavior: Clip.antiAliasWithSaveLayer,
+        child: InkWell(
+          onTap: () {
+            Clipboard.setData(ClipboardData(text: alarm.address));
+            successToast('Adresse kopiert');
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const Icon(Icons.location_on_outlined),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    () {
+                      var pos = alarm.positionFromAddressIfCoordinates;
+                      if (pos != null) {
+                        return '${pos.latitude.toStringAsFixed(5)}, ${pos.longitude.toStringAsFixed(5)}';
+                      } else {
+                        return alarm.address;
+                      }
+                    }(),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
       if (alarm.notes.isNotEmpty) const Divider(height: 12, color: Colors.blue),
       if (alarm.notes.isNotEmpty)
-        InkWell(
-          onTap: () {
-            Clipboard.setData(ClipboardData(text: alarm.notes.join('\n')));
-            successToast('Notizen kopiert');
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                const Icon(Icons.notes_outlined),
-                const SizedBox(width: 8),
-                Flexible(child: Text(alarm.notes.join('\n'))),
-              ],
+        Card(
+          elevation: 10,
+          clipBehavior: Clip.antiAliasWithSaveLayer,
+          child: InkWell(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: alarm.notes.join('\n')));
+              successToast('Notizen kopiert');
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.notes_outlined),
+                    const SizedBox(width: 8),
+                    Flexible(child: Text(alarm.notes.join('\n'))),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

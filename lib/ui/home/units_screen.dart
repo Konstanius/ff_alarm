@@ -10,10 +10,10 @@ class UnitsScreen extends StatefulWidget {
   final ValueNotifier<int> badge;
 
   @override
-  State<UnitsScreen> createState() => _UnitsScreenState();
+  State<UnitsScreen> createState() => UnitsScreenState();
 }
 
-class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientMixin, Updates {
+class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientMixin, Updates {
   @override
   bool get wantKeepAlive => true;
 
@@ -90,40 +90,47 @@ class _UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClient
                 itemCount: stationUnits.length,
                 itemBuilder: (BuildContext context, int index) {
                   var unit = stationUnits[index];
-                  return Card(
-                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                    elevation: 2,
-                    margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-                    child: ListTile(
-                      onTap: () {
-                        Globals.router.go('/unit', extra: unit.id);
-                      },
-                      title: Text(
-                        unit.callSign(station),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: kDefaultFontSize * 1.2,
-                        ),
-                      ),
-                      subtitle: Text("${unit.unitDescription}  ( ${unit.positionsDescription} )"),
-                      trailing: () {
-                        var status = UnitStatus.fromInt(unit.status);
-                        return Text(
-                          status.value.toString(),
-                          style: TextStyle(
-                            color: status.color,
-                            fontWeight: FontWeight.bold,
-                            fontSize: kDefaultFontSize * 1.6,
-                          ),
-                        );
-                      }(),
-                    ),
-                  );
+                  return unitCard(unit, station, const EdgeInsets.symmetric(horizontal: 2, vertical: 4), true);
                 },
               ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  static Widget unitCard(Unit unit, Station station, margin, bool canClick) {
+    return Card(
+      clipBehavior: Clip.antiAliasWithSaveLayer,
+      elevation: 2,
+      margin: margin,
+      child: ListTile(
+        onTap: canClick
+            ? () {
+                Globals.router.go('/unit', extra: unit.id);
+              }
+            : null,
+        title: Text(
+          unit.callSign(station),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: kDefaultFontSize * 1.2,
+          ),
+        ),
+        subtitle: Text("${unit.unitDescription}  ( ${unit.positionsDescription} )"),
+        trailing: () {
+          var status = UnitStatus.fromInt(unit.status);
+          if (status == UnitStatus.invalid) return const SizedBox();
+          return Text(
+            status.value.toString(),
+            style: TextStyle(
+              color: status.color,
+              fontWeight: FontWeight.bold,
+              fontSize: kDefaultFontSize * 1.6,
+            ),
+          );
+        }(),
       ),
     );
   }

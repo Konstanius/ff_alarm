@@ -11,8 +11,6 @@ import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:photo_view/photo_view.dart';
@@ -20,7 +18,6 @@ import 'package:photo_view/photo_view.dart';
 import '../../data/interfaces/alarm_interface.dart';
 import '../../data/interfaces/station_interface.dart';
 import '../../data/interfaces/unit_interface.dart';
-import '../../firebase_options.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
