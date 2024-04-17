@@ -2,6 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:ff_alarm/data/interfaces/alarm_interface.dart';
+import 'package:ff_alarm/data/interfaces/person_interface.dart';
+import 'package:ff_alarm/data/interfaces/station_interface.dart';
+import 'package:ff_alarm/data/interfaces/unit_interface.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/models/station.dart';
@@ -43,8 +47,19 @@ class RealTimeListener {
     }
   }
 
+  Future<void> reFetch() async {
+    AlarmInterface.fetchAllForServerSilent(server);
+    PersonInterface.fetchAllForServerSilent(server);
+    StationInterface.fetchAllForServerSilent(server);
+    UnitInterface.fetchAllForServerSilent(server);
+  }
+
   Future<void> init() async {
     if (!Globals.foreground) {
+      try {
+        await socket?.close();
+        socket = null;
+      } catch (_) {}
       return;
     } else if (socket != null && socket!.readyState == WebSocket.open) {
       if (DateTime.now().millisecondsSinceEpoch ~/ 1000 - lastPing > 10) {
@@ -54,6 +69,8 @@ class RealTimeListener {
 
         Logger.warn('RealTimeListener: Socket closed due to inactivity');
         lastPing = DateTime.now().millisecondsSinceEpoch ~/ 1000 + 5;
+
+        reFetch();
       } else {
         const List<int> pingBytes = [123, 34, 116, 34, 58, 34, 112, 105, 110, 103, 34, 125]; // {"t":"ping"}
         socket?.addUtf8Text(pingBytes);
@@ -63,6 +80,8 @@ class RealTimeListener {
       try {
         await socket!.close();
       } catch (_) {}
+
+      reFetch();
     }
 
     try {

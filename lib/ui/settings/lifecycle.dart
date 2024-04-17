@@ -497,30 +497,36 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
     }
     var result = await Permission.locationWhenInUse.request();
     if (result.isGranted) {
-      var res = await generalDialog(
-        color: Colors.blue,
-        title: 'Standortzugriff',
-        content: const Text(
-          'Durch das Aktivieren des dauerhaften Standortzugriffs wird FF Alarm bei aktivierten Geofences im Hintergrund deinen Standort mit dem Server teilen.\n\n'
-          'DEIN STANDORT WIRD NIEMALS MIT ANDEREN GETEILT ODER DAUERHAFT GESPEICHERT!\n\n'
-          'Beim Fortfahren musst du in der folgenden Seite den Standortzugriff auf "Immer erlauben" setzen.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(Globals.context!, false);
-            },
-            child: const Text('Abbrechen'),
+      bool already = await Permission.locationAlways.isGranted;
+      if (!already) {
+        var res = await generalDialog(
+          color: Colors.blue,
+          title: 'Standortzugriff',
+          content: const Text(
+            'Durch das Aktivieren des dauerhaften Standortzugriffs wird FF Alarm bei aktivierten Geofences im Hintergrund deinen Standort mit dem Server teilen.\n\n'
+            'DEIN STANDORT WIRD NIEMALS MIT ANDEREN GETEILT ODER DAUERHAFT GESPEICHERT!\n\n'
+            'Beim Fortfahren musst du in der folgenden Seite den Standortzugriff auf "Immer erlauben" setzen.',
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(Globals.context!, true);
-            },
-            child: const Text('Fortfahren'),
-          ),
-        ],
-      );
-      if (res != true) {
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(Globals.context!, false);
+              },
+              child: const Text('Abbrechen'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(Globals.context!, true);
+              },
+              child: const Text('Fortfahren'),
+            ),
+          ],
+        );
+
+        if (res != true) {
+          return;
+        }
+      } else {
         return;
       }
 

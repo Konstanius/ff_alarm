@@ -26,4 +26,7 @@ abstract class StationDao {
 
   @Query('SELECT COUNT(*) FROM Station WHERE id LIKE :prefix||"%"')
   Future<int?> getAmountWithPrefix(String prefix);
+
+  @Query('SELECT * FROM Station WHERE id LIKE :prefix||"%"')
+  Future<List<Station>> getWithPrefix(String prefix);
 }

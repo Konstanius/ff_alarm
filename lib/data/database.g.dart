@@ -10,12 +10,14 @@ part of 'database.dart';
 class $FloorAppDatabase {
   /// Creates a database builder for a persistent database.
   /// Once a database is built, you should keep a reference to it and re-use it.
-  static _$AppDatabaseBuilder databaseBuilder(String name) => _$AppDatabaseBuilder(name);
+  static _$AppDatabaseBuilder databaseBuilder(String name) =>
+      _$AppDatabaseBuilder(name);
 
   /// Creates a database builder for an in memory database.
   /// Information stored in an in memory database disappears when the process is killed.
   /// Once a database is built, you should keep a reference to it and re-use it.
-  static _$AppDatabaseBuilder inMemoryDatabaseBuilder() => _$AppDatabaseBuilder(null);
+  static _$AppDatabaseBuilder inMemoryDatabaseBuilder() =>
+      _$AppDatabaseBuilder(null);
 }
 
 class _$AppDatabaseBuilder {
@@ -41,7 +43,9 @@ class _$AppDatabaseBuilder {
 
   /// Creates the database and initializes it.
   Future<AppDatabase> build() async {
-    final path = name != null ? await sqfliteDatabaseFactory.getDatabasePath(name!) : ':memory:';
+    final path = name != null
+        ? await sqfliteDatabaseFactory.getDatabasePath(name!)
+        : ':memory:';
     final database = _$AppDatabase();
     database.database = await database.open(
       path,
@@ -80,7 +84,8 @@ class _$AppDatabase extends AppDatabase {
         await callback?.onOpen?.call(database);
       },
       onUpgrade: (database, startVersion, endVersion) async {
-        await MigrationAdapter.runMigrations(database, startVersion, endVersion, migrations);
+        await MigrationAdapter.runMigrations(
+            database, startVersion, endVersion, migrations);
 
         await callback?.onUpgrade?.call(database, startVersion, endVersion);
       },
@@ -138,7 +143,8 @@ class _$AlarmDao extends AlarmDao {
                   'address': item.address,
                   'notes': _listStringConverter.encode(item.notes),
                   'units': _listIntConverter.encode(item.units),
-                  'responses': _mapIntAlarmResponseConverter.encode(item.responses),
+                  'responses':
+                      _mapIntAlarmResponseConverter.encode(item.responses),
                   'updated': item.updated
                 }),
         _alarmUpdateAdapter = UpdateAdapter(
@@ -154,7 +160,8 @@ class _$AlarmDao extends AlarmDao {
                   'address': item.address,
                   'notes': _listStringConverter.encode(item.notes),
                   'units': _listIntConverter.encode(item.units),
-                  'responses': _mapIntAlarmResponseConverter.encode(item.responses),
+                  'responses':
+                      _mapIntAlarmResponseConverter.encode(item.responses),
                   'updated': item.updated
                 }),
         _alarmDeletionAdapter = DeletionAdapter(
@@ -170,7 +177,8 @@ class _$AlarmDao extends AlarmDao {
                   'address': item.address,
                   'notes': _listStringConverter.encode(item.notes),
                   'units': _listIntConverter.encode(item.units),
-                  'responses': _mapIntAlarmResponseConverter.encode(item.responses),
+                  'responses':
+                      _mapIntAlarmResponseConverter.encode(item.responses),
                   'updated': item.updated
                 });
 
@@ -198,14 +206,16 @@ class _$AlarmDao extends AlarmDao {
             address: row['address'] as String,
             notes: _listStringConverter.decode(row['notes'] as String),
             units: _listIntConverter.decode(row['units'] as String),
-            responses: _mapIntAlarmResponseConverter.decode(row['responses'] as String),
+            responses: _mapIntAlarmResponseConverter
+                .decode(row['responses'] as String),
             updated: row['updated'] as int),
         arguments: [id]);
   }
 
   @override
   Future<void> deleteById(String id) async {
-    await _queryAdapter.queryNoReturn('DELETE FROM Alarm WHERE id = ?1', arguments: [id]);
+    await _queryAdapter
+        .queryNoReturn('DELETE FROM Alarm WHERE id = ?1', arguments: [id]);
   }
 
   @override
@@ -213,7 +223,8 @@ class _$AlarmDao extends AlarmDao {
     String id,
     int limit,
   ) async {
-    return _queryAdapter.queryList('SELECT * FROM Alarm WHERE id < ?1 ORDER BY id DESC LIMIT ?2',
+    return _queryAdapter.queryList(
+        'SELECT * FROM Alarm WHERE id < ?1 ORDER BY id DESC LIMIT ?2',
         mapper: (Map<String, Object?> row) => Alarm(
             id: row['id'] as String,
             type: row['type'] as String,
@@ -223,19 +234,47 @@ class _$AlarmDao extends AlarmDao {
             address: row['address'] as String,
             notes: _listStringConverter.decode(row['notes'] as String),
             units: _listIntConverter.decode(row['units'] as String),
-            responses: _mapIntAlarmResponseConverter.decode(row['responses'] as String),
+            responses: _mapIntAlarmResponseConverter
+                .decode(row['responses'] as String),
             updated: row['updated'] as int),
         arguments: [id, limit]);
   }
 
   @override
   Future<void> deleteByPrefix(String id) async {
-    await _queryAdapter.queryNoReturn('DELETE FROM Alarm WHERE id LIKE ?1||\" %\"', arguments: [id]);
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM Alarm WHERE id LIKE ?1||\" %\"',
+        arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
-    return _queryAdapter.query('SELECT COUNT(*) FROM Alarm WHERE id LIKE ?1||\"%\"', mapper: (Map<String, Object?> row) => row.values.first as int, arguments: [prefix]);
+    return _queryAdapter.query(
+        'SELECT COUNT(*) FROM Alarm WHERE id LIKE ?1||\"%\"',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [prefix]);
+  }
+
+  @override
+  Future<List<Alarm>> getWithPrefix(
+    String prefix,
+    int date,
+  ) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM Alarm WHERE id LIKE ?1||\"%\" AND date > ?2',
+        mapper: (Map<String, Object?> row) => Alarm(
+            id: row['id'] as String,
+            type: row['type'] as String,
+            word: row['word'] as String,
+            date: _dateTimeConverter.decode(row['date'] as int),
+            number: row['number'] as int,
+            address: row['address'] as String,
+            notes: _listStringConverter.decode(row['notes'] as String),
+            units: _listIntConverter.decode(row['units'] as String),
+            responses: _mapIntAlarmResponseConverter
+                .decode(row['responses'] as String),
+            updated: row['updated'] as int),
+        arguments: [prefix, date]);
   }
 
   @override
@@ -332,13 +371,15 @@ class _$StationDao extends StationDao {
             coordinates: row['coordinates'] as String,
             updated: row['updated'] as int,
             persons: _listIntConverter.decode(row['persons'] as String),
-            adminPersons: _listIntConverter.decode(row['adminPersons'] as String)),
+            adminPersons:
+                _listIntConverter.decode(row['adminPersons'] as String)),
         arguments: [id]);
   }
 
   @override
   Future<void> deleteById(String id) async {
-    await _queryAdapter.queryNoReturn('DELETE FROM Station WHERE id = ?1', arguments: [id]);
+    await _queryAdapter
+        .queryNoReturn('DELETE FROM Station WHERE id = ?1', arguments: [id]);
   }
 
   @override
@@ -346,7 +387,8 @@ class _$StationDao extends StationDao {
     String id,
     int limit,
   ) async {
-    return _queryAdapter.queryList('SELECT * FROM Station WHERE id < ?1 ORDER BY id DESC LIMIT ?2',
+    return _queryAdapter.queryList(
+        'SELECT * FROM Station WHERE id < ?1 ORDER BY id DESC LIMIT ?2',
         mapper: (Map<String, Object?> row) => Station(
             id: row['id'] as String,
             name: row['name'] as String,
@@ -357,18 +399,43 @@ class _$StationDao extends StationDao {
             coordinates: row['coordinates'] as String,
             updated: row['updated'] as int,
             persons: _listIntConverter.decode(row['persons'] as String),
-            adminPersons: _listIntConverter.decode(row['adminPersons'] as String)),
+            adminPersons:
+                _listIntConverter.decode(row['adminPersons'] as String)),
         arguments: [id, limit]);
   }
 
   @override
   Future<void> deleteByPrefix(String id) async {
-    await _queryAdapter.queryNoReturn('DELETE FROM Station WHERE id LIKE ?1||\" %\"', arguments: [id]);
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM Station WHERE id LIKE ?1||\" %\"',
+        arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
-    return _queryAdapter.query('SELECT COUNT(*) FROM Station WHERE id LIKE ?1||\"%\"', mapper: (Map<String, Object?> row) => row.values.first as int, arguments: [prefix]);
+    return _queryAdapter.query(
+        'SELECT COUNT(*) FROM Station WHERE id LIKE ?1||\"%\"',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [prefix]);
+  }
+
+  @override
+  Future<List<Station>> getWithPrefix(String prefix) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM Station WHERE id LIKE ?1||\"%\"',
+        mapper: (Map<String, Object?> row) => Station(
+            id: row['id'] as String,
+            name: row['name'] as String,
+            area: row['area'] as String,
+            prefix: row['prefix'] as String,
+            stationNumber: row['stationNumber'] as int,
+            address: row['address'] as String,
+            coordinates: row['coordinates'] as String,
+            updated: row['updated'] as int,
+            persons: _listIntConverter.decode(row['persons'] as String),
+            adminPersons:
+                _listIntConverter.decode(row['adminPersons'] as String)),
+        arguments: [prefix]);
   }
 
   @override
@@ -402,7 +469,8 @@ class _$UnitDao extends UnitDao {
                   'unitIdentifier': item.unitIdentifier,
                   'unitDescription': item.unitDescription,
                   'status': item.status,
-                  'positions': _listUnitPositionConverter.encode(item.positions),
+                  'positions':
+                      _listUnitPositionConverter.encode(item.positions),
                   'capacity': item.capacity,
                   'updated': item.updated
                 }),
@@ -417,7 +485,8 @@ class _$UnitDao extends UnitDao {
                   'unitIdentifier': item.unitIdentifier,
                   'unitDescription': item.unitDescription,
                   'status': item.status,
-                  'positions': _listUnitPositionConverter.encode(item.positions),
+                  'positions':
+                      _listUnitPositionConverter.encode(item.positions),
                   'capacity': item.capacity,
                   'updated': item.updated
                 }),
@@ -432,7 +501,8 @@ class _$UnitDao extends UnitDao {
                   'unitIdentifier': item.unitIdentifier,
                   'unitDescription': item.unitDescription,
                   'status': item.status,
-                  'positions': _listUnitPositionConverter.encode(item.positions),
+                  'positions':
+                      _listUnitPositionConverter.encode(item.positions),
                   'capacity': item.capacity,
                   'updated': item.updated
                 });
@@ -459,7 +529,8 @@ class _$UnitDao extends UnitDao {
             unitIdentifier: row['unitIdentifier'] as int,
             unitDescription: row['unitDescription'] as String,
             status: row['status'] as int,
-            positions: _listUnitPositionConverter.decode(row['positions'] as String),
+            positions:
+                _listUnitPositionConverter.decode(row['positions'] as String),
             capacity: row['capacity'] as int,
             updated: row['updated'] as int),
         arguments: [id]);
@@ -467,7 +538,8 @@ class _$UnitDao extends UnitDao {
 
   @override
   Future<void> deleteById(String id) async {
-    await _queryAdapter.queryNoReturn('DELETE FROM Unit WHERE id = ?1', arguments: [id]);
+    await _queryAdapter
+        .queryNoReturn('DELETE FROM Unit WHERE id = ?1', arguments: [id]);
   }
 
   @override
@@ -475,7 +547,8 @@ class _$UnitDao extends UnitDao {
     String id,
     int limit,
   ) async {
-    return _queryAdapter.queryList('SELECT * FROM Unit WHERE id < ?1 ORDER BY id DESC LIMIT ?2',
+    return _queryAdapter.queryList(
+        'SELECT * FROM Unit WHERE id < ?1 ORDER BY id DESC LIMIT ?2',
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
             stationId: row['stationId'] as int,
@@ -483,7 +556,8 @@ class _$UnitDao extends UnitDao {
             unitIdentifier: row['unitIdentifier'] as int,
             unitDescription: row['unitDescription'] as String,
             status: row['status'] as int,
-            positions: _listUnitPositionConverter.decode(row['positions'] as String),
+            positions:
+                _listUnitPositionConverter.decode(row['positions'] as String),
             capacity: row['capacity'] as int,
             updated: row['updated'] as int),
         arguments: [id, limit]);
@@ -491,12 +565,17 @@ class _$UnitDao extends UnitDao {
 
   @override
   Future<void> deleteByPrefix(String id) async {
-    await _queryAdapter.queryNoReturn('DELETE FROM Unit WHERE id LIKE ?1||\" %\"', arguments: [id]);
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM Unit WHERE id LIKE ?1||\" %\"',
+        arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
-    return _queryAdapter.query('SELECT COUNT(*) FROM Unit WHERE id LIKE ?1||\"%\"', mapper: (Map<String, Object?> row) => row.values.first as int, arguments: [prefix]);
+    return _queryAdapter.query(
+        'SELECT COUNT(*) FROM Unit WHERE id LIKE ?1||\"%\"',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [prefix]);
   }
 
   @override
@@ -504,7 +583,8 @@ class _$UnitDao extends UnitDao {
     int stationId,
     String prefix,
   ) async {
-    return _queryAdapter.queryList('SELECT * FROM Unit WHERE stationId = ?1 AND id LIKE ?2||\"%\"',
+    return _queryAdapter.queryList(
+        'SELECT * FROM Unit WHERE stationId = ?1 AND id LIKE ?2||\"%\"',
         mapper: (Map<String, Object?> row) => Unit(
             id: row['id'] as String,
             stationId: row['stationId'] as int,
@@ -512,10 +592,28 @@ class _$UnitDao extends UnitDao {
             unitIdentifier: row['unitIdentifier'] as int,
             unitDescription: row['unitDescription'] as String,
             status: row['status'] as int,
-            positions: _listUnitPositionConverter.decode(row['positions'] as String),
+            positions:
+                _listUnitPositionConverter.decode(row['positions'] as String),
             capacity: row['capacity'] as int,
             updated: row['updated'] as int),
         arguments: [stationId, prefix]);
+  }
+
+  @override
+  Future<List<Unit>> getWithPrefix(String prefix) async {
+    return _queryAdapter.queryList('SELECT * FROM Unit WHERE id LIKE ?1||\"%\"',
+        mapper: (Map<String, Object?> row) => Unit(
+            id: row['id'] as String,
+            stationId: row['stationId'] as int,
+            unitType: row['unitType'] as int,
+            unitIdentifier: row['unitIdentifier'] as int,
+            unitDescription: row['unitDescription'] as String,
+            status: row['status'] as int,
+            positions:
+                _listUnitPositionConverter.decode(row['positions'] as String),
+            capacity: row['capacity'] as int,
+            updated: row['updated'] as int),
+        arguments: [prefix]);
   }
 
   @override
@@ -548,7 +646,8 @@ class _$PersonDao extends PersonDao {
                   'lastName': item.lastName,
                   'birthday': _dateTimeConverter.encode(item.birthday),
                   'allowedUnits': _listIntConverter.encode(item.allowedUnits),
-                  'qualifications': _listQualificationConverter.encode(item.qualifications),
+                  'qualifications':
+                      _listQualificationConverter.encode(item.qualifications),
                   'updated': item.updated
                 }),
         _personUpdateAdapter = UpdateAdapter(
@@ -561,7 +660,8 @@ class _$PersonDao extends PersonDao {
                   'lastName': item.lastName,
                   'birthday': _dateTimeConverter.encode(item.birthday),
                   'allowedUnits': _listIntConverter.encode(item.allowedUnits),
-                  'qualifications': _listQualificationConverter.encode(item.qualifications),
+                  'qualifications':
+                      _listQualificationConverter.encode(item.qualifications),
                   'updated': item.updated
                 }),
         _personDeletionAdapter = DeletionAdapter(
@@ -574,7 +674,8 @@ class _$PersonDao extends PersonDao {
                   'lastName': item.lastName,
                   'birthday': _dateTimeConverter.encode(item.birthday),
                   'allowedUnits': _listIntConverter.encode(item.allowedUnits),
-                  'qualifications': _listQualificationConverter.encode(item.qualifications),
+                  'qualifications':
+                      _listQualificationConverter.encode(item.qualifications),
                   'updated': item.updated
                 });
 
@@ -598,15 +699,18 @@ class _$PersonDao extends PersonDao {
             firstName: row['firstName'] as String,
             lastName: row['lastName'] as String,
             birthday: _dateTimeConverter.decode(row['birthday'] as int),
-            allowedUnits: _listIntConverter.decode(row['allowedUnits'] as String),
-            qualifications: _listQualificationConverter.decode(row['qualifications'] as String),
+            allowedUnits:
+                _listIntConverter.decode(row['allowedUnits'] as String),
+            qualifications: _listQualificationConverter
+                .decode(row['qualifications'] as String),
             updated: row['updated'] as int),
         arguments: [id]);
   }
 
   @override
   Future<void> deleteById(String id) async {
-    await _queryAdapter.queryNoReturn('DELETE FROM Person WHERE id = ?1', arguments: [id]);
+    await _queryAdapter
+        .queryNoReturn('DELETE FROM Person WHERE id = ?1', arguments: [id]);
   }
 
   @override
@@ -614,40 +718,70 @@ class _$PersonDao extends PersonDao {
     String id,
     int limit,
   ) async {
-    return _queryAdapter.queryList('SELECT * FROM Person WHERE id < ?1 ORDER BY id DESC LIMIT ?2',
+    return _queryAdapter.queryList(
+        'SELECT * FROM Person WHERE id < ?1 ORDER BY id DESC LIMIT ?2',
         mapper: (Map<String, Object?> row) => Person(
             id: row['id'] as String,
             firstName: row['firstName'] as String,
             lastName: row['lastName'] as String,
             birthday: _dateTimeConverter.decode(row['birthday'] as int),
-            allowedUnits: _listIntConverter.decode(row['allowedUnits'] as String),
-            qualifications: _listQualificationConverter.decode(row['qualifications'] as String),
+            allowedUnits:
+                _listIntConverter.decode(row['allowedUnits'] as String),
+            qualifications: _listQualificationConverter
+                .decode(row['qualifications'] as String),
             updated: row['updated'] as int),
         arguments: [id, limit]);
   }
 
   @override
   Future<void> deleteByPrefix(String id) async {
-    await _queryAdapter.queryNoReturn('DELETE FROM Person WHERE id LIKE ?1||\" %\"', arguments: [id]);
+    await _queryAdapter.queryNoReturn(
+        'DELETE FROM Person WHERE id LIKE ?1||\" %\"',
+        arguments: [id]);
   }
 
   @override
   Future<int?> getAmountWithPrefix(String prefix) async {
-    return _queryAdapter.query('SELECT COUNT(*) FROM Person WHERE id LIKE ?1||\"%\"', mapper: (Map<String, Object?> row) => row.values.first as int, arguments: [prefix]);
+    return _queryAdapter.query(
+        'SELECT COUNT(*) FROM Person WHERE id LIKE ?1||\"%\"',
+        mapper: (Map<String, Object?> row) => row.values.first as int,
+        arguments: [prefix]);
   }
 
   @override
-  Future<List<Person>> getWhereIn(List<String> ids) async {
-    const offset = 1;
-    final _sqliteVariablesForIds = Iterable<String>.generate(ids.length, (i) => '?${i + offset}').join(',');
-    return _queryAdapter.queryList('SELECT * FROM Person WHERE id IN (' + _sqliteVariablesForIds + ')',
+  Future<List<Person>> getWithPrefix(String prefix) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM Person WHERE id LIKE ?1||\"%\"',
         mapper: (Map<String, Object?> row) => Person(
             id: row['id'] as String,
             firstName: row['firstName'] as String,
             lastName: row['lastName'] as String,
             birthday: _dateTimeConverter.decode(row['birthday'] as int),
-            allowedUnits: _listIntConverter.decode(row['allowedUnits'] as String),
-            qualifications: _listQualificationConverter.decode(row['qualifications'] as String),
+            allowedUnits:
+                _listIntConverter.decode(row['allowedUnits'] as String),
+            qualifications: _listQualificationConverter
+                .decode(row['qualifications'] as String),
+            updated: row['updated'] as int),
+        arguments: [prefix]);
+  }
+
+  @override
+  Future<List<Person>> getWhereIn(List<String> ids) async {
+    const offset = 1;
+    final _sqliteVariablesForIds =
+        Iterable<String>.generate(ids.length, (i) => '?${i + offset}')
+            .join(',');
+    return _queryAdapter.queryList(
+        'SELECT * FROM Person WHERE id IN (' + _sqliteVariablesForIds + ')',
+        mapper: (Map<String, Object?> row) => Person(
+            id: row['id'] as String,
+            firstName: row['firstName'] as String,
+            lastName: row['lastName'] as String,
+            birthday: _dateTimeConverter.decode(row['birthday'] as int),
+            allowedUnits:
+                _listIntConverter.decode(row['allowedUnits'] as String),
+            qualifications: _listQualificationConverter
+                .decode(row['qualifications'] as String),
             updated: row['updated'] as int),
         arguments: [...ids]);
   }

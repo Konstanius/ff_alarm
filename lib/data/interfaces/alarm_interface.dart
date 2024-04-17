@@ -25,6 +25,12 @@ abstract class AlarmInterface {
     await Future.wait(futures);
   }
 
+  static Future<void> fetchAllForServerSilent(String server) async {
+    DateTime archiveDate = DateTime.now().subtract(const Duration(days: 90));
+    List<Alarm> serverAlarms = await Globals.db.alarmDao.getWithPrefix(server, archiveDate.millisecondsSinceEpoch);
+    await fetchAllForServer(server, serverAlarms);
+  }
+
   static Future<void> fetchAllForServer(String server, List<Alarm> nonArchivedAlarms) async {
     StringBuffer sb = StringBuffer();
     for (Alarm alarm in nonArchivedAlarms) {

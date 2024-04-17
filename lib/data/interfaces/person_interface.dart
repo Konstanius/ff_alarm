@@ -18,6 +18,11 @@ abstract class PersonInterface {
     await Future.wait(futures);
   }
 
+  static Future<void> fetchAllForServerSilent(String server) async {
+    List<Person> serverPersons = await Globals.db.personDao.getWithPrefix(server);
+    await fetchAllForServer(server, serverPersons);
+  }
+
   static Future<void> fetchAllForServer(String server, List<Person> serverPersons) async {
     StringBuffer sb = StringBuffer();
     for (Person person in serverPersons) {

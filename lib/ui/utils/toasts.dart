@@ -14,12 +14,12 @@ void _generalToast({required String message, required Color color}) {
   Flushbar bar = Flushbar(
     message: message,
     messageSize: Theme.of(Globals.context!).textTheme.bodyMedium!.fontSize,
-    messageColor: color,
+    messageColor: Colors.white,
     margin: const EdgeInsets.symmetric(horizontal: 20),
     positionOffset: 60,
-    borderColor: color.withOpacity(0.5),
+    borderColor: color,
     borderRadius: const BorderRadius.all(Radius.circular(10)),
-    backgroundColor: Theme.of(Globals.context!).colorScheme.background.withBlue(color.blue ~/ 5).withGreen(color.green ~/ 5).withRed(color.red ~/ 5),
+    backgroundColor: Theme.of(Globals.context!).colorScheme.background.withBlue(color.blue ~/ 3).withGreen(color.green ~/ 3).withRed(color.red ~/ 3),
     padding: const EdgeInsets.all(20),
     onTap: (bar) => bar.dismiss(),
     onStatusChanged: (status) {
@@ -43,7 +43,9 @@ void _generalToast({required String message, required Color color}) {
   );
 
   _toastList.add(MapEntry(id, bar));
-  bar.show(Globals.context!).catchError((e, s) {});
+  bar.show(Globals.context!).catchError((e, s) {
+    _toastList.removeWhere((element) => element.key == id);
+  });
 
   // dismiss all other toasts
   for (var element in _toastList) {

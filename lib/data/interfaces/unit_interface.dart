@@ -18,6 +18,11 @@ abstract class UnitInterface {
     await Future.wait(futures);
   }
 
+  static Future<void> fetchAllForServerSilent(String server) async {
+    List<Unit> serverUnits = await Globals.db.unitDao.getWithPrefix(server);
+    await fetchAllForServer(server, serverUnits);
+  }
+
   static Future<void> fetchAllForServer(String server, List<Unit> serverUnits) async {
     StringBuffer sb = StringBuffer();
     for (Unit unit in serverUnits) {

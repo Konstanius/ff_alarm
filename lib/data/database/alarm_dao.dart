@@ -26,4 +26,7 @@ abstract class AlarmDao {
 
   @Query('SELECT COUNT(*) FROM Alarm WHERE id LIKE :prefix||"%"')
   Future<int?> getAmountWithPrefix(String prefix);
+
+  @Query('SELECT * FROM Alarm WHERE id LIKE :prefix||"%" AND date > :date')
+  Future<List<Alarm>> getWithPrefix(String prefix, int date);
 }
