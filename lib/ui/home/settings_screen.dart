@@ -214,14 +214,14 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                         ),
                       ],
                     ),
-                    actions: <Widget>[
-                      TextButton(
+                    actions: [
+                      DialogActionButton(
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
-                        child: const Text('OK'),
+                        text: 'OK',
                       ),
-                      TextButton(
+                      DialogActionButton(
                         onPressed: () async {
                           Globals.context!.loaderOverlay.show();
                           try {
@@ -237,7 +237,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                             Globals.context!.loaderOverlay.hide();
                           }
                         },
-                        child: const Text('Verbindung testen'),
+                        text: 'Verbindung testen',
                       ),
                     ],
                   );
@@ -251,17 +251,17 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                     generalDialog(
                       color: Colors.blue,
                       title: 'Quelle löschen',
-                      content: Text('Möchtest Du die Daten-Quelle ${uri.host} wirklich löschen?\n\n'
+                      content: Text('Möchtest du die Daten-Quelle ${uri.host} wirklich löschen?\n\n'
                           'Alle Daten, die von dieser Quelle stammen, werden ebenfalls gelöscht.\n\n'
-                          'Zur erneuten Registrierung musst Du von einem Wachen-Admin hinzugefügt werden.'),
-                      actions: <Widget>[
-                        TextButton(
+                          'Zur erneuten Registrierung musst du von einem Wachen-Admin hinzugefügt werden.'),
+                      actions: [
+                        DialogActionButton(
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
-                          child: const Text('Abbrechen'),
+                          text: 'Abbrechen',
                         ),
-                        TextButton(
+                        DialogActionButton(
                           onPressed: () async {
                             Globals.context!.loaderOverlay.show();
                             try {
@@ -280,7 +280,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                               Globals.context!.loaderOverlay.hide();
                             }
                           },
-                          child: const Text('Löschen'),
+                          text: 'Löschen',
                         ),
                       ],
                     );
@@ -424,18 +424,18 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                     );
                   },
                 ),
-                actions: <Widget>[
-                  TextButton(
+                actions: [
+                  DialogActionButton(
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
-                    child: const Text('Abbrechen'),
+                    text: 'Abbrechen',
                   ),
-                  TextButton(
+                  DialogActionButton(
                     onPressed: () {
                       Navigator.of(context).pop(selected);
                     },
-                    child: const Text('OK'),
+                    text: 'OK',
                   ),
                 ],
               );
@@ -461,12 +461,12 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                     color: Colors.blue,
                     title: 'Neustart erforderlich',
                     content: const Text('Die Änderungen werden erst nach einem Neustart der App übernommen.'),
-                    actions: <Widget>[
-                      TextButton(
+                    actions: [
+                      DialogActionButton(
                         onPressed: () {
                           Navigator.of(context).pop();
                         },
-                        child: const Text('OK'),
+                        text: 'OK',
                       ),
                     ],
                   ).then((value) {
@@ -485,22 +485,22 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                   color: Colors.red,
                   title: 'Alarme stummschalten',
                   content: const Text(
-                    'Möchtest Du wirklich alle Alarmierungen stummschalten?\n\n'
+                    'Möchtest du wirklich alle Alarmierungen stummschalten?\n\n'
                     'Diese Einstellung wird bei einer Alarmierung deinen Status NICHT automatisch auf "Nicht bereit" setzen.\n\n'
                     'Nutze dafür die Bereitschaftseinstellungen der jeweiligen Wache(n).',
                   ),
-                  actions: <Widget>[
-                    TextButton(
+                  actions: [
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.of(context).pop(false);
                       },
-                      child: const Text('Nein'),
+                      text: 'Nein',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.of(context).pop(true);
                       },
-                      child: const Text('Ja'),
+                      text: 'Ja',
                     ),
                   ],
                 );

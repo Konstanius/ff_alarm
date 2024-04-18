@@ -114,17 +114,17 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                     'Dadurch können Alarmierungen schneller und zuverlässiger empfangen werden.',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Abbrechen'),
+                      text: 'Abbrechen',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Fortfahren'),
+                      text: 'Fortfahren',
                     ),
                   ],
                 );
@@ -161,17 +161,17 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                     'Beim Fortfahren musst du in der folgenden Liste für die App "FF Alarm" die Benachrichtigungspolitik für den "Nicht-Stören"-Modus aktivieren.',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Abbrechen'),
+                      text: 'Abbrechen',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Fortfahren'),
+                      text: 'Fortfahren',
                     ),
                   ],
                 );
@@ -207,17 +207,17 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                     'Diese Einstellung ermöglicht es der App, den "Nicht-Stören"-Modus zu umgehen und Alarmierungen auch bei komplett stummgeschaltetem Gerät zu empfangen und laut zu signalisieren.',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Abbrechen'),
+                      text: 'Abbrechen',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Fortfahren'),
+                      text: 'Fortfahren',
                     ),
                   ],
                 );
@@ -250,17 +250,17 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                     'Dies gilt NICHT für Test-Alarmierungen!',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Abbrechen'),
+                      text: 'Abbrechen',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Fortfahren'),
+                      text: 'Fortfahren',
                     ),
                   ],
                 );
@@ -277,17 +277,17 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                     'Hast du die Einstellung für "Nicht-Stören"-Erlaubnis (oder Ähnlich) gefunden und aktiviert?',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Nein'),
+                      text: 'Nein',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Ja'),
+                      text: 'Ja',
                     ),
                   ],
                 );
@@ -320,17 +320,17 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                     'Dies gilt NUR für Test-Alarmierungen!',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Abbrechen'),
+                      text: 'Abbrechen',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Fortfahren'),
+                      text: 'Fortfahren',
                     ),
                   ],
                 );
@@ -347,17 +347,17 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                     'Hast du die Einstellung für "Nicht-Stören"-Erlaubnis (oder Ähnlich) gefunden und aktiviert?',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Nein'),
+                      text: 'Nein',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Ja'),
+                      text: 'Ja',
                     ),
                   ],
                 );

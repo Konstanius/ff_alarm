@@ -178,18 +178,18 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   ),
-                  actions: <Widget>[
-                    TextButton(
+                  actions: [
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(Globals.context!, false);
                       },
-                      child: const Text('Abbrechen'),
+                      text: 'Abbrechen',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(Globals.context!, true);
                       },
-                      child: const Text('Registrieren'),
+                      text: 'Registrieren',
                     ),
                   ],
                 );

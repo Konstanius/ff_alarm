@@ -241,21 +241,21 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
                   bool? confirm = await generalDialog(
                     color: Colors.blue,
                     title: "Speichern",
-                    content: const Text("Möchtest Du deine Änderungen speichern?\n\n"
+                    content: const Text("Möchtest du deine Änderungen speichern?\n\n"
                         "Deine Bereitschaftseinstellung wird mit den Servern synchronisiert und füllt eine Absage im Bedarfsfall automatisch aus.\n\n"
                         "Du kannst trotzdem jederzeit die Absage in einer Alarmierung manuell überschreiben."),
                     actions: [
-                      TextButton(
+                      DialogActionButton(
                         onPressed: () {
                           Navigator.of(context).pop(false);
                         },
-                        child: const Text("Abbrechen"),
+                        text: 'Abbrechen',
                       ),
-                      TextButton(
+                      DialogActionButton(
                         onPressed: () {
                           Navigator.of(context).pop(true);
                         },
-                        child: const Text("Speichern"),
+                        text: 'Speichern',
                       ),
                     ],
                   );
@@ -664,11 +664,11 @@ class _GeoFenceSelectionWidgetState extends State<GeoFenceSelectionWidget> {
                   "Klicke zum Löschen auf das jeweilige Gebiet.",
                 ),
                 actions: [
-                  TextButton(
+                  DialogActionButton(
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
-                    child: const Text("Schließen"),
+                    text: 'Schließen',
                   ),
                 ],
               );
@@ -816,20 +816,20 @@ class _GeoFenceSelectionWidgetState extends State<GeoFenceSelectionWidget> {
         title: "Geofencing Gebiet",
         content: const Text("Möchtest du dieses Gebiet wirklich löschen?"),
         actions: [
-          TextButton(
+          DialogActionButton(
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: const Text("Abbrechen"),
+            text: 'Abbrechen',
           ),
-          TextButton(
+          DialogActionButton(
             onPressed: () {
               Navigator.of(context).pop();
               widget.current.geofencing.removeWhere((element) => element.position == closest!.position && element.radius == closest.radius);
               widget.positionsNotifier.value.removeWhere((element) => element.position == closest!.position && element.radius == closest.radius);
               widget.positionsNotifier.notifyListeners();
             },
-            child: const Text("Löschen"),
+            text: 'Löschen',
           ),
         ],
       );

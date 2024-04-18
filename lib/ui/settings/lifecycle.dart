@@ -114,17 +114,17 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                     'Dies kann Probleme in der Alarmierungs- und Standortbestimmungsfunktion beheben, aber auch die Akkulaufzeit beeinträchtigen.',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Abbrechen'),
+                      text: 'Abbrechen',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Fortfahren'),
+                      text: 'Fortfahren',
                     ),
                   ],
                 );
@@ -156,17 +156,17 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                     'Beim Fortfahren musst du in der folgenden Seite erst auf "Berechtigungen" klicken, dann ganz unten die Einstellung "Berechtigungen bei Nicht-Nutzung entfernen" (oder Ähnlich) deaktivieren.',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Abbrechen'),
+                      text: 'Abbrechen',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Fortfahren'),
+                      text: 'Fortfahren',
                     ),
                   ],
                 );
@@ -183,17 +183,17 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                     'Hast du die Einstellung "Berechtigungen bei Nicht-Nutzung entfernen" (oder Ähnlich) deaktiviert?',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Nein'),
+                      text: 'Nein',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Ja'),
+                      text: 'Ja',
                     ),
                   ],
                 );
@@ -230,17 +230,17 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                     'Beim Fortfahren musst du in der folgenden Seite die Datennutzungsdetails öffnen und Hintergrunddaten erlauben.',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Abbrechen'),
+                      text: 'Abbrechen',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Fortfahren'),
+                      text: 'Fortfahren',
                     ),
                   ],
                 );
@@ -266,17 +266,17 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                     'Beim Fortfahren musst du in der folgenden Seite die Batterienutzung öffnen und die Einstellung "Hintergrundaktivität" (oder Ähnlich) aktivieren.',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Abbrechen'),
+                      text: 'Abbrechen',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Fortfahren'),
+                      text: 'Fortfahren',
                     ),
                   ],
                 );
@@ -293,17 +293,17 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                     'Hast du die Einstellung "Hintergrundaktivität" (oder Ähnlich) aktiviert?',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Nein'),
+                      text: 'Nein',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Ja'),
+                      text: 'Ja',
                     ),
                   ],
                 );
@@ -334,17 +334,17 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                     'Beim Fortfahren musst du in der folgenden Seite die Batterienutzung öffnen und die Einstellung "Automatischer Start" (oder Ähnlich) aktivieren.',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Abbrechen'),
+                      text: 'Abbrechen',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Fortfahren'),
+                      text: 'Fortfahren',
                     ),
                   ],
                 );
@@ -361,17 +361,17 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                     'Hast du die Einstellung "Automatischer Start" (oder Ähnlich) aktiviert?',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Nein'),
+                      text: 'Nein',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Ja'),
+                      text: 'Ja',
                     ),
                   ],
                 );
@@ -428,17 +428,17 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                     'Dies erlaubt dem Geofence Feature, genauer zu bestimmen, ob du dich in einem Alarmierungs-Gebiet befindest.',
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, false);
                       },
-                      child: const Text('Abbrechen'),
+                      text: 'Abbrechen',
                     ),
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.pop(context, true);
                       },
-                      child: const Text('Fortfahren'),
+                      text: 'Fortfahren',
                     ),
                   ],
                 );
@@ -476,20 +476,20 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
         content: const Text(
           'Durch das Aktivieren des Standortzugriffs wird FF Alarm deinen Standort auf Karten für dich anzeigen können.\n\n'
           'Klicke auf "Fortfahren" und wähle dann "Immer erlauben" aus.\n\n'
-          '"Einmal erlauben" reicht nicht aus, da Du die Berechtigung sonst bei Inaktivität verlierst',
+          '"Einmal erlauben" reicht nicht aus, da du die Berechtigung sonst bei Inaktivität verlierst',
         ),
         actions: [
-          TextButton(
+          DialogActionButton(
             onPressed: () {
               Navigator.pop(Globals.context!, false);
             },
-            child: const Text('Abbrechen'),
+            text: 'Abbrechen',
           ),
-          TextButton(
+          DialogActionButton(
             onPressed: () {
               Navigator.pop(Globals.context!, true);
             },
-            child: const Text('Fortfahren'),
+            text: 'Fortfahren',
           ),
         ],
       );
@@ -508,17 +508,17 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
             'Beim Fortfahren musst du in der folgenden Seite den Standortzugriff auf "Immer erlauben" setzen.',
           ),
           actions: [
-            TextButton(
+            DialogActionButton(
               onPressed: () {
                 Navigator.pop(Globals.context!, false);
               },
-              child: const Text('Abbrechen'),
+              text: 'Abbrechen',
             ),
-            TextButton(
+            DialogActionButton(
               onPressed: () {
                 Navigator.pop(Globals.context!, true);
               },
-              child: const Text('Fortfahren'),
+              text: 'Fortfahren',
             ),
           ],
         );

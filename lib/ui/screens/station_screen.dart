@@ -1,3 +1,4 @@
+import 'package:ff_alarm/data/interfaces/station_interface.dart';
 import 'package:ff_alarm/data/interfaces/unit_interface.dart';
 import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/models/station.dart';
@@ -11,6 +12,7 @@ import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 import 'package:map_launcher/map_launcher.dart';
 
 class StationPage extends StatefulWidget {
@@ -156,11 +158,11 @@ class StationPageState extends State<StationPage> with Updates {
                     ],
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.of(context).pop();
                       },
-                      child: const Text('Schließen'),
+                      text: 'Schließen',
                     ),
                   ],
                 );
@@ -387,8 +389,41 @@ class StationPageState extends State<StationPage> with Updates {
                           elevation: 4,
                           clipBehavior: Clip.antiAliasWithSaveLayer,
                           child: InkWell(
-                            onTap: () {
-                              // TODO
+                            onTap: () async {
+                              bool confirm = await generalDialog(
+                                color: Colors.red,
+                                title: 'Person entfernen',
+                                content: Text('Möchtest du ${person.fullName} wirklich von der Wache entfernen?'),
+                                actions: [
+                                  DialogActionButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop(true);
+                                    },
+                                    text: 'Ja',
+                                  ),
+                                  DialogActionButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop(false);
+                                    },
+                                    text: 'Nein',
+                                  ),
+                                ],
+                              );
+                              if (confirm != true) return;
+
+                              Globals.context!.loaderOverlay.show();
+                              try {
+                                await StationInterface.removePerson(
+                                  server: station!.server,
+                                  stationId: station!.idNumber,
+                                  personId: person.idNumber,
+                                );
+                                Navigator.of(Globals.context!).pop();
+                              } catch (e, s) {
+                                exceptionToast(e, s);
+                              } finally {
+                                Globals.context!.loaderOverlay.hide();
+                              }
                             },
                             child: const Padding(
                               padding: EdgeInsets.all(8.0),
@@ -408,8 +443,45 @@ class StationPageState extends State<StationPage> with Updates {
                           elevation: 4,
                           clipBehavior: Clip.antiAliasWithSaveLayer,
                           child: InkWell(
-                            onTap: () {
-                              // TODO
+                            onTap: () async {
+                              bool toAdmin = !station!.adminPersonProperIds.contains(person.id);
+                              bool? confirm = await generalDialog(
+                                color: Colors.red,
+                                title: toAdmin ? 'Person zum Admin machen' : 'Admin entfernen',
+                                content: toAdmin
+                                    ? Text('Möchtest du ${person.fullName} wirklich zum Wachen-Admin machen?')
+                                    : Text('Möchtest du ${person.fullName} wirklich den Admin-Status der Wache entziehen?'),
+                                actions: [
+                                  DialogActionButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop(true);
+                                    },
+                                    text: 'Ja',
+                                  ),
+                                  DialogActionButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop(false);
+                                    },
+                                    text: 'Nein',
+                                  ),
+                                ],
+                              );
+                              if (confirm != true) return;
+
+                              Globals.context!.loaderOverlay.show();
+                              try {
+                                await StationInterface.setAdmin(
+                                  toAdmin: toAdmin,
+                                  server: station!.server,
+                                  stationId: station!.idNumber,
+                                  personId: person.idNumber,
+                                );
+                                Navigator.of(Globals.context!).pop();
+                              } catch (e, s) {
+                                exceptionToast(e, s);
+                              } finally {
+                                Globals.context!.loaderOverlay.hide();
+                              }
                             },
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
@@ -427,11 +499,11 @@ class StationPageState extends State<StationPage> with Updates {
                     ],
                   ),
                   actions: [
-                    TextButton(
+                    DialogActionButton(
                       onPressed: () {
                         Navigator.of(context).pop();
                       },
-                      child: const Text('Schließen'),
+                      text: 'Schließen',
                     ),
                   ],
                 );
@@ -447,7 +519,16 @@ class StationPageState extends State<StationPage> with Updates {
   @override
   void onUpdate(UpdateInfo info) async {
     if (info.type == UpdateType.station && info.ids.contains(widget.stationId)) {
+      List<String> previousIds = station!.personProperIds;
       station = await Globals.db.stationDao.getById(widget.stationId);
+      if (station!.personProperIds.length != previousIds.length) {
+        persons = await Globals.db.personDao.getWhereIn(station!.personProperIds);
+        persons!.sort((a, b) {
+          if (station!.adminPersonProperIds.contains(a.id)) return -1;
+          if (station!.adminPersonProperIds.contains(b.id)) return 1;
+          return a.fullName.compareTo(b.fullName);
+        });
+      }
     }
 
     if (info.type == UpdateType.person) {

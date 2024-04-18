@@ -7,7 +7,7 @@ Future<dynamic> generalDialog({
   required Color color,
   required String title,
   required Widget content,
-  required List<Widget> actions,
+  required List<DialogActionButton> actions,
 }) {
   return showDialog(
     barrierColor: Theme.of(Globals.context!).colorScheme.background.withOpacity(0.5),
@@ -22,30 +22,45 @@ Future<dynamic> generalDialog({
         backgroundColor: Theme.of(Globals.context!).scaffoldBackgroundColor,
         title: Text(title, style: Theme.of(Globals.context!).textTheme.titleLarge!.copyWith(color: color)),
         content: SingleChildScrollView(child: content),
-        actions: actions,
+        actions: [
+          for (DialogActionButton action in actions)
+            TextButton(
+              onPressed: () {
+                action.onPressed();
+              },
+              child: Text(action.text, style: TextStyle(color: color)),
+            ),
+        ],
       );
     },
   );
+}
+
+class DialogActionButton {
+  String text;
+  Function onPressed;
+
+  DialogActionButton({required this.text, required this.onPressed});
 }
 
 Future<void> discardDialog(BuildContext context) async {
   await generalDialog(
     color: Colors.blue,
     title: "Änderungen verwerfen",
-    content: const Text("Möchtest Du deine Änderungen verwerfen?"),
+    content: const Text("Möchtest du deine Änderungen verwerfen?"),
     actions: [
-      TextButton(
+      DialogActionButton(
         onPressed: () {
           Navigator.of(context).pop();
         },
-        child: const Text("Abbrechen"),
+        text: "Abbrechen",
       ),
-      TextButton(
+      DialogActionButton(
         onPressed: () {
           Navigator.of(context).pop();
           Navigator.of(context).pop();
         },
-        child: const Text("Verwerfen"),
+        text: "Verwerfen",
       ),
     ],
   );
@@ -79,13 +94,13 @@ Future<void> aboutDialog() async {
         const SizedBox(height: 12),
         Text(
           'Das Projekt wurde im April 2024 gestartet und wird dauerhaft weiter entwickelt. Der Source Code ist öffentlich einsehbar und Änderungsvorschläge '
-          '/ Fehlermeldungen / Risikoanalysen können jederzeit auf GitHub mitgeteilt werden. Links dazu findest Du unten.',
+          '/ Fehlermeldungen / Risikoanalysen können jederzeit auf GitHub mitgeteilt werden. Links dazu findest du unten.',
           style: Theme.of(Globals.context!).textTheme.bodySmall,
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
         Text(
-          'Die FF Alarm App kommuniziert mit allen Servern, in denen Du dich registriert hast und als Daten-Quelle hinzugefügt hast.',
+          'Die FF Alarm App kommuniziert mit allen Servern, in denen du dich registriert hast und als Daten-Quelle hinzugefügt hast.',
           style: Theme.of(Globals.context!).textTheme.bodySmall,
           textAlign: TextAlign.center,
         ),
@@ -121,12 +136,12 @@ Future<void> aboutDialog() async {
         ),
       ],
     ),
-    actions: <Widget>[
-      TextButton(
+    actions: [
+      DialogActionButton(
         onPressed: () {
           Navigator.pop(Globals.context!);
         },
-        child: const Text('Schließen'),
+        text: 'Schließen',
       ),
     ],
   );

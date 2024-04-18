@@ -270,19 +270,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         color: Colors.red,
         title: badgeSettings.value > 1 ? 'Aktionen erforderlich' : 'Aktion erforderlich',
         content: const Text('Die Einstellungen und Berechtigungen der App auf deinem Handy sind nicht vollständig. Bitte überprüfe die Einstellungen.'),
-        actions: <Widget>[
-          TextButton(
+        actions: [
+          DialogActionButton(
             onPressed: () {
               Navigator.of(context).pop();
             },
-            child: const Text('Ignorieren'),
+            text: 'Ignorieren',
           ),
-          TextButton(
+          DialogActionButton(
             onPressed: () {
               Navigator.of(context).pop();
               tabController.index = 2;
             },
-            child: const Text('Einstellungen'),
+            text: 'Einstellungen',
           ),
         ],
       );
@@ -309,20 +309,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       color: Colors.red,
       title: 'Aktion erforderlich',
       content: const Text('Die App benötigt Zugriff auf deinen Standort, um Geofencing zu verwenden. Bitte erlaube den Zugriff in den Einstellungen.'),
-      actions: <Widget>[
-        TextButton(
+      actions: [
+        DialogActionButton(
           onPressed: () {
             Navigator.of(context).pop();
           },
-          child: const Text('Ignorieren'),
+          text: 'Ignorieren',
         ),
-        TextButton(
+        DialogActionButton(
           onPressed: () async {
             Navigator.of(context).pop();
 
             Globals.router.go('/lifecycle');
           },
-          child: const Text('Einstellungen'),
+          text: 'Einstellungen',
         ),
       ],
     );

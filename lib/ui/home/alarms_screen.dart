@@ -86,7 +86,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alarmierungen'),
-        actions: <Widget>[
+        actions: [
           IconButton(
             icon: Icon(Icons.filter_alt_outlined, color: filter.noFilters ? null : Colors.blue),
             onPressed: () async {
@@ -242,7 +242,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                             ),
                           ),
                         ),
-                        actions: <Widget>[
+                        actions: [
                           if (!filter.noFilters)
                             TextButton(
                               onPressed: () {
@@ -393,7 +393,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                       content: SingleChildScrollView(
                         child: Text(log),
                       ),
-                      actions: <Widget>[
+                      actions: [
                         TextButton(
                           onPressed: () {
                             Navigator.of(context).pop();

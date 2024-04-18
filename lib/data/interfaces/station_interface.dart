@@ -89,4 +89,41 @@ abstract class StationInterface {
 
     return result;
   }
+
+  static Future<void> setAdmin({required bool toAdmin, required String server, required int stationId, required int personId}) async {
+    Map<String, dynamic> data = {
+      'stationId': stationId,
+      'personId': personId,
+      'toAdmin': toAdmin,
+    };
+
+    Request response = await Request('stationSetAdmin', data, server).emit(true);
+
+    Station station = Station.fromJson(response.ackData!);
+    await Station.update(station, true);
+  }
+
+  static Future<void> addPerson({required String server, required int stationId, required int personId}) async {
+    Map<String, dynamic> data = {
+      'stationId': stationId,
+      'personId': personId,
+    };
+
+    Request response = await Request('stationAddPerson', data, server).emit(true);
+
+    Station station = Station.fromJson(response.ackData!);
+    await Station.update(station, true);
+  }
+
+  static Future<void> removePerson({required String server, required int stationId, required int personId}) async {
+    Map<String, dynamic> data = {
+      'stationId': stationId,
+      'personId': personId,
+    };
+
+    Request response = await Request('stationRemovePerson', data, server).emit(true);
+
+    Station station = Station.fromJson(response.ackData!);
+    await Station.update(station, true);
+  }
 }

@@ -66,7 +66,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
       if (!mounted) return;
       setState(() {
         stations = value;
-        stations.sort((a, b) => a.name.compareTo(b.name));
+        stations.sort((a, b) => a.descriptiveName.compareTo(b.descriptiveName));
       });
 
       if (stations.isNotEmpty) {
@@ -325,6 +325,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
           if (station != null) {
             stations.removeWhere((s) => s.id == station.id);
             stations.add(station);
+            stations.sort((a, b) => a.descriptiveName.compareTo(b.descriptiveName));
             ids.remove(station.id);
           }
         }
@@ -347,7 +348,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
           if (!mounted) return;
           setState(() {
             stations = value;
-            stations.sort((a, b) => a.name.compareTo(b.name));
+            stations.sort((a, b) => a.descriptiveName.compareTo(b.descriptiveName));
           });
         });
 
