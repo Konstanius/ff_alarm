@@ -1,8 +1,13 @@
+import 'dart:async';
+
+import 'package:ff_alarm/data/interfaces/station_interface.dart';
 import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 class UnitsScreen extends StatefulWidget {
   const UnitsScreen({super.key, required this.badge});
@@ -20,10 +25,31 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
   List<Unit> units = [];
   List<Station> stations = [];
 
+  Timer? timer;
+  Map<String, dynamic> notifyInformation = {};
+  DateTime notifyInfoTime = DateTime.now();
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
     setupListener({UpdateType.unit, UpdateType.station, UpdateType.ui});
+
+    timer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (!Globals.foreground || stations.isEmpty) return;
+      StationInterface.getNotifyInformation(stations.map((e) => e.server).toList()).then((value) {
+        if (!mounted) return;
+        setState(() {
+          notifyInformation = value;
+          notifyInfoTime = DateTime.now();
+        });
+      });
+    });
 
     if (Globals.localPersons.isEmpty) return;
 
@@ -42,6 +68,16 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
         stations = value;
         stations.sort((a, b) => a.name.compareTo(b.name));
       });
+
+      if (stations.isNotEmpty) {
+        StationInterface.getNotifyInformation(stations.map((e) => e.server).toSet().toList()).then((value) {
+          if (!mounted) return;
+          setState(() {
+            notifyInformation = value;
+            notifyInfoTime = DateTime.now();
+          });
+        });
+      }
     });
 
     Unit.getAll().then((List<Unit> value) {
@@ -76,22 +112,143 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
               contentPadding: const EdgeInsets.symmetric(horizontal: 4),
               title: Padding(
                 padding: const EdgeInsets.only(bottom: 4, left: 10),
-                child: Text(
-                  station.descriptiveName,
-                  style: const TextStyle(
-                    fontSize: kDefaultFontSize * 1.4,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        station.descriptiveName,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: kDefaultFontSize * 1.4,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              subtitle: ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: stationUnits.length,
-                itemBuilder: (BuildContext context, int index) {
-                  var unit = stationUnits[index];
-                  return unitCard(unit, station, const EdgeInsets.symmetric(horizontal: 2, vertical: 4), true);
-                },
+              subtitle: Column(
+                children: [
+                  for (var unit in stationUnits) unitCard(unit, station, const EdgeInsets.symmetric(horizontal: 2, vertical: 4), true),
+                  if (notifyInformation.containsKey(station.id)) const SizedBox(height: 8),
+                  if (notifyInformation.containsKey(station.id))
+                    () {
+                      var info = notifyInformation[station.id];
+
+                      int totalY = info["yT"];
+                      int totalN = info["nT"];
+                      int totalU = info["uT"];
+
+                      Map<String, int> y = info["y"].cast<String, int>();
+                      Map<String, int> n = info["n"].cast<String, int>();
+                      Map<String, int> u = info["u"].cast<String, int>();
+
+                      List<({String type, int y, int u, int n})> sorted = [];
+                      for (var key in y.keys) {
+                        String type = key;
+                        int yV = y[key] ?? 0;
+                        int nV = n[key] ?? 0;
+                        int uV = u[key] ?? 0;
+
+                        sorted.add((type: type, y: yV, u: uV, n: nV));
+                      }
+                      for (var key in n.keys) {
+                        if (sorted.any((element) => element.type == key)) continue;
+                        String type = key;
+                        int yV = y[key] ?? 0;
+                        int nV = n[key] ?? 0;
+                        int uV = u[key] ?? 0;
+
+                        sorted.add((type: type, y: yV, u: uV, n: nV));
+                      }
+                      for (var key in u.keys) {
+                        if (sorted.any((element) => element.type == key)) continue;
+                        String type = key;
+                        int yV = y[key] ?? 0;
+                        int nV = n[key] ?? 0;
+                        int uV = u[key] ?? 0;
+
+                        sorted.add((type: type, y: yV, u: uV, n: nV));
+                      }
+
+                      sorted.sort((a, b) => a.type.compareTo(b.type));
+
+                      return Column(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: ColoredBox(
+                                    color: Colors.blue.withOpacity(0.7),
+                                    child: Column(
+                                      children: [
+                                        const Text(" "),
+                                        const Text("Gesamt", style: TextStyle(fontWeight: FontWeight.bold)),
+                                        const Divider(color: Colors.white),
+                                        for (var item in sorted) ...[
+                                          Text(item.type, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: ColoredBox(
+                                    color: Colors.green.withOpacity(0.7),
+                                    child: Column(
+                                      children: [
+                                        const Text("Verfügbar"),
+                                        Text("$totalY", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        const Divider(),
+                                        for (var item in sorted) Text("${item.y}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: ColoredBox(
+                                    color: Colors.amber.withOpacity(0.7),
+                                    child: Column(
+                                      children: [
+                                        const Text("Keine Info"),
+                                        Text("$totalU", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        const Divider(),
+                                        for (var item in sorted) Text("${item.u}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: ColoredBox(
+                                    color: Colors.red.withOpacity(0.7),
+                                    child: Column(
+                                      children: [
+                                        const Text("Abwesend"),
+                                        Text("$totalN", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        const Divider(),
+                                        for (var item in sorted) Text("${item.n}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Text(
+                                "Stand: ${notifyInfoTime.hour.toString().padLeft(2, '0')}:${notifyInfoTime.minute.toString().padLeft(2, '0')}:${notifyInfoTime.second.toString().padLeft(2, '0')}    ",
+                                style: const TextStyle(fontSize: kDefaultFontSize * 0.8, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ],
+                      );
+                    }(),
+                ],
               ),
             ),
           );

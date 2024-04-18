@@ -116,8 +116,7 @@ class _PersonManageScreenState extends State<PersonManageScreen> {
               ),
         body: ListView(
           padding: const EdgeInsets.all(8),
-          children: [
-          ],
+          children: [],
         ),
       ),
     );

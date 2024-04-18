@@ -7,7 +7,6 @@ import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/screens/person_manage.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
-import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +27,14 @@ class StationPageState extends State<StationPage> with Updates {
   Station? station;
   List<Person>? persons;
   List<Unit>? units;
+
+  ScrollController scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -429,6 +436,7 @@ class StationPageState extends State<StationPage> with Updates {
                   ],
                 );
               },
+              scrollController,
             ),
           ],
         ),
@@ -531,7 +539,7 @@ class StationPageState extends State<StationPage> with Updates {
     ];
   }
 
-  static List<Widget> getPersonsDisplay(Station station, BuildContext context, List<Person> persons, DateTime now, Function(Person person) onTap) {
+  static List<Widget> getPersonsDisplay(Station station, BuildContext context, List<Person> persons, DateTime now, Function(Person person) onTap, ScrollController scrollController) {
     return [
       const SettingsDivider(text: 'Personen'),
       () {
@@ -572,8 +580,10 @@ class StationPageState extends State<StationPage> with Updates {
               ),
               const SizedBox(height: 8),
               RawScrollbar(
+                controller: scrollController,
                 thumbVisibility: true,
                 child: SingleChildScrollView(
+                  controller: scrollController,
                   scrollDirection: Axis.horizontal,
                   child: Padding(
                     padding: const EdgeInsets.only(bottom: 5.0),

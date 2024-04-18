@@ -1,4 +1,5 @@
 import 'package:ff_alarm/data/models/station.dart';
+import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 
@@ -65,5 +66,27 @@ abstract class StationInterface {
     await Future.wait(futures);
 
     UpdateInfo(UpdateType.station, updatedIds);
+  }
+
+  static Future<Map<String, dynamic>> getNotifyInformation(List<String> servers) async {
+    List<Future> futures = [];
+    Map<String, dynamic> result = {};
+    for (String server in servers) {
+      String copy = server;
+      futures.add(() async {
+        try {
+          Request response = await Request('stationGetNotifyModes', {}, server).emit(true);
+          for (var entry in response.ackData!.entries) {
+            result['$copy ${entry.key}'] = entry.value;
+          }
+        } catch (e, s) {
+          Logger.error('Failed to get notify information for $server: $e\n$s');
+        }
+      }());
+    }
+
+    await Future.wait(futures);
+
+    return result;
   }
 }

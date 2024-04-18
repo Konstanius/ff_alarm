@@ -22,6 +22,14 @@ class _UnitPageState extends State<UnitPage> with Updates {
   Station? station;
   List<Person>? persons;
 
+  ScrollController scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -235,6 +243,7 @@ class _UnitPageState extends State<UnitPage> with Updates {
                 }
                 // TODO
               },
+              scrollController,
             ),
           ],
         ),

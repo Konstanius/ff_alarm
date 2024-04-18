@@ -535,6 +535,11 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
               if (current.enabledMode == 3) ...[
                 Text("Aktiviert innerhalb der folgenden Bereiche:", style: Theme.of(context).textTheme.titleMedium),
                 const SizedBox(height: 5),
+                Text(
+                  "Es kann sein, dass Energiesparmaßnahmen des Handys verhindern, dass dein Standort zu jeder Zeit bestimmt wird. In solchen Fällen erhältst du eine laute Alarmierung, egal wo du dich befindest.",
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 5),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Stack(
@@ -1023,7 +1028,7 @@ class SettingsNotificationData {
         var granted = await Permission.locationAlways.isGranted;
         if (granted) {
           try {
-            var position = await Geolocator.getCurrentPosition(timeLimit: const Duration(seconds: 10), desiredAccuracy: LocationAccuracy.high);
+            var position = await Geolocator.getCurrentPosition(timeLimit: const Duration(seconds: 15), desiredAccuracy: LocationAccuracy.high);
             lastPosition = LatLng(position.latitude, position.longitude);
           } catch (_) {}
         }

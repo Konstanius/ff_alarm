@@ -104,9 +104,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                         content: LimitedBox(
                           maxHeight: MediaQuery.of(context).size.height * 0.8,
                           child: SingleChildScrollView(
-                            child: ListView(
-                              shrinkWrap: true,
-                              padding: const EdgeInsets.all(8),
+                            child: Column(
                               children: [
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
