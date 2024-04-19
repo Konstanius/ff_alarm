@@ -402,6 +402,7 @@ abstract class Globals {
   static bool appStarted = false;
   static bool fastStartBypass = false;
   static bool foreground = false;
+  static ({String server, int receivedTime})? fcmTest;
 
   static List<String> get registeredServers {
     String registeredUsers = Globals.prefs.getString('registered_users') ?? '[]';

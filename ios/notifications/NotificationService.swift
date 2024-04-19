@@ -231,6 +231,14 @@ class NotificationService: UNNotificationServiceExtension {
                         break
                     }
                     break
+                case "fcmTest":
+                    bestAttemptContent.title = "Test"
+                    bestAttemptContent.body = "Test der Alarmierungs-Zustellung"
+                    bestAttemptContent.sound = nil
+                    if #available(iOSApplicationExtension 15.0, *) {
+                        bestAttemptContent.interruptionLevel = .passive
+                    }
+                    break
                 default:
                     break
                 }

@@ -223,13 +223,80 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                       ),
                       DialogActionButton(
                         onPressed: () async {
+                          Globals.fcmTest = null;
                           Globals.context!.loaderOverlay.show();
                           try {
+                            int timeout = 600;
+                            int startTime = DateTime.now().millisecondsSinceEpoch;
                             bool connected = await Request.isConnected(localUser.server);
+                            int endTime = DateTime.now().millisecondsSinceEpoch;
+                            int duration = endTime - startTime;
                             if (connected) {
-                              successToast('Verbindung erfolgreich');
+                              int? delay;
+                              while (timeout > 0) {
+                                await Future.delayed(const Duration(milliseconds: 10));
+                                timeout -= 1;
+
+                                if (Globals.fcmTest != null && Globals.fcmTest!.server == localUser.server) {
+                                  delay = Globals.fcmTest!.receivedTime - startTime;
+                                  break;
+                                }
+                              }
+                              Globals.fcmTest = null;
+
+                              generalDialog(
+                                color: delay != null ? Colors.blue : Colors.amber,
+                                title: 'Testergebnis',
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const ListTile(
+                                      title: Text('Verbindung', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      subtitle: Text('Erfolgreich', style: TextStyle(color: Colors.green)),
+                                    ),
+                                    ListTile(
+                                      title: const Text('Ping-Zeit', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      subtitle: Text(
+                                        '${duration}ms',
+                                        style: TextStyle(color: duration > 300 ? Colors.amber : Colors.green),
+                                      ),
+                                    ),
+                                    ListTile(
+                                      title: const Text('Alarmierungs-Zustellung', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      subtitle: delay != null
+                                          ? Text(
+                                              '${delay}ms',
+                                              style: TextStyle(color: delay > 1000 ? Colors.amber : Colors.green),
+                                            )
+                                          : const Text('Fehlgeschlagen!', style: TextStyle(color: Colors.red)),
+                                    ),
+                                    // TODO help button
+                                  ],
+                                ),
+                                actions: [
+                                  DialogActionButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    text: 'OK',
+                                  ),
+                                ],
+                              );
                             } else {
-                              errorToast('Verbindung fehlgeschlagen');
+                              generalDialog(
+                                color: Colors.red,
+                                title: 'Testergebnis',
+                                content: const Text('Verbindung fehlgeschlagen!'),
+                                // TODO help button
+                                actions: [
+                                  DialogActionButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    text: 'OK',
+                                  ),
+                                ],
+                              );
                             }
                             Globals.context!.loaderOverlay.hide();
                           } catch (e, s) {

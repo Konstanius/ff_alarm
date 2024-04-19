@@ -22,7 +22,14 @@ class Request {
 
   static Future<bool> isConnected(String server) async {
     try {
-      await Request('ping', {}, server).emit(true, guest: true);
+      await Request(
+        'personPing',
+        {
+          'fcmToken': Globals.prefs.getString('fcm_token') ?? '',
+          'platform': Platform.isAndroid ? 'A' : 'I',
+        },
+        server,
+      ).emit(true);
       return true;
     } catch (e, s) {
       Logger.warn(e);

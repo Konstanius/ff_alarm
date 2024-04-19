@@ -83,5 +83,12 @@ Future<void> firebaseMessagingHandler(RemoteMessage message, bool foreground) as
         }
         break;
       }
+    case "fcmTest":
+      {
+        int receivedTime = DateTime.now().millisecondsSinceEpoch;
+        String server = data['server'];
+        Globals.fcmTest = (server: server, receivedTime: receivedTime);
+        break;
+      }
   }
 }
