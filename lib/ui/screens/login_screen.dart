@@ -279,6 +279,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   AlarmInterface.fetchAll();
 
                   UpdateInfo(UpdateType.ui, {"3"});
+
+                  PersonInterface.testConnection(server);
                 } catch (e) {
                   Logger.error('LoginScreen: $e');
                   errorToast('Ungültiger Code');
