@@ -552,6 +552,7 @@ void onServiceStartAndroid(ServiceInstance instance) async {
 
   bool locationGranted = await Permission.locationAlways.isGranted;
   if (!locationGranted) {
+    Globals.positionSubscription?.cancel();
     await instance.stopSelf();
     return;
   }
@@ -568,10 +569,12 @@ void onServiceStartAndroid(ServiceInstance instance) async {
     }
 
     if (!geofenceActive) {
+      Globals.positionSubscription?.cancel();
       await instance.stopSelf();
       return;
     }
   } else {
+    Globals.positionSubscription?.cancel();
     await instance.stopSelf();
     return;
   }
@@ -602,14 +605,17 @@ void onServiceStartAndroid(ServiceInstance instance) async {
             }
 
             if (!geofenceActive) {
+              Globals.positionSubscription?.cancel();
               await instance.stopSelf();
               return;
             }
           } else {
+            Globals.positionSubscription?.cancel();
             await instance.stopSelf();
             return;
           }
         } else if (!exists) {
+          Globals.positionSubscription?.cancel();
           await instance.stopSelf();
           return;
         }

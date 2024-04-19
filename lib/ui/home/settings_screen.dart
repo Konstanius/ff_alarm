@@ -136,142 +136,149 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                 return const SizedBox.shrink();
               }
 
-              return ListTile(
-                leading: const Icon(Icons.storage_outlined),
-                title: Text(uri.host),
-                subtitle: Row(
-                  children: [
-                    if (localUser.server.startsWith('s')) ...[
-                      const Icon(Icons.lock_outlined, color: Colors.green, size: kDefaultFontSize),
-                      const SizedBox(width: 4),
-                      const Text('Verschlüsselt'),
-                    ] else ...[
-                      const Icon(Icons.lock_person_outlined, color: Colors.red, size: kDefaultFontSize),
-                      const SizedBox(width: 4),
-                      const Text('Nicht verschlüsselt'),
-                    ],
-                  ],
-                ),
-                onTap: () async {
-                  Globals.context!.loaderOverlay.show();
+              return Card(
+                clipBehavior: Clip.antiAliasWithSaveLayer,
+                elevation: 10,
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                child: InkWell(
+                  onTap: () async {
+                    Globals.context!.loaderOverlay.show();
 
-                  int stationsAmount = await Station.getAmount(localUser.server) ?? 0;
-                  int alarmsAmount = await Alarm.getAmount(localUser.server) ?? 0;
-                  int unitsAmount = await Unit.getAmount(localUser.server) ?? 0;
-                  int personsAmount = await Person.getAmount(localUser.server) ?? 0;
+                    int stationsAmount = await Station.getAmount(localUser.server) ?? 0;
+                    int alarmsAmount = await Alarm.getAmount(localUser.server) ?? 0;
+                    int unitsAmount = await Unit.getAmount(localUser.server) ?? 0;
+                    int personsAmount = await Person.getAmount(localUser.server) ?? 0;
 
-                  Globals.context!.loaderOverlay.hide();
+                    Globals.context!.loaderOverlay.hide();
 
-                  generalDialog(
-                    color: Colors.blue,
-                    title: 'Daten-Quelle',
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListTile(
-                          title: const Text('Server'),
-                          subtitle: Text(uri.host),
-                        ),
-                        ListTile(
-                          title: const Text('Port'),
-                          subtitle: Text(uri.port.toString()),
-                        ),
-                        ListTile(
-                          title: const Text('SSL-Verschlüsselung'),
-                          subtitle: Text(localUser.server.startsWith('s') ? 'Ja' : 'Nein'),
-                        ),
-                        ListTile(
-                          title: const Text('Benutzer'),
-                          subtitle: Text(localUser.fullName),
-                        ),
-                        const Divider(),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Wachen'),
-                            Text(stationsAmount.toString()),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Einheiten'),
-                            Text(unitsAmount.toString()),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Personen'),
-                            Text(personsAmount.toString()),
-                          ],
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Alarmierungen'),
-                            Text(alarmsAmount.toString()),
-                          ],
-                        ),
-                      ],
-                    ),
-                    actions: [
-                      DialogActionButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        text: 'OK',
-                      ),
-                      DialogActionButton(
-                        onPressed: () => PersonInterface.testConnection(localUser.server),
-                        text: 'Verbindung testen',
-                      ),
-                    ],
-                  );
-                },
-                trailing: IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  visualDensity: VisualDensity.compact,
-                  padding: EdgeInsets.zero,
-                  style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size.zero)),
-                  onPressed: () {
                     generalDialog(
                       color: Colors.blue,
-                      title: 'Quelle löschen',
-                      content: Text('Möchtest du die Daten-Quelle ${uri.host} wirklich löschen?\n\n'
-                          'Alle Daten, die von dieser Quelle stammen, werden ebenfalls gelöscht.\n\n'
-                          'Zur erneuten Registrierung musst du von einem Wachen-Admin hinzugefügt werden.'),
+                      title: 'Daten-Quelle',
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ListTile(
+                            title: const Text('Server'),
+                            subtitle: Text(uri.host),
+                          ),
+                          ListTile(
+                            title: const Text('Port'),
+                            subtitle: Text(uri.port.toString()),
+                          ),
+                          ListTile(
+                            title: const Text('SSL-Verschlüsselung'),
+                            subtitle: Text(localUser.server.startsWith('s') ? 'Ja' : 'Nein'),
+                          ),
+                          ListTile(
+                            title: const Text('Benutzer'),
+                            subtitle: Text(localUser.fullName),
+                          ),
+                          const Divider(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Wachen'),
+                              Text(stationsAmount.toString()),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Einheiten'),
+                              Text(unitsAmount.toString()),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Personen'),
+                              Text(personsAmount.toString()),
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Alarmierungen'),
+                              Text(alarmsAmount.toString()),
+                            ],
+                          ),
+                        ],
+                      ),
                       actions: [
                         DialogActionButton(
                           onPressed: () {
                             Navigator.of(context).pop();
                           },
-                          text: 'Abbrechen',
+                          text: 'OK',
                         ),
                         DialogActionButton(
-                          onPressed: () async {
-                            Globals.context!.loaderOverlay.show();
-                            try {
-                              var data = {
-                                "sessionId": Globals.prefs.getInt('auth_session_${localUser.server}'),
-                                "token": Globals.prefs.getString('auth_token_${localUser.server}'),
-                                "fcmToken": "${Platform.isAndroid ? "A" : "I"}${Globals.prefs.getString('fcm_token')}",
-                              };
-                              await Request('logout', data, localUser.server).emit(true, guest: true);
-                              Navigator.of(Globals.context!).pop();
-                              await Future.delayed(const Duration(milliseconds: 20));
-                              await logout(localUser.server);
-                              Globals.context!.loaderOverlay.hide();
-                            } catch (e, s) {
-                              exceptionToast(e, s);
-                              Globals.context!.loaderOverlay.hide();
-                            }
-                          },
-                          text: 'Löschen',
+                          onPressed: () => PersonInterface.testConnection(localUser.server),
+                          text: 'Verbindung testen',
                         ),
                       ],
                     );
                   },
+                  child: ListTile(
+                    leading: const Icon(Icons.storage_outlined),
+                    title: Text(uri.host),
+                    subtitle: Row(
+                      children: [
+                        if (localUser.server.startsWith('s')) ...[
+                          const Icon(Icons.lock_outlined, color: Colors.green, size: kDefaultFontSize),
+                          const SizedBox(width: 4),
+                          const Text('Verschlüsselt'),
+                        ] else ...[
+                          const Icon(Icons.lock_person_outlined, color: Colors.red, size: kDefaultFontSize),
+                          const SizedBox(width: 4),
+                          const Text('Nicht verschlüsselt'),
+                        ],
+                      ],
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size.zero)),
+                      onPressed: () {
+                        generalDialog(
+                          color: Colors.blue,
+                          title: 'Quelle löschen',
+                          content: Text('Möchtest du die Daten-Quelle ${uri.host} wirklich löschen?\n\n'
+                              'Alle Daten, die von dieser Quelle stammen, werden ebenfalls gelöscht.\n\n'
+                              'Zur erneuten Registrierung musst du von einem Wachen-Admin hinzugefügt werden.'),
+                          actions: [
+                            DialogActionButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              text: 'Abbrechen',
+                            ),
+                            DialogActionButton(
+                              onPressed: () async {
+                                Globals.context!.loaderOverlay.show();
+                                try {
+                                  var data = {
+                                    "sessionId": Globals.prefs.getInt('auth_session_${localUser.server}'),
+                                    "token": Globals.prefs.getString('auth_token_${localUser.server}'),
+                                    "fcmToken": "${Platform.isAndroid ? "A" : "I"}${Globals.prefs.getString('fcm_token')}",
+                                  };
+                                  await Request('logout', data, localUser.server).emit(true, guest: true);
+                                  Navigator.of(Globals.context!).pop();
+                                  await Future.delayed(const Duration(milliseconds: 20));
+                                  await logout(localUser.server);
+                                  Globals.context!.loaderOverlay.hide();
+                                } catch (e, s) {
+                                  exceptionToast(e, s);
+                                  Globals.context!.loaderOverlay.hide();
+                                }
+                              },
+                              text: 'Löschen',
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
                 ),
               );
             }(),
@@ -282,187 +289,215 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
             child: const Text('Daten-Quelle hinzufügen'),
           ),
           const SettingsDivider(text: 'App-Funktionalität'),
-          ListTile(
-            leading: const Icon(Icons.settings_outlined),
-            title: const Text('Optimierungen'),
-            subtitle: lifeCycleBad > 0 ? Text('Aktion${lifeCycleBad > 1 ? 'en' : ''} erforderlich') : null,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (lifeCycleBad > 0) const Icon(Icons.warning_outlined, color: Colors.red),
-                const Icon(Icons.arrow_forward_outlined),
-              ],
+          Card(
+            clipBehavior: Clip.antiAliasWithSaveLayer,
+            elevation: 10,
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            child: InkWell(
+              onTap: () {
+                Globals.router.push('/lifecycle');
+              },
+              child: ListTile(
+                leading: const Icon(Icons.settings_outlined),
+                title: const Text('Optimierungen'),
+                subtitle: lifeCycleBad > 0 ? Text('Aktion${lifeCycleBad > 1 ? 'en' : ''} erforderlich') : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (lifeCycleBad > 0) const Icon(Icons.warning_outlined, color: Colors.red),
+                    const Icon(Icons.arrow_forward_outlined),
+                  ],
+                ),
+              ),
             ),
-            onTap: () {
-              Globals.router.push('/lifecycle');
-            },
           ),
-          ListTile(
-            leading: const Icon(Icons.notifications_outlined),
-            title: const Text('Benachrichtigungen'),
-            subtitle: notificationsBad > 0 ? Text('Aktion${notificationsBad > 1 ? 'en' : ''} erforderlich') : null,
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (notificationsBad > 0) const Icon(Icons.warning_outlined, color: Colors.red),
-                const Icon(Icons.arrow_forward_outlined),
-              ],
+          Card(
+            clipBehavior: Clip.antiAliasWithSaveLayer,
+            elevation: 10,
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            child: InkWell(
+              onTap: () {
+                Globals.router.push('/notifications');
+              },
+              child: ListTile(
+                leading: const Icon(Icons.notifications_outlined),
+                title: const Text('Benachrichtigungen'),
+                subtitle: notificationsBad > 0 ? Text('Aktion${notificationsBad > 1 ? 'en' : ''} erforderlich') : null,
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (notificationsBad > 0) const Icon(Icons.warning_outlined, color: Colors.red),
+                    const Icon(Icons.arrow_forward_outlined),
+                  ],
+                ),
+              ),
             ),
-            onTap: () {
-              Globals.router.push('/notifications');
-            },
           ),
           const SettingsDivider(text: 'Bereitschaft'),
           if (stations == null)
             const SizedBox()
           else ...[
             for (var station in stations!)
-              ListTile(
-                leading: allNotificationSettings.containsKey(station.id) ? const Icon(Icons.settings_outlined) : const Icon(Icons.question_mark_outlined),
-                title: Text(station.descriptiveName),
-                subtitle: () {
-                  LatLng? lastPosition;
-                  if (Globals.lastPosition != null) {
-                    lastPosition = Formats.positionToLatLng(Globals.lastPosition!);
-                  }
-                  if (allNotificationSettings.containsKey(station.id)) {
-                    return Text(
-                      'Zu deiner Position & Zeit:\n'
-                      '${allNotificationSettings[station.id]!.shouldNotify(lastPosition) ? 'EINGESCHALTET' : 'ALLE ABSAGEN'}',
-                    );
-                  } else {
-                    return const Text('Nicht konfiguriert');
-                  }
-                }(),
-                trailing: const Icon(Icons.arrow_forward_outlined),
-                onTap: () {
-                  Globals.router.push('/alarmsettings', extra: station.id);
-                },
+              Card(
+                clipBehavior: Clip.antiAliasWithSaveLayer,
+                elevation: 10,
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                child: InkWell(
+                  onTap: () {
+                    Globals.router.push('/alarmsettings', extra: station.id);
+                  },
+                  child: ListTile(
+                    leading: allNotificationSettings.containsKey(station.id) ? const Icon(Icons.settings_outlined) : const Icon(Icons.question_mark_outlined),
+                    title: Text(station.descriptiveName),
+                    subtitle: () {
+                      LatLng? lastPosition;
+                      if (Globals.lastPosition != null) {
+                        lastPosition = Formats.positionToLatLng(Globals.lastPosition!);
+                      }
+                      if (allNotificationSettings.containsKey(station.id)) {
+                        return Text(
+                          'Zu deiner Position & Zeit:\n'
+                          '${allNotificationSettings[station.id]!.shouldNotify(lastPosition) ? 'EINGESCHALTET' : 'ALLE ABSAGEN'}',
+                        );
+                      } else {
+                        return const Text('Nicht konfiguriert');
+                      }
+                    }(),
+                    trailing: const Icon(Icons.arrow_forward_outlined),
+                  ),
+                ),
               ),
           ],
           const SettingsDivider(text: 'Alarmierungs-Ton'),
-          ListTile(
-            enabled: Platform.isIOS,
-            leading: const Icon(Icons.phone_callback_outlined),
-            title: const Text('Alarmierungston'),
-            subtitle: () {
-              if (Platform.isAndroid) return const Text('Auf Android noch nicht verfügbar');
-              return Text(Globals.prefs.getString('alarm_sound') ?? 'ABCABCAB');
-            }(),
-            onTap: () async {
-              if (Platform.isAndroid) {
-                infoToast('Auf Android noch nicht verfügbar');
-                return;
-              }
-              String selected = Globals.prefs.getString('alarm_sound') ?? 'ABCABCAB';
-              String previousPath = Globals.prefs.getString('alarm_soundPath') ?? 'res_alarm_1';
-
-              var player = AssetsAudioPlayer.newPlayer();
-              String? playing;
-
-              RealVolume.getCurrentVol(StreamType.MUSIC).then((value) {
-                if (value != null && value < 0.05) {
-                  infoToast('Musik ist stummgeschaltet');
+          Card(
+            clipBehavior: Clip.antiAliasWithSaveLayer,
+            elevation: Platform.isAndroid ? 10 : 2,
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            child: InkWell(
+              onTap: () async {
+                if (Platform.isAndroid) {
+                  errorToast('Auf Android noch nicht verfügbar');
+                  return;
                 }
-              });
+                String selected = Globals.prefs.getString('alarm_sound') ?? 'ABCABCAB';
+                String previousPath = Globals.prefs.getString('alarm_soundPath') ?? 'res_alarm_1';
 
-              dynamic result = await generalDialog(
-                color: Colors.blue,
-                title: 'Alarmierungston',
-                content: StatefulBuilder(
-                  builder: (context, sbSetState) {
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text('Wiedergabe hier leiser als bei Alarmierung'),
-                        ...alarmSounds.keys.map((e) {
-                          return ListTile(
-                            title: Text(e),
-                            selected: selected == e,
-                            onTap: () {
-                              selected = e;
-                              if (mounted) sbSetState(() {});
-                            },
-                            trailing: () {
-                              return IconButton(
-                                icon: playing == alarmSounds[e] ? const Icon(Icons.stop_outlined) : const Icon(Icons.play_arrow_outlined),
-                                onPressed: () async {
-                                  if (playing == alarmSounds[e]) {
-                                    await player.stop();
-                                    playing = null;
-                                  } else {
-                                    await player.open(
-                                      Audio('android/app/src/main/res/raw/${alarmSounds[e]}.mp3'),
-                                      autoStart: true,
-                                      volume: 0.5,
-                                      loopMode: LoopMode.single,
-                                      showNotification: false,
-                                    );
-                                    await player.play();
-                                    playing = alarmSounds[e];
-                                  }
-                                  if (mounted) sbSetState(() {});
-                                },
-                              );
-                            }(),
-                          );
-                        }),
+                var player = AssetsAudioPlayer.newPlayer();
+                String? playing;
+
+                RealVolume.getCurrentVol(StreamType.MUSIC).then((value) {
+                  if (value != null && value < 0.05) {
+                    infoToast('Musik ist stummgeschaltet');
+                  }
+                });
+
+                dynamic result = await generalDialog(
+                  color: Colors.blue,
+                  title: 'Alarmierungston',
+                  content: StatefulBuilder(
+                    builder: (context, sbSetState) {
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Wiedergabe hier leiser als bei Alarmierung'),
+                          ...alarmSounds.keys.map((e) {
+                            return ListTile(
+                              title: Text(e),
+                              selected: selected == e,
+                              onTap: () {
+                                selected = e;
+                                if (mounted) sbSetState(() {});
+                              },
+                              trailing: () {
+                                return IconButton(
+                                  icon: playing == alarmSounds[e] ? const Icon(Icons.stop_outlined) : const Icon(Icons.play_arrow_outlined),
+                                  onPressed: () async {
+                                    if (playing == alarmSounds[e]) {
+                                      await player.stop();
+                                      playing = null;
+                                    } else {
+                                      await player.open(
+                                        Audio('android/app/src/main/res/raw/${alarmSounds[e]}.mp3'),
+                                        autoStart: true,
+                                        volume: 0.5,
+                                        loopMode: LoopMode.single,
+                                        showNotification: false,
+                                      );
+                                      await player.play();
+                                      playing = alarmSounds[e];
+                                    }
+                                    if (mounted) sbSetState(() {});
+                                  },
+                                );
+                              }(),
+                            );
+                          }),
+                        ],
+                      );
+                    },
+                  ),
+                  actions: [
+                    DialogActionButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      text: 'Abbrechen',
+                    ),
+                    DialogActionButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(selected);
+                      },
+                      text: 'OK',
+                    ),
+                  ],
+                );
+
+                player.dispose();
+
+                if (result != null) {
+                  String selectedPath = alarmSounds[result]!;
+                  if (selectedPath == previousPath) return;
+                  Globals.prefs.setString('alarm_sound', result);
+                  Globals.prefs.setString('alarm_soundPath', selectedPath);
+                  if (mounted) setState(() {});
+
+                  await AwesomeNotifications().removeChannel('alarm');
+                  await AwesomeNotifications().removeChannel('test');
+                  if (Platform.isIOS) {
+                    initializeAwesomeNotifications();
+                  } else if (Platform.isAndroid) {
+                    // tell the user to restart the app, also reset the DnD prefs setting
+                    Globals.prefs.remove('critical_alerts_test');
+                    Globals.prefs.remove('critical_alerts');
+                    generalDialog(
+                      color: Colors.blue,
+                      title: 'Neustart erforderlich',
+                      content: const Text('Die Änderungen werden erst nach einem Neustart der App übernommen.'),
+                      actions: [
+                        DialogActionButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          text: 'OK',
+                        ),
                       ],
-                    );
-                  },
-                ),
-                actions: [
-                  DialogActionButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    text: 'Abbrechen',
-                  ),
-                  DialogActionButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(selected);
-                    },
-                    text: 'OK',
-                  ),
-                ],
-              );
-
-              player.dispose();
-
-              if (result != null) {
-                String selectedPath = alarmSounds[result]!;
-                if (selectedPath == previousPath) return;
-                Globals.prefs.setString('alarm_sound', result);
-                Globals.prefs.setString('alarm_soundPath', selectedPath);
-                if (mounted) setState(() {});
-
-                await AwesomeNotifications().removeChannel('alarm');
-                await AwesomeNotifications().removeChannel('test');
-                if (Platform.isIOS) {
-                  initializeAwesomeNotifications();
-                } else if (Platform.isAndroid) {
-                  // tell the user to restart the app, also reset the DnD prefs setting
-                  Globals.prefs.remove('critical_alerts_test');
-                  Globals.prefs.remove('critical_alerts');
-                  generalDialog(
-                    color: Colors.blue,
-                    title: 'Neustart erforderlich',
-                    content: const Text('Die Änderungen werden erst nach einem Neustart der App übernommen.'),
-                    actions: [
-                      DialogActionButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        text: 'OK',
-                      ),
-                    ],
-                  ).then((value) {
-                    SystemNavigator.pop();
-                  });
+                    ).then((value) {
+                      SystemNavigator.pop();
+                    });
+                  }
                 }
-              }
-            },
-            trailing: const Icon(Icons.arrow_drop_down_circle_outlined),
+              },
+              child: ListTile(
+                enabled: Platform.isIOS,
+                leading: const Icon(Icons.phone_callback_outlined),
+                title: const Text('Alarmierungston'),
+                subtitle: () {
+                  if (Platform.isAndroid) return const Text('Auf Android noch nicht verfügbar');
+                  return Text(Globals.prefs.getString('alarm_sound') ?? 'ABCABCAB');
+                }(),
+                trailing: const Icon(Icons.arrow_drop_down_circle_outlined),
+              ),
+            ),
           ),
           () {
             void onChanged() async {
@@ -497,30 +532,44 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
               if (mounted) setState(() {});
             }
 
-            return ListTile(
-              leading: const Icon(Icons.warning_amber_outlined),
-              title: const Text('Alarme stummschalten'),
-              onTap: () => onChanged(),
-              trailing: Switch(
-                value: Globals.prefs.getBool('alarms_muted') ?? false,
-                onChanged: (_) => onChanged(),
+            return Card(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              elevation: 10,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              child: InkWell(
+                onTap: () => onChanged(),
+                child: ListTile(
+                  leading: const Icon(Icons.warning_amber_outlined),
+                  title: const Text('Alarme stummschalten'),
+                  trailing: Switch(
+                    value: Globals.prefs.getBool('alarms_muted') ?? false,
+                    onChanged: (_) => onChanged(),
+                  ),
+                ),
               ),
             );
           }(),
-          ListTile(
-            leading: const Icon(Icons.assignment_turned_in_outlined),
-            title: const Text('Tests stummschalten'),
-            onTap: () {
-              bool muted = Globals.prefs.getBool('alarms_testsMuted') ?? false;
-              Globals.prefs.setBool('alarms_testsMuted', !muted);
-              if (mounted) setState(() {});
-            },
-            trailing: Switch(
-              value: Globals.prefs.getBool('alarms_testsMuted') ?? false,
-              onChanged: (value) {
-                Globals.prefs.setBool('alarms_testsMuted', value);
+          Card(
+            clipBehavior: Clip.antiAliasWithSaveLayer,
+            elevation: 10,
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            child: InkWell(
+              onTap: () {
+                bool muted = Globals.prefs.getBool('alarms_testsMuted') ?? false;
+                Globals.prefs.setBool('alarms_testsMuted', !muted);
                 if (mounted) setState(() {});
               },
+              child: ListTile(
+                leading: const Icon(Icons.assignment_turned_in_outlined),
+                title: const Text('Tests stummschalten'),
+                trailing: Switch(
+                  value: Globals.prefs.getBool('alarms_testsMuted') ?? false,
+                  onChanged: (value) {
+                    Globals.prefs.setBool('alarms_testsMuted', value);
+                    if (mounted) setState(() {});
+                  },
+                ),
+              ),
             ),
           ),
         ],
@@ -560,7 +609,7 @@ class SettingsDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       child: Row(
         children: [
           const Expanded(

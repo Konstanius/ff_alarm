@@ -13,6 +13,7 @@ import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/home/units_screen.dart';
 import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/map.dart';
+import 'package:ff_alarm/ui/utils/no_data.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
@@ -356,7 +357,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
               clipBehavior: Clip.antiAliasWithSaveLayer,
               color: selectedStation == station.id ? Colors.blue : Theme.of(context).focusColor,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              margin: const EdgeInsets.all(8),
+              margin: const EdgeInsets.only(bottom: 8, right: 8, left: 8),
               elevation: selectedStation == station.id ? 5 : 0,
               child: stationCard(station),
             ),
@@ -477,7 +478,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                         children: [
                           Icon(Icons.circle, color: AlarmResponseType.onStation.color),
                           const SizedBox(width: 5),
-                          Text('(vor Ort) ${responses[0]}'),
+                          Text('(An Wache) ${responses[0]}'),
                         ],
                       ),
                       Row(
@@ -499,7 +500,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.circle, color: Colors.grey),
+                          Icon(Icons.circle, color: AlarmResponseType.notSet.color),
                           const SizedBox(width: 5),
                           Text('(Unklar) ${responses[6]}'),
                         ],
@@ -532,7 +533,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                         children: [
                           Icon(Icons.circle, color: AlarmResponseType.notReady.color),
                           const SizedBox(width: 5),
-                          Text('(Nein) ${responses[5]}'),
+                          Text('(Absage) ${responses[5]}'),
                         ],
                       ),
                       const Row(mainAxisSize: MainAxisSize.min, children: [Text('')]),
@@ -1308,13 +1309,13 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 SafeArea(
                   child: () {
                     if (alarm.units.isEmpty) {
-                      return const Center(child: Text('Diese Alarmierung ist ein Test'));
+                      return const NoDataWidget(text: 'Diese Alarmierung ist ein Test');
                     }
 
                     if (data == null) return const Center(child: CircularProgressIndicator());
 
                     if (station == null) {
-                      return const Center(child: Text('Keine Wache ausgewählt'));
+                      return const NoDataWidget(text: 'Keine Wache ausgewählt');
                     }
 
                     List<MapEntry<Person, AlarmResponse>> responsesForSelectedStation = [];
@@ -1479,13 +1480,13 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 SafeArea(
                   child: () {
                     if (alarm.units.isEmpty) {
-                      return const Center(child: Text('Diese Alarmierung ist ein Test'));
+                      return const NoDataWidget(text: 'Diese Alarmierung ist ein Test');
                     }
 
                     if (data == null) return const Center(child: CircularProgressIndicator());
 
                     if (station == null) {
-                      return const Center(child: Text('Keine Wache ausgewählt'));
+                      return const NoDataWidget(text: 'Keine Wache ausgewählt');
                     }
 
                     List<MapEntry<Person, AlarmResponse>> responsesForSelectedStation = [];
@@ -1881,7 +1882,7 @@ enum AlarmResponseType {
       case AlarmResponseType.notReady:
         return Colors.red;
       case AlarmResponseType.notSet:
-        return Colors.white;
+        return Colors.grey;
     }
   }
 

@@ -7,6 +7,8 @@ import 'package:ff_alarm/ui/screens/station_screen.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 
+import '../utils/no_data.dart';
+
 class UnitPage extends StatefulWidget {
   const UnitPage({super.key, required this.unitId});
 
@@ -76,13 +78,7 @@ class _UnitPageState extends State<UnitPage> with Updates {
     if (loading) return const SizedBox();
 
     if (station == null || unit == null) {
-      return Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: true,
-          title: const Text('Einheit'),
-        ),
-        body: const Center(child: Text("Einheit konnte nicht geladen werden")),
-      );
+      return const NoDataWidget(text: 'Einheit konnte nicht geladen werden', enableAppBar: true, appBarText: 'Einheit');
     }
 
     String? localPersonForServer = Globals.localPersonForServer(station!.server);
@@ -186,7 +182,7 @@ class _UnitPageState extends State<UnitPage> with Updates {
               clipBehavior: Clip.antiAliasWithSaveLayer,
               child: InkWell(
                 onTap: () {
-                  Globals.router.go('/station', extra: unit!.stationProperId);
+                  Globals.router.push('/station', extra: unit!.stationProperId);
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -238,7 +234,7 @@ class _UnitPageState extends State<UnitPage> with Updates {
               now,
               (person) {
                 if (!isAdmin) {
-                  Globals.router.go('/person', extra: person.id);
+                  Globals.router.push('/person', extra: person.id);
                   return;
                 }
                 // TODO

@@ -6,6 +6,7 @@ import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/screens/alarm_info.dart';
+import 'package:ff_alarm/ui/utils/no_data.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
@@ -54,6 +55,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
   bool get wantKeepAlive => true;
 
   List<Alarm> alarms = [];
+  bool loading = true;
 
   AlarmsFilter filter = AlarmsFilter();
   TextEditingController searchController = TextEditingController();
@@ -67,6 +69,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
 
     Alarm.getAllStreamed().listen((List<Alarm> value) {
       if (!mounted) return;
+      loading = false;
       alarms.addAll(value);
       alarms.sort((a, b) => b.date.compareTo(a.date));
       setState(() {});
@@ -82,7 +85,225 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
   @override
   Widget build(BuildContext context) {
     super.build(context);
+
     List<Alarm> alarmsList = filter.noFilters ? alarms : alarms.where((element) => filter.filter(element)).toList();
+
+    Widget bodyWidget;
+    if (loading) {
+      bodyWidget = const SizedBox();
+    } else if (alarms.isEmpty) {
+      bodyWidget = const NoDataWidget(text: 'Keine Alarmierungen vorhanden');
+    } else if (alarmsList.isEmpty) {
+      bodyWidget = NoDataWidget(
+        text: 'Keine Alarmierungen gefunden',
+        button: ElevatedButton(
+          onPressed: () {
+            filter = AlarmsFilter();
+            searchController.clear();
+            setState(() {});
+          },
+          child: const Text('Filter zurücksetzen'),
+        ),
+      );
+    } else {
+      bodyWidget = ListView(
+        padding: const EdgeInsets.all(8),
+        children: <Widget>[
+          ElevatedButton(
+            onPressed: () async {
+              String registeredUsers = Globals.prefs.getString('registered_users') ?? '[]';
+              List<String> users;
+              try {
+                users = jsonDecode(registeredUsers).cast<String>();
+              } catch (e) {
+                users = [];
+              }
+
+              List<String> servers = [];
+              for (String user in users) {
+                servers.add(user.split(' ')[0]);
+              }
+
+              // dialog to select server
+              String? server = await showDialog<String>(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Server auswählen'),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          for (String server in servers)
+                            ListTile(
+                              title: Text(server),
+                              onTap: () {
+                                Navigator.of(context).pop(server);
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+              if (server == null) return;
+
+              try {
+                await Request('test', {}, server).emit(true);
+              } catch (e, s) {
+                exceptionToast(e, s);
+              }
+            },
+            child: const Text('Test Alarmierung'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              String registeredUsers = Globals.prefs.getString('registered_users') ?? '[]';
+              List<String> users;
+              try {
+                users = jsonDecode(registeredUsers).cast<String>();
+              } catch (e) {
+                users = [];
+              }
+
+              List<String> servers = [];
+              for (String user in users) {
+                servers.add(user.split(' ')[0]);
+              }
+
+              // dialog to select server
+              String? server = await showDialog<String>(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: const Text('Server auswählen'),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          for (String server in servers)
+                            ListTile(
+                              title: Text(server),
+                              onTap: () {
+                                Navigator.of(context).pop(server);
+                              },
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+              if (server == null) return;
+
+              Map<String, dynamic> data = {
+                "type": "Brand 1",
+                "word": "BMA Alarmierung",
+                "number": 240400002,
+                "address": "Carl Zeiss Promenade 10, 07745 Jena",
+                "units": [1],
+              };
+
+              try {
+                await Request('alarmSendExample', data, server).emit(true);
+              } catch (e, s) {
+                exceptionToast(e, s);
+              }
+            },
+            child: const Text('Beispiel Alarmierung'),
+          ),
+          if (Platform.isIOS)
+            ElevatedButton(
+              onPressed: () {
+                File file = File('${Globals.filesPath}/nse.log');
+                if (!file.existsSync()) {
+                  errorToast('Log-Datei nicht gefunden');
+                  return;
+                }
+
+                String log = file.readAsStringSync();
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: const Text('NSE Log'),
+                      content: SingleChildScrollView(
+                        child: Text(log),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text('Schließen'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              child: const Text('NSE Log anzeigen'),
+            ),
+          if (Platform.isIOS)
+            ElevatedButton(
+              onPressed: () {
+                File file = File('${Globals.filesPath}/nse.log');
+                if (!file.existsSync()) {
+                  errorToast('Log-Datei nicht gefunden');
+                  return;
+                }
+
+                file.deleteSync();
+                successToast('Log-Datei gelöscht');
+              },
+              child: const Text('NSE Log löschen'),
+            ),
+          for (int i = 0; i < alarmsList.length; i++)
+            () {
+              Alarm alarm = alarmsList[i];
+              bool dateDivider = i == 0 || alarm.date.day != alarmsList[i - 1].date.day || alarm.date.month != alarmsList[i - 1].date.month || alarm.date.year != alarmsList[i - 1].date.year;
+
+              AlarmResponse? ownResponse = alarm.ownResponse;
+
+              return Column(
+                children: <Widget>[
+                  if (dateDivider) ...[
+                    const SizedBox(height: 8),
+                    Text(DateFormat('EEEE, dd.MM.yyyy').format(alarm.date), style: const TextStyle(fontSize: 20, color: Colors.blue)),
+                    const Divider(color: Colors.blue),
+                  ],
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Colors.transparent,
+                              ownResponse?.getResponseInfo().responseType.color.withOpacity(0.5) ?? Colors.white.withOpacity(0.5),
+                            ],
+                          ),
+                        ),
+                        child: ListTile(
+                          title: Text(alarm.word),
+                          subtitle: Text(alarm.address),
+                          trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
+                          onTap: () {
+                            Globals.router.push('/alarm', extra: alarm);
+                          },
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }(),
+        ],
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Alarmierungen'),
@@ -270,202 +491,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(8),
-        children: <Widget>[
-          ElevatedButton(
-            onPressed: () async {
-              String registeredUsers = Globals.prefs.getString('registered_users') ?? '[]';
-              List<String> users;
-              try {
-                users = jsonDecode(registeredUsers).cast<String>();
-              } catch (e) {
-                users = [];
-              }
-
-              List<String> servers = [];
-              for (String user in users) {
-                servers.add(user.split(' ')[0]);
-              }
-
-              // dialog to select server
-              String? server = await showDialog<String>(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('Server auswählen'),
-                    content: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          for (String server in servers)
-                            ListTile(
-                              title: Text(server),
-                              onTap: () {
-                                Navigator.of(context).pop(server);
-                              },
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-              if (server == null) return;
-
-              try {
-                await Request('test', {}, server).emit(true);
-              } catch (e, s) {
-                exceptionToast(e, s);
-              }
-            },
-            child: const Text('Test Alarmierung'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              String registeredUsers = Globals.prefs.getString('registered_users') ?? '[]';
-              List<String> users;
-              try {
-                users = jsonDecode(registeredUsers).cast<String>();
-              } catch (e) {
-                users = [];
-              }
-
-              List<String> servers = [];
-              for (String user in users) {
-                servers.add(user.split(' ')[0]);
-              }
-
-              // dialog to select server
-              String? server = await showDialog<String>(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('Server auswählen'),
-                    content: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          for (String server in servers)
-                            ListTile(
-                              title: Text(server),
-                              onTap: () {
-                                Navigator.of(context).pop(server);
-                              },
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-              if (server == null) return;
-
-              Map<String, dynamic> data = {
-                "type": "Brand 1",
-                "word": "BMA Alarmierung",
-                "number": 240400002,
-                "address": "Carl Zeiss Promenade 10, 07745 Jena",
-                "units": [1],
-              };
-
-              try {
-                await Request('alarmSendExample', data, server).emit(true);
-              } catch (e, s) {
-                exceptionToast(e, s);
-              }
-            },
-            child: const Text('Beispiel Alarmierung'),
-          ),
-          if (Platform.isIOS)
-            ElevatedButton(
-              onPressed: () {
-                File file = File('${Globals.filesPath}/nse.log');
-                if (!file.existsSync()) {
-                  errorToast('Log-Datei nicht gefunden');
-                  return;
-                }
-
-                String log = file.readAsStringSync();
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: const Text('NSE Log'),
-                      content: SingleChildScrollView(
-                        child: Text(log),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('Schließen'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-              child: const Text('NSE Log anzeigen'),
-            ),
-          if (Platform.isIOS)
-            ElevatedButton(
-              onPressed: () {
-                File file = File('${Globals.filesPath}/nse.log');
-                if (!file.existsSync()) {
-                  errorToast('Log-Datei nicht gefunden');
-                  return;
-                }
-
-                file.deleteSync();
-                successToast('Log-Datei gelöscht');
-              },
-              child: const Text('NSE Log löschen'),
-            ),
-          for (int i = 0; i < alarmsList.length; i++)
-            () {
-              Alarm alarm = alarmsList[i];
-              bool dateDivider = i == 0 || alarm.date.day != alarmsList[i - 1].date.day || alarm.date.month != alarmsList[i - 1].date.month || alarm.date.year != alarmsList[i - 1].date.year;
-
-              AlarmResponse? ownResponse = alarm.ownResponse;
-
-              return Column(
-                children: <Widget>[
-                  if (dateDivider) ...[
-                    const SizedBox(height: 8),
-                    Text(DateFormat('EEEE, dd.MM.yyyy').format(alarm.date), style: const TextStyle(fontSize: 20, color: Colors.blue)),
-                    const Divider(color: Colors.blue),
-                  ],
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.transparent,
-                              ownResponse?.getResponseInfo().responseType.color.withOpacity(0.5) ?? Colors.white.withOpacity(0.5),
-                            ],
-                          ),
-                        ),
-                        child: ListTile(
-                          title: Text(alarm.word),
-                          subtitle: Text(alarm.address),
-                          trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
-                          onTap: () {
-                            Globals.router.go('/alarm', extra: alarm);
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              );
-            }(),
-        ],
-      ),
+      body: bodyWidget,
     );
   }
 

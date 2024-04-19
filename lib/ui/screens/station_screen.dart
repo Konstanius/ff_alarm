@@ -8,6 +8,7 @@ import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/screens/person_manage.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
+import 'package:ff_alarm/ui/utils/no_data.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
@@ -86,13 +87,7 @@ class StationPageState extends State<StationPage> with Updates {
     if (loading) return const SizedBox();
 
     if (station == null || persons == null || units == null) {
-      return Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: true,
-          title: const Text('Wache'),
-        ),
-        body: const Center(child: Text("Wache konnte nicht geladen werden")),
-      );
+      return const NoDataWidget(text: 'Wache konnte nicht geladen werden', enableAppBar: true, appBarText: 'Wache');
     }
 
     String? localPersonForServer = Globals.localPersonForServer(station!.server);
@@ -261,7 +256,7 @@ class StationPageState extends State<StationPage> with Updates {
                   margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
                   child: ListTile(
                     onTap: () {
-                      Globals.router.go('/unit', extra: unit.id);
+                      Globals.router.push('/unit', extra: unit.id);
                     },
                     title: Text(
                       unit.callSign,
@@ -323,7 +318,7 @@ class StationPageState extends State<StationPage> with Updates {
               now,
               (person) {
                 if (!isAdmin) {
-                  Globals.router.go('/person', extra: person.id);
+                  Globals.router.push('/person', extra: person.id);
                   return;
                 }
 
@@ -348,7 +343,7 @@ class StationPageState extends State<StationPage> with Updates {
                         clipBehavior: Clip.antiAliasWithSaveLayer,
                         child: InkWell(
                           onTap: () {
-                            Globals.router.go('/person', extra: person.id);
+                            Globals.router.push('/person', extra: person.id);
                           },
                           child: const Padding(
                             padding: EdgeInsets.all(8.0),
@@ -648,7 +643,7 @@ class StationPageState extends State<StationPage> with Updates {
         return Card(
           clipBehavior: Clip.antiAliasWithSaveLayer,
           elevation: 2,
-          margin: const EdgeInsets.only(left: 2, right: 2, bottom: 8),
+          margin: const EdgeInsets.only(left: 2, right: 2, bottom: 8, top: 4),
           child: Column(
             children: [
               const SizedBox(height: 4),

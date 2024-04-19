@@ -320,7 +320,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           onPressed: () async {
             Navigator.of(context).pop();
 
-            Globals.router.go('/lifecycle');
+            Globals.router.push('/lifecycle');
           },
           text: 'Einstellungen',
         ),

@@ -4,6 +4,7 @@ import 'package:ff_alarm/data/interfaces/station_interface.dart';
 import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/ui/utils/no_data.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +23,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
   @override
   bool get wantKeepAlive => true;
 
+  bool loading = true;
   List<Unit> units = [];
   List<Station> stations = [];
 
@@ -42,7 +44,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
 
     timer = Timer.periodic(const Duration(minutes: 1), (timer) {
       if (!Globals.foreground || stations.isEmpty) return;
-      StationInterface.getNotifyInformation(stations.map((e) => e.server).toList()).then((value) {
+      StationInterface.getNotifyInformation(stations.map((e) => e.server).toSet().toList()).then((value) {
         if (!mounted) return;
         setState(() {
           notifyInformation = value;
@@ -65,6 +67,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
     ).then((List<Station> value) {
       if (!mounted) return;
       setState(() {
+        loading = false;
         stations = value;
         stations.sort((a, b) => a.descriptiveName.compareTo(b.descriptiveName));
       });
@@ -91,11 +94,14 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Wachen & Einheiten'),
-      ),
-      body: ListView.builder(
+
+    Widget bodyWidget;
+    if (loading) {
+      bodyWidget = const SizedBox();
+    } else if (stations.isEmpty) {
+      bodyWidget = const NoDataWidget(text: 'Du bist nicht Mitglied einer Wache');
+    } else {
+      bodyWidget = ListView.builder(
         padding: const EdgeInsets.all(8),
         itemCount: stations.length,
         itemBuilder: (BuildContext context, int index) {
@@ -107,7 +113,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
             elevation: 10,
             child: ListTile(
               onTap: () {
-                Globals.router.go('/station', extra: station.id);
+                Globals.router.push('/station', extra: station.id);
               },
               contentPadding: const EdgeInsets.symmetric(horizontal: 4),
               title: Padding(
@@ -132,7 +138,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
                   for (var unit in stationUnits) unitCard(unit, station, const EdgeInsets.symmetric(horizontal: 2, vertical: 4), true),
                   if (notifyInformation.containsKey(station.id)) const SizedBox(height: 8),
                   if (notifyInformation.containsKey(station.id))
-                    () {
+                        () {
                       var info = notifyInformation[station.id];
 
                       int totalY = info["yT"];
@@ -253,7 +259,14 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
             ),
           );
         },
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Wachen & Einheiten'),
       ),
+      body: bodyWidget,
     );
   }
 
@@ -265,7 +278,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
       child: ListTile(
         onTap: canClick
             ? () {
-                Globals.router.go('/unit', extra: unit.id);
+                Globals.router.push('/unit', extra: unit.id);
               }
             : null,
         title: Text(

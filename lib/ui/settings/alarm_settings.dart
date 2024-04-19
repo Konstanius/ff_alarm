@@ -14,6 +14,7 @@ import 'package:ff_alarm/ui/settings/lifecycle.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/map.dart';
+import 'package:ff_alarm/ui/utils/no_data.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
@@ -211,10 +212,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
   Widget build(BuildContext context) {
     if (loading) return const SizedBox();
     if (this.station == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text("Bereitschaftseinstellung")),
-        body: const Center(child: Text("Wache konnte nicht geladen werden")),
-      );
+      return const NoDataWidget(appBarText: "Bereitschaftseinstellung", enableAppBar: true, text: "Wache konnte nicht geladen werden");
     }
     Station station = this.station!;
 
