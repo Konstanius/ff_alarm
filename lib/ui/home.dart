@@ -15,9 +15,12 @@ import 'package:ff_alarm/ui/home/units_screen.dart';
 import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:responsive_navigation_bar/responsive_navigation_bar.dart';
+import 'home/calendar_screen.dart';
 
 class FFAlarmApp extends StatelessWidget {
   const FFAlarmApp({super.key});
@@ -57,8 +60,9 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver, Updates {
-  late final TabController tabController;
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Updates {
+  final PageController pageController = PageController();
+  final ValueNotifier<int> currentPage = ValueNotifier<int>(0);
 
   Timer? _timer;
 
@@ -104,7 +108,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     Globals.foreground = WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
 
     Globals.appStarted = true;
-    tabController = TabController(length: 3, vsync: this);
 
     Future.delayed(const Duration(seconds: 2), () {
       Globals.fastStartBypass = false;
@@ -136,21 +139,28 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         Globals.router.go('/login');
       });
     }
+
+    pageController.addListener(() {
+      if (pageController.page!.round() != currentPage.value) currentPage.value = pageController.page!.round();
+    });
   }
 
   @override
   void dispose() {
     _timer?.cancel();
-    tabController.dispose();
+    pageController.dispose();
+    currentPage.dispose();
     WidgetsBinding.instance.removeObserver(this);
 
     badgeAlarms.dispose();
+    badgeCalendar.dispose();
     badgeUnits.dispose();
     badgeSettings.dispose();
     super.dispose();
   }
 
   final ValueNotifier<int> badgeAlarms = ValueNotifier<int>(0);
+  final ValueNotifier<int> badgeCalendar = ValueNotifier<int>(0);
   final ValueNotifier<int> badgeUnits = ValueNotifier<int>(0);
   final ValueNotifier<int> badgeSettings = ValueNotifier<int>(0);
 
@@ -158,90 +168,60 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        body: TabBarView(
-          controller: tabController,
+        extendBody: true,
+        body: PageView(
+          controller: pageController,
           children: <Widget>[
             AlarmsScreen(badge: badgeAlarms),
+            CalendarScreen(badge: badgeCalendar),
             UnitsScreen(badge: badgeUnits),
             SettingsScreen(badge: badgeSettings),
           ],
         ),
-        bottomNavigationBar: Card(
-          margin: EdgeInsets.zero,
-          elevation: 5,
-          clipBehavior: Clip.antiAliasWithSaveLayer,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(8),
-              topRight: Radius.circular(8),
-            ),
-          ),
-          color: Theme.of(context).focusColor,
-          child: TabBar(
-            controller: tabController,
-            tabs: <Tab>[
-              Tab(
-                child: Column(
-                  children: <Widget>[
-                    const SizedBox(height: 6),
-                    ValueListenableBuilder(
-                      valueListenable: badgeAlarms,
-                      builder: (context, value, child) {
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.local_fire_department_outlined),
-                            if (value > 0) Text(' $value !', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                          ],
-                        );
-                      },
-                    ),
-                    const Text('Alarmierungen', textScaler: TextScaler.linear(0.8)),
-                  ],
+        bottomNavigationBar: ValueListenableBuilder(
+          valueListenable: currentPage,
+          builder: (context, currentTab, child) {
+            return ResponsiveNavigationBar(
+              selectedIndex: currentTab,
+              backgroundColor: Theme.of(context).dialogBackgroundColor,
+              fontSize: kDefaultFontSize * 1.2,
+              activeButtonFlexFactor: 200,
+              inactiveButtonsFlexFactor: 60,
+              navigationBarButtons: [
+                NavigationBarButton(
+                  icon: Icons.local_fire_department_outlined,
+                  text: 'Alarmierungen',
+                  backgroundColor: Colors.blue.withOpacity(0.5),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                 ),
-              ),
-              Tab(
-                child: Column(
-                  children: <Widget>[
-                    const SizedBox(height: 6),
-                    ValueListenableBuilder(
-                      valueListenable: badgeUnits,
-                      builder: (context, value, child) {
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.fire_truck_outlined),
-                            if (value > 0) Text(' $value !', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                          ],
-                        );
-                      },
-                    ),
-                    const Text('Einheiten', textScaler: TextScaler.linear(0.8)),
-                  ],
+                NavigationBarButton(
+                  icon: Icons.calendar_month_outlined,
+                  text: 'Kalender',
+                  backgroundColor: Colors.blue.withOpacity(0.5),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                 ),
-              ),
-              Tab(
-                child: Column(
-                  children: <Widget>[
-                    const SizedBox(height: 6),
-                    ValueListenableBuilder(
-                      valueListenable: badgeSettings,
-                      builder: (context, value, child) {
-                        return Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.settings_outlined),
-                            if (value > 0) Text(' $value !', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-                          ],
-                        );
-                      },
-                    ),
-                    const Text('Einstellungen', textScaler: TextScaler.linear(0.8)),
-                  ],
+                NavigationBarButton(
+                  icon: Icons.fire_truck_outlined,
+                  text: 'Einheiten',
+                  backgroundColor: Colors.blue.withOpacity(0.5),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                 ),
-              ),
-            ],
-          ),
+                NavigationBarButton(
+                  icon: Icons.settings_outlined,
+                  text: 'Einstellungen',
+                  backgroundColor: Colors.blue.withOpacity(0.5),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                ),
+              ],
+              onTabChange: (index) {
+                pageController.animateToPage(
+                  index,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              },
+            );
+          },
         ),
       ),
     );
@@ -280,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           DialogActionButton(
             onPressed: () {
               Navigator.of(context).pop();
-              tabController.index = 2;
+              pageController.animateToPage(3, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
             },
             text: 'Einstellungen',
           ),

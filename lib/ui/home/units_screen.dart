@@ -101,164 +101,166 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
     } else if (stations.isEmpty) {
       bodyWidget = const NoDataWidget(text: 'Du bist nicht Mitglied einer Wache');
     } else {
-      bodyWidget = ListView.builder(
+      bodyWidget = ListView(
         padding: const EdgeInsets.all(8),
-        itemCount: stations.length,
-        itemBuilder: (BuildContext context, int index) {
-          var station = stations[index];
-          var stationUnits = units.where((u) => u.stationProperId == station.id).toList();
-          return Card(
-            clipBehavior: Clip.antiAliasWithSaveLayer,
-            margin: const EdgeInsets.only(bottom: 8),
-            elevation: 10,
-            child: ListTile(
-              onTap: () {
-                Globals.router.push('/station', extra: station.id);
-              },
-              contentPadding: const EdgeInsets.symmetric(horizontal: 4),
-              title: Padding(
-                padding: const EdgeInsets.only(bottom: 4, left: 10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        station.descriptiveName,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: kDefaultFontSize * 1.4,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              subtitle: Column(
-                children: [
-                  for (var unit in stationUnits) unitCard(unit, station, const EdgeInsets.symmetric(horizontal: 2, vertical: 4), true),
-                  if (notifyInformation.containsKey(station.id)) const SizedBox(height: 8),
-                  if (notifyInformation.containsKey(station.id))
-                        () {
-                      var info = notifyInformation[station.id];
-
-                      int totalY = info["yT"];
-                      int totalN = info["nT"];
-                      int totalU = info["uT"];
-
-                      Map<String, int> y = info["y"].cast<String, int>();
-                      Map<String, int> n = info["n"].cast<String, int>();
-                      Map<String, int> u = info["u"].cast<String, int>();
-
-                      List<({String type, int y, int u, int n})> sorted = [];
-                      for (var key in y.keys) {
-                        String type = key;
-                        int yV = y[key] ?? 0;
-                        int nV = n[key] ?? 0;
-                        int uV = u[key] ?? 0;
-
-                        sorted.add((type: type, y: yV, u: uV, n: nV));
-                      }
-                      for (var key in n.keys) {
-                        if (sorted.any((element) => element.type == key)) continue;
-                        String type = key;
-                        int yV = y[key] ?? 0;
-                        int nV = n[key] ?? 0;
-                        int uV = u[key] ?? 0;
-
-                        sorted.add((type: type, y: yV, u: uV, n: nV));
-                      }
-                      for (var key in u.keys) {
-                        if (sorted.any((element) => element.type == key)) continue;
-                        String type = key;
-                        int yV = y[key] ?? 0;
-                        int nV = n[key] ?? 0;
-                        int uV = u[key] ?? 0;
-
-                        sorted.add((type: type, y: yV, u: uV, n: nV));
-                      }
-
-                      sorted.sort((a, b) => a.type.compareTo(b.type));
-
-                      return Column(
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: ColoredBox(
-                                    color: Colors.blue.withOpacity(0.7),
-                                    child: Column(
-                                      children: [
-                                        const Text(" "),
-                                        const Text("Gesamt", style: TextStyle(fontWeight: FontWeight.bold)),
-                                        const Divider(color: Colors.white),
-                                        for (var item in sorted) ...[
-                                          Text(item.type, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: ColoredBox(
-                                    color: Colors.green.withOpacity(0.7),
-                                    child: Column(
-                                      children: [
-                                        const Text("Verfügbar"),
-                                        Text("$totalY", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        const Divider(),
-                                        for (var item in sorted) Text("${item.y}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: ColoredBox(
-                                    color: Colors.amber.withOpacity(0.7),
-                                    child: Column(
-                                      children: [
-                                        const Text("Keine Info"),
-                                        Text("$totalU", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        const Divider(),
-                                        for (var item in sorted) Text("${item.u}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: ColoredBox(
-                                    color: Colors.red.withOpacity(0.7),
-                                    child: Column(
-                                      children: [
-                                        const Text("Abwesend"),
-                                        Text("$totalN", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        const Divider(),
-                                        for (var item in sorted) Text("${item.n}", style: const TextStyle(fontWeight: FontWeight.bold)),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
+        children: [
+          for (var station in stations)
+            () {
+              var stationUnits = units.where((u) => u.stationProperId == station.id).toList();
+              return Card(
+                clipBehavior: Clip.antiAliasWithSaveLayer,
+                margin: const EdgeInsets.only(bottom: 8),
+                elevation: 10,
+                child: ListTile(
+                  onTap: () {
+                    Globals.router.push('/station', extra: station.id);
+                  },
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                  title: Padding(
+                    padding: const EdgeInsets.only(bottom: 4, left: 10),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            station.descriptiveName,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: kDefaultFontSize * 1.4,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
+                        ),
+                      ],
+                    ),
+                  ),
+                  subtitle: Column(
+                    children: [
+                      for (var unit in stationUnits) unitCard(unit, station, const EdgeInsets.symmetric(horizontal: 2, vertical: 4), true),
+                      if (notifyInformation.containsKey(station.id)) const SizedBox(height: 8),
+                      if (notifyInformation.containsKey(station.id))
+                        () {
+                          var info = notifyInformation[station.id];
+
+                          int totalY = info["yT"];
+                          int totalN = info["nT"];
+                          int totalU = info["uT"];
+
+                          Map<String, int> y = info["y"].cast<String, int>();
+                          Map<String, int> n = info["n"].cast<String, int>();
+                          Map<String, int> u = info["u"].cast<String, int>();
+
+                          List<({String type, int y, int u, int n})> sorted = [];
+                          for (var key in y.keys) {
+                            String type = key;
+                            int yV = y[key] ?? 0;
+                            int nV = n[key] ?? 0;
+                            int uV = u[key] ?? 0;
+
+                            sorted.add((type: type, y: yV, u: uV, n: nV));
+                          }
+                          for (var key in n.keys) {
+                            if (sorted.any((element) => element.type == key)) continue;
+                            String type = key;
+                            int yV = y[key] ?? 0;
+                            int nV = n[key] ?? 0;
+                            int uV = u[key] ?? 0;
+
+                            sorted.add((type: type, y: yV, u: uV, n: nV));
+                          }
+                          for (var key in u.keys) {
+                            if (sorted.any((element) => element.type == key)) continue;
+                            String type = key;
+                            int yV = y[key] ?? 0;
+                            int nV = n[key] ?? 0;
+                            int uV = u[key] ?? 0;
+
+                            sorted.add((type: type, y: yV, u: uV, n: nV));
+                          }
+
+                          sorted.sort((a, b) => a.type.compareTo(b.type));
+
+                          return Column(
                             children: [
-                              Text(
-                                "Stand: ${notifyInfoTime.hour.toString().padLeft(2, '0')}:${notifyInfoTime.minute.toString().padLeft(2, '0')}:${notifyInfoTime.second.toString().padLeft(2, '0')}    ",
-                                style: const TextStyle(fontSize: kDefaultFontSize * 0.8, color: Colors.grey),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: ColoredBox(
+                                        color: Colors.blue.withOpacity(0.7),
+                                        child: Column(
+                                          children: [
+                                            const Text(" "),
+                                            const Text("Gesamt", style: TextStyle(fontWeight: FontWeight.bold)),
+                                            const Divider(color: Colors.white),
+                                            for (var item in sorted) ...[
+                                              Text(item.type, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: ColoredBox(
+                                        color: Colors.green.withOpacity(0.7),
+                                        child: Column(
+                                          children: [
+                                            const Text("Verfügbar"),
+                                            Text("$totalY", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                            const Divider(),
+                                            for (var item in sorted) Text("${item.y}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: ColoredBox(
+                                        color: Colors.amber.withOpacity(0.7),
+                                        child: Column(
+                                          children: [
+                                            const Text("Keine Info"),
+                                            Text("$totalU", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                            const Divider(),
+                                            for (var item in sorted) Text("${item.u}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: ColoredBox(
+                                        color: Colors.red.withOpacity(0.7),
+                                        child: Column(
+                                          children: [
+                                            const Text("Abwesend"),
+                                            Text("$totalN", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                            const Divider(),
+                                            for (var item in sorted) Text("${item.n}", style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    "Stand: ${notifyInfoTime.hour.toString().padLeft(2, '0')}:${notifyInfoTime.minute.toString().padLeft(2, '0')}:${notifyInfoTime.second.toString().padLeft(2, '0')}    ",
+                                    style: const TextStyle(fontSize: kDefaultFontSize * 0.8, color: Colors.grey),
+                                  ),
+                                ],
                               ),
                             ],
-                          ),
-                        ],
-                      );
-                    }(),
-                ],
-              ),
-            ),
-          );
-        },
+                          );
+                        }(),
+                    ],
+                  ),
+                ),
+              );
+            }(),
+          const SizedBox(height: kBottomNavigationBarHeight),
+        ],
       );
     }
 

@@ -572,6 +572,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
               ),
             ),
           ),
+          const SizedBox(height: kBottomNavigationBarHeight),
         ],
       ),
     );

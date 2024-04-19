@@ -830,7 +830,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 Navigator.of(Globals.context!).pop();
               },
             ),
-            backgroundColor: selectedStationOwnResponseType?.color ?? Colors.white,
+            backgroundColor: selectedStationOwnResponseType?.color ?? Colors.grey,
             title: const Text('Alarmierung', style: TextStyle(color: Colors.black)),
             actions: getActionsList(true),
             bottom: PreferredSize(

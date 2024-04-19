@@ -5,11 +5,13 @@ import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/server/request.dart';
+import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/screens/alarm_info.dart';
 import 'package:ff_alarm/ui/utils/no_data.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 
 class AlarmsScreen extends StatefulWidget {
@@ -211,52 +213,6 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
             },
             child: const Text('Beispiel Alarmierung'),
           ),
-          if (Platform.isIOS)
-            ElevatedButton(
-              onPressed: () {
-                File file = File('${Globals.filesPath}/nse.log');
-                if (!file.existsSync()) {
-                  errorToast('Log-Datei nicht gefunden');
-                  return;
-                }
-
-                String log = file.readAsStringSync();
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: const Text('NSE Log'),
-                      content: SingleChildScrollView(
-                        child: Text(log),
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text('Schließen'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-              child: const Text('NSE Log anzeigen'),
-            ),
-          if (Platform.isIOS)
-            ElevatedButton(
-              onPressed: () {
-                File file = File('${Globals.filesPath}/nse.log');
-                if (!file.existsSync()) {
-                  errorToast('Log-Datei nicht gefunden');
-                  return;
-                }
-
-                file.deleteSync();
-                successToast('Log-Datei gelöscht');
-              },
-              child: const Text('NSE Log löschen'),
-            ),
           for (int i = 0; i < alarmsList.length; i++)
             () {
               Alarm alarm = alarmsList[i];
@@ -266,40 +222,29 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
 
               return Column(
                 children: <Widget>[
-                  if (dateDivider) ...[
-                    const SizedBox(height: 8),
-                    Text(DateFormat('EEEE, dd.MM.yyyy').format(alarm.date), style: const TextStyle(fontSize: 20, color: Colors.blue)),
-                    const Divider(color: Colors.blue),
-                  ],
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.transparent,
-                              ownResponse?.getResponseInfo().responseType.color.withOpacity(0.5) ?? Colors.white.withOpacity(0.5),
-                            ],
-                          ),
-                        ),
-                        child: ListTile(
-                          title: Text(alarm.word),
-                          subtitle: Text(alarm.address),
-                          trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
-                          onTap: () {
-                            Globals.router.push('/alarm', extra: alarm);
-                          },
-                        ),
-                      ),
+                  if (dateDivider) SettingsDivider(text: DateFormat('EEEE, dd.MM.yyyy').format(alarm.date)),
+                  Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                    elevation: 10,
+                    surfaceTintColor: ownResponse?.getResponseInfo().responseType.color.withOpacity(0.5) ?? Colors.grey.withOpacity(0.5),
+                    child: ListTile(
+                      title: Text(alarm.word),
+                      subtitle: Text(() {
+                        Position? pos = alarm.positionFromAddressIfCoordinates;
+                        if (pos == null) return alarm.address;
+                        return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
+                      }()),
+                      trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
+                      onTap: () {
+                        Globals.router.push('/alarm', extra: alarm);
+                      },
                     ),
                   ),
                 ],
               );
             }(),
+          const SizedBox(height: kBottomNavigationBarHeight),
         ],
       );
     }
