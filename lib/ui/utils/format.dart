@@ -96,6 +96,18 @@ abstract class Formats {
     return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
   }
 
+  static DateTime parseDateTime(String date) {
+    List<String> parts = date.split(' ');
+    List<String> dateParts = parts[0].split('.');
+    List<String> timeParts = parts[1].split(':');
+    return DateTime(int.parse(dateParts[2]), int.parse(dateParts[1]), int.parse(dateParts[0]), int.parse(timeParts[0]), int.parse(timeParts[1]));
+  }
+
+  static DateTime parseDate(String date) {
+    List<String> dateParts = date.split('.');
+    return DateTime(int.parse(dateParts[2]), int.parse(dateParts[1]), int.parse(dateParts[0]));
+  }
+
   static String time(int dayMillis) {
     int hours = (dayMillis / 3600000).floor();
     int minutes = ((dayMillis % 3600000) / 60000).floor();

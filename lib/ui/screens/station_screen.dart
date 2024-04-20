@@ -8,6 +8,8 @@ import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/screens/person_manage.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
+import 'package:ff_alarm/ui/utils/format.dart';
+import 'package:ff_alarm/ui/utils/large_card.dart';
 import 'package:ff_alarm/ui/utils/no_data.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
@@ -17,9 +19,9 @@ import 'package:loader_overlay/loader_overlay.dart';
 import 'package:map_launcher/map_launcher.dart';
 
 class StationPage extends StatefulWidget {
-  const StationPage({super.key, required this.stationId});
+  const StationPage({super.key, required this.station});
 
-  final String stationId;
+  final Station station;
 
   @override
   State<StationPage> createState() => StationPageState();
@@ -43,13 +45,15 @@ class StationPageState extends State<StationPage> with Updates {
   void initState() {
     super.initState();
     _loadStation();
+    
+    station = widget.station;
 
     setupListener({UpdateType.station, UpdateType.person, UpdateType.unit});
   }
 
   void _loadStation() async {
     try {
-      station = await Globals.db.stationDao.getById(widget.stationId);
+      station = await Globals.db.stationDao.getById(widget.station.id);
 
       persons = await Globals.db.personDao.getWhereIn(station!.personProperIds);
       persons!.sort((a, b) {
@@ -135,7 +139,7 @@ class StationPageState extends State<StationPage> with Updates {
                         child: InkWell(
                           onTap: () {
                             Navigator.of(context).pop();
-                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => PersonManageScreen(stationId: station!.id)));
+                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => PersonManageScreen(station: station!)));
                           },
                           child: const Padding(
                             padding: EdgeInsets.all(8.0),
@@ -170,7 +174,7 @@ class StationPageState extends State<StationPage> with Updates {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           children: [
-            ...getStationDisplay(station!, context),
+            LargeCard(firstRow: station!.name, secondRow: station!.descriptiveNameShort, sourceString: station!.server),
             const SizedBox(height: 8),
             Card(
               elevation: 4,
@@ -256,7 +260,7 @@ class StationPageState extends State<StationPage> with Updates {
                   margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
                   child: ListTile(
                     onTap: () {
-                      Globals.router.push('/unit', extra: unit.id);
+                      Globals.router.push('/unit', extra: unit);
                     },
                     title: Text(
                       unit.callSign,
@@ -318,7 +322,7 @@ class StationPageState extends State<StationPage> with Updates {
               now,
               (person) {
                 if (!isAdmin) {
-                  Globals.router.push('/person', extra: person.id);
+                  Globals.router.push('/person', extra: person);
                   return;
                 }
 
@@ -332,7 +336,7 @@ class StationPageState extends State<StationPage> with Updates {
                         child: Row(
                           children: [
                             Text(
-                              'Geboren: ${DateFormat('dd.MM.yyyy').format(person.birthday)}',
+                              'Geboren: ${Formats.date(person.birthday)}',
                               style: const TextStyle(color: Colors.white),
                             ),
                           ],
@@ -343,7 +347,8 @@ class StationPageState extends State<StationPage> with Updates {
                         clipBehavior: Clip.antiAliasWithSaveLayer,
                         child: InkWell(
                           onTap: () {
-                            Globals.router.push('/person', extra: person.id);
+                            Navigator.of(context).pop();
+                            Globals.router.push('/person', extra: person);
                           },
                           child: const Padding(
                             padding: EdgeInsets.all(8.0),
@@ -364,7 +369,7 @@ class StationPageState extends State<StationPage> with Updates {
                         child: InkWell(
                           onTap: () {
                             Navigator.of(context).pop();
-                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => PersonManageScreen(stationId: station!.id, person: person)));
+                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => PersonManageScreen(station: station!, person: person)));
                           },
                           child: const Padding(
                             padding: EdgeInsets.all(8.0),
@@ -513,9 +518,9 @@ class StationPageState extends State<StationPage> with Updates {
 
   @override
   void onUpdate(UpdateInfo info) async {
-    if (info.type == UpdateType.station && info.ids.contains(widget.stationId)) {
+    if (info.type == UpdateType.station && info.ids.contains(widget.station.id)) {
       List<String> previousIds = station!.personProperIds;
-      station = await Globals.db.stationDao.getById(widget.stationId);
+      station = await Globals.db.stationDao.getById(widget.station.id);
       if (station!.personProperIds.length != previousIds.length) {
         persons = await Globals.db.personDao.getWhereIn(station!.personProperIds);
         persons!.sort((a, b) {
@@ -553,69 +558,14 @@ class StationPageState extends State<StationPage> with Updates {
     if (mounted) setState(() {});
   }
 
-  static List<Widget> getStationDisplay(Station station, BuildContext context, {Widget? thirdRow}) {
-    return [
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Card(
-          margin: const EdgeInsets.all(0),
-          elevation: 100,
-          clipBehavior: Clip.antiAliasWithSaveLayer,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                height: MediaQuery.of(context).size.width / 2,
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          station.name,
-                          style: TextStyle(
-                            fontSize: MediaQuery.of(context).size.width / (station.name.length > 20 ? 20 : station.name.length),
-                            fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                      Flexible(
-                        child: Text(
-                          station.descriptiveNameShort,
-                          style: const TextStyle(fontSize: kDefaultFontSize * 1.2),
-                        ),
-                      ),
-                      if (thirdRow != null) thirdRow,
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(
-            'Quelle: ${() {
-              var uri = Uri.tryParse('http${station.server}');
-              if (uri == null) return 'http${station.server}';
-              return uri.host;
-            }()}',
-            style: const TextStyle(fontSize: kDefaultFontSize * 0.7),
-          ),
-        ],
-      ),
-    ];
-  }
-
-  static List<Widget> getPersonsDisplay(Station station, BuildContext context, List<Person> persons, DateTime now, Function(Person person) onTap, ScrollController scrollController) {
+  static List<Widget> getPersonsDisplay(
+    Station station,
+    BuildContext context,
+    List<Person> persons,
+    DateTime now,
+    Function(Person person) onTap,
+    ScrollController scrollController,
+  ) {
     return [
       const SettingsDivider(text: 'Personen'),
       () {

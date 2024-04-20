@@ -9,10 +9,10 @@ import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
-import 'package:ff_alarm/ui/screens/station_screen.dart';
 import 'package:ff_alarm/ui/settings/lifecycle.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/format.dart';
+import 'package:ff_alarm/ui/utils/large_card.dart';
 import 'package:ff_alarm/ui/utils/map.dart';
 import 'package:ff_alarm/ui/utils/no_data.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
@@ -20,7 +20,6 @@ import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -284,9 +283,9 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
         body: ListView(
           padding: const EdgeInsets.all(8),
           children: [
-            ...StationPageState.getStationDisplay(
-              station,
-              context,
+            LargeCard(
+              firstRow: station.name,
+              secondRow: station.descriptiveNameShort,
               thirdRow: notify
                   ? const Row(
                       children: [
@@ -302,6 +301,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
                         Text("Automatische Absage", style: TextStyle(color: Colors.red)),
                       ],
                     ),
+              sourceString: station.server,
             ),
             const SettingsDivider(text: "Alarmierungs-Einstellungen"),
             Center(
@@ -327,7 +327,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
               // list all datetime ranges
               for (var item in current.calendar) ...[
                 ListTile(
-                  title: Text("${DateFormat("dd.MM.yyyy").format(item.start)}  bis  ${DateFormat("dd.MM.yyyy").format(item.end.subtract(const Duration(days: 1)))}"),
+                  title: Text("${Formats.date(item.start)}  bis  ${Formats.date(item.end.subtract(const Duration(days: 1)))}"),
                   subtitle: Text("Dauer: ${item.end.difference(item.start).inDays} Tage"),
                   trailing: IconButton(
                     icon: const Icon(Icons.delete),

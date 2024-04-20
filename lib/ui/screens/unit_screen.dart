@@ -1,18 +1,25 @@
+import 'package:ff_alarm/data/interfaces/unit_interface.dart';
 import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
+import 'package:ff_alarm/ui/screens/person_manage.dart';
 import 'package:ff_alarm/ui/screens/station_screen.dart';
+import 'package:ff_alarm/ui/utils/dialogs.dart';
+import 'package:ff_alarm/ui/utils/format.dart';
+import 'package:ff_alarm/ui/utils/large_card.dart';
+import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
+import 'package:loader_overlay/loader_overlay.dart';
 
 import '../utils/no_data.dart';
 
 class UnitPage extends StatefulWidget {
-  const UnitPage({super.key, required this.unitId});
+  const UnitPage({super.key, required this.unit});
 
-  final String unitId;
+  final Unit unit;
 
   @override
   State<UnitPage> createState() => _UnitPageState();
@@ -42,7 +49,7 @@ class _UnitPageState extends State<UnitPage> with Updates {
 
   void _loadUnit() async {
     try {
-      unit = await Globals.db.unitDao.getById(widget.unitId);
+      unit = await Globals.db.unitDao.getById(widget.unit.id);
       if (unit == null) {
         throw Exception('Unit not found');
       }
@@ -95,7 +102,63 @@ class _UnitPageState extends State<UnitPage> with Updates {
             IconButton(
               icon: const Icon(Icons.person_add_outlined),
               onPressed: () {
-                // TODO
+                generalDialog(
+                  color: Colors.blue,
+                  title: 'Person hinzufügen',
+                  content: Column(
+                    children: [
+                      Card(
+                        elevation: 4,
+                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        child: InkWell(
+                          onTap: () {
+                            // TODO
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Icon(Icons.person_search_outlined),
+                                SizedBox(width: 8),
+                                Flexible(child: Text('Person suchen')),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Card(
+                        elevation: 4,
+                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => PersonManageScreen(station: station!)));
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Icon(Icons.person_add_outlined),
+                                SizedBox(width: 8),
+                                Flexible(child: Text('Person erstellen')),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    DialogActionButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      text: 'Schließen',
+                    ),
+                  ],
+                );
               },
             ),
           ],
@@ -105,62 +168,7 @@ class _UnitPageState extends State<UnitPage> with Updates {
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Card(
-                margin: const EdgeInsets.all(0),
-                elevation: 100,
-                clipBehavior: Clip.antiAliasWithSaveLayer,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.max,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      height: MediaQuery.of(context).size.width / 2,
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Flexible(
-                              child: Text(
-                                unit!.unitDescription,
-                                style: TextStyle(
-                                  fontSize: MediaQuery.of(context).size.width / (unit!.unitDescription.length > 20 ? 20 : unit!.unitDescription.length),
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                            Flexible(
-                              child: Text(
-                                unit!.callSign,
-                                style: const TextStyle(fontSize: kDefaultFontSize * 1.2),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Text(
-                  'Quelle: ${() {
-                    var uri = Uri.tryParse('http${unit!.server}');
-                    if (uri == null) return 'http${unit!.server}';
-                    return uri.host;
-                  }()}',
-                  style: const TextStyle(fontSize: kDefaultFontSize * 0.7),
-                ),
-              ],
-            ),
+            LargeCard(firstRow: unit!.unitDescription, secondRow: unit!.callSign, sourceString: unit!.server),
             const SizedBox(height: 8),
             Card(
               elevation: 4,
@@ -182,7 +190,7 @@ class _UnitPageState extends State<UnitPage> with Updates {
               clipBehavior: Clip.antiAliasWithSaveLayer,
               child: InkWell(
                 onTap: () {
-                  Globals.router.push('/station', extra: unit!.stationProperId);
+                  Globals.router.push('/station', extra: station!);
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
@@ -234,10 +242,132 @@ class _UnitPageState extends State<UnitPage> with Updates {
               now,
               (person) {
                 if (!isAdmin) {
-                  Globals.router.push('/person', extra: person.id);
+                  Globals.router.push('/person', extra: person);
                   return;
                 }
-                // TODO
+
+                generalDialog(
+                  color: Colors.blue,
+                  title: person.fullName,
+                  content: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Geboren: ${Formats.date(person.birthday)}',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Card(
+                        elevation: 4,
+                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            Globals.router.push('/person', extra: person);
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Icon(Icons.info_outlined),
+                                SizedBox(width: 8),
+                                Flexible(child: Text('Details anzeigen')),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Card(
+                        elevation: 4,
+                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.of(context).pop();
+                            Navigator.of(context).push(MaterialPageRoute(builder: (context) => PersonManageScreen(station: station!, person: person)));
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Icon(Icons.edit_outlined),
+                                SizedBox(width: 8),
+                                Flexible(child: Text('Bearbeiten')),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Card(
+                        elevation: 4,
+                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        child: InkWell(
+                          onTap: () async {
+                            bool confirm = await generalDialog(
+                              color: Colors.red,
+                              title: 'Person entfernen',
+                              content: Text('Möchtest du ${person.fullName} wirklich von der Einheit entfernen?'),
+                              actions: [
+                                DialogActionButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(true);
+                                  },
+                                  text: 'Ja',
+                                ),
+                                DialogActionButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(false);
+                                  },
+                                  text: 'Nein',
+                                ),
+                              ],
+                            );
+                            if (confirm != true) return;
+
+                            Globals.context!.loaderOverlay.show();
+                            try {
+                              await UnitInterface.removePerson(
+                                server: station!.server,
+                                unitId: unit!.idNumber,
+                                personId: person.idNumber,
+                              );
+                              Navigator.of(Globals.context!).pop();
+                            } catch (e, s) {
+                              exceptionToast(e, s);
+                            } finally {
+                              Globals.context!.loaderOverlay.hide();
+                            }
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Icon(Icons.person_remove_outlined),
+                                SizedBox(width: 8),
+                                Flexible(child: Text('Von Einheit entfernen')),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    DialogActionButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      text: 'Schließen',
+                    ),
+                  ],
+                );
               },
               scrollController,
             ),
@@ -251,13 +381,20 @@ class _UnitPageState extends State<UnitPage> with Updates {
   void onUpdate(UpdateInfo info) async {
     if (info.type == UpdateType.station && info.ids.contains(unit!.stationProperId)) {
       station = await Globals.db.stationDao.getById(unit!.stationProperId);
+      persons = await Globals.db.personDao.getWhereIn(station!.personProperIds);
+      persons!.removeWhere((element) => !element.allowedUnitProperIds.contains(unit!.id));
+      persons!.sort((a, b) {
+        if (station!.adminPersonProperIds.contains(a.id)) return -1;
+        if (station!.adminPersonProperIds.contains(b.id)) return 1;
+        return a.fullName.compareTo(b.fullName);
+      });
     }
 
-    if (info.type == UpdateType.unit && info.ids.contains(widget.unitId)) {
-      unit = await Globals.db.unitDao.getById(widget.unitId);
+    if (info.type == UpdateType.unit && info.ids.contains(widget.unit.id)) {
+      unit = await Globals.db.unitDao.getById(widget.unit.id);
     }
 
-    if (info.type == UpdateType.person && station != null && station!.personProperIds.any((element) => info.ids.contains(element))) {
+    if (info.type == UpdateType.person && station != null) {
       persons = await Globals.db.personDao.getWhereIn(station!.personProperIds);
       persons!.removeWhere((element) => !element.allowedUnitProperIds.contains(unit!.id));
       persons!.sort((a, b) {

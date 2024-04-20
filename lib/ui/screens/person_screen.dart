@@ -1,9 +1,10 @@
+import 'package:ff_alarm/data/models/person.dart';
 import 'package:flutter/material.dart';
 
 class PersonPage extends StatefulWidget {
-  const PersonPage({super.key, required this.personId});
+  const PersonPage({super.key, required this.person});
 
-  final String personId;
+  final Person person;
 
   @override
   State<PersonPage> createState() => _PersonScreenState();

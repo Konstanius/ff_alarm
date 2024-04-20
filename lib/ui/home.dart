@@ -17,7 +17,6 @@ import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/responsive_navigation_bar.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'home/calendar_screen.dart';
@@ -216,28 +215,48 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Up
                       text: 'Alarmierungen',
                       badge: badges.alarms > 0 ? badges.alarms.toString() : null,
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                      backgroundGradient: const LinearGradient(colors: [Colors.red, Colors.orange]),
+                      backgroundGradient: const LinearGradient(
+                        colors: [
+                          Color.fromARGB(255, 255, 0, 0),
+                          Color.fromARGB(255, 255, 165, 0),
+                        ],
+                      ),
                     ),
                     NavigationBarButton(
                       icon: Icons.calendar_month_outlined,
                       text: 'Kalender',
                       badge: badges.calendar > 0 ? badges.calendar.toString() : null,
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                      backgroundGradient: const LinearGradient(colors: [Colors.purple, Colors.pink]),
+                      backgroundGradient: const LinearGradient(
+                        colors: [
+                          Color.fromARGB(255, 4, 147, 4),
+                          Color.fromARGB(255, 11, 178, 102),
+                        ],
+                      ),
                     ),
                     NavigationBarButton(
                       icon: Icons.fire_truck_outlined,
                       text: 'Einheiten',
                       badge: badges.units > 0 ? badges.units.toString() : null,
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                      backgroundGradient: const LinearGradient(colors: [Colors.lightGreen, Colors.green]),
+                      backgroundGradient: const LinearGradient(
+                        colors: [
+                          Color.fromARGB(255, 0, 0, 255),
+                          Color.fromARGB(255, 0, 119, 255),
+                        ],
+                      ),
                     ),
                     NavigationBarButton(
                       icon: Icons.settings_outlined,
                       text: 'Einstellungen',
                       badge: badges.settings > 0 ? badges.settings.toString() : null,
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                      backgroundGradient: const LinearGradient(colors: [Colors.lightBlue, Colors.blue]),
+                      backgroundGradient: const LinearGradient(
+                        colors: [
+                          Color.fromARGB(255, 50, 50, 50),
+                          Color.fromARGB(255, 100, 100, 100),
+                        ],
+                      ),
                     ),
                   ],
                   onTabChange: (index) {

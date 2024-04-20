@@ -338,7 +338,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                 margin: const EdgeInsets.symmetric(vertical: 4),
                 child: ListTile(
                   onTap: () {
-                    Globals.router.push('/alarmsettings', extra: station.id);
+                    Globals.router.push('/alarmsettings', extra: station);
                   },
                   leading: allNotificationSettings.containsKey(station.id) ? const Icon(Icons.settings_outlined) : const Icon(Icons.question_mark_outlined),
                   title: Text(station.descriptiveName),

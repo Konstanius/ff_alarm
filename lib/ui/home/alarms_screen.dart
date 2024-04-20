@@ -6,6 +6,7 @@ import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/screens/alarm_info.dart';
+import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/no_data.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
@@ -365,7 +366,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                                         });
                                         setState(() {});
                                       },
-                                      child: Text(filter.date == null ? 'Alle' : DateFormat('dd.MM.yyyy').format(filter.date!)),
+                                      child: Text(filter.date == null ? 'Alle' : Formats.date(filter.date!)),
                                     ),
                                   ],
                                 ),

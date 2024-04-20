@@ -71,12 +71,35 @@ abstract class PersonInterface {
     UpdateInfo(UpdateType.person, updatedIds);
   }
 
-  static Future<({String key, int personId})> create({
+  static Future<void> update({
+    required int personId,
     required int stationId,
     required String firstName,
     required String lastName,
     required DateTime birthday,
-    required List<int> allowedUnits,
+    required List<Qualification> qualifications,
+    required String server,
+  }) async {
+    Map<String, dynamic> data = {
+      'personId': personId,
+      'stationId': stationId,
+      'firstName': firstName,
+      'lastName': lastName,
+      'birthday': birthday.millisecondsSinceEpoch,
+      'qualifications': qualifications.map((e) => e.toString()).toList(),
+    };
+
+    Request response = await Request('personUpdate', data, server).emit(true);
+
+    Person newPerson = Person.fromJson(response.ackData!);
+    await Person.update(newPerson, true);
+  }
+
+  static Future<({String key, Person person})> create({
+    required int stationId,
+    required String firstName,
+    required String lastName,
+    required DateTime birthday,
     required List<Qualification> qualifications,
     required String server,
   }) async {
@@ -85,16 +108,15 @@ abstract class PersonInterface {
       'firstName': firstName,
       'lastName': lastName,
       'birthday': birthday.millisecondsSinceEpoch,
-      'allowedUnits': allowedUnits,
       'qualifications': qualifications.map((e) => e.toString()).toList(),
     };
 
     Request response = await Request('personCreate', data, server).emit(true);
 
     String key = response.ackData!['key'];
-    int id = response.ackData!['id'];
+    Person newPerson = Person.fromJson(response.ackData!['person']);
 
-    return (key: key, personId: id);
+    return (key: key, person: newPerson);
   }
 
   static Future<void> testConnection(String server) async {

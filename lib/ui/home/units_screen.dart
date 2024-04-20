@@ -111,7 +111,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
                 elevation: 10,
                 child: ListTile(
                   onTap: () {
-                    Globals.router.push('/station', extra: station.id);
+                    Globals.router.push('/station', extra: station);
                   },
                   contentPadding: const EdgeInsets.symmetric(horizontal: 4),
                   title: Padding(
@@ -278,7 +278,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
       child: ListTile(
         onTap: canClick
             ? () {
-                Globals.router.push('/unit', extra: unit.id);
+                Globals.router.push('/unit', extra: unit);
               }
             : null,
         title: Text(

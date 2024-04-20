@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:ff_alarm/data/interfaces/alarm_interface.dart';
+import 'package:ff_alarm/data/interfaces/unit_interface.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
@@ -157,7 +159,15 @@ class Person {
       await Globals.db.personDao.inserts(person);
     }
 
-    if (Globals.localPersons.containsKey(person.id)) Globals.localPersons[person.id] = person;
+    if (Globals.localPersons.containsKey(person.id)) {
+      Person old = Globals.localPersons[person.id]!;
+      Globals.localPersons[person.id] = person;
+
+      if (old.allowedUnits.length != person.allowedUnits.length) {
+        UnitInterface.fetchAllForServerSilent(person.server);
+        AlarmInterface.fetchAllForServerSilent(person.server);
+      }
+    }
 
     if (!bc) return;
     UpdateInfo(UpdateType.person, {person.id});
@@ -174,9 +184,9 @@ class Person {
 }
 
 class Qualification {
-  final String type;
-  final DateTime? start;
-  final DateTime? end;
+  String type;
+  DateTime? start;
+  DateTime? end;
 
   Qualification(this.type, this.start, this.end);
 
@@ -192,5 +202,19 @@ class Qualification {
   String toString() {
     if (type.contains(':')) throw AckError(HttpStatus.badRequest, "Qualifikationen können nicht ':' enthalten.");
     return "$type:${start?.millisecondsSinceEpoch ?? 0}:${end?.millisecondsSinceEpoch ?? 0}";
+  }
+
+  String get displayString {
+    if (type.startsWith("_")) return type.substring(1);
+    return type;
+  }
+
+  bool get hidden => type.startsWith("_");
+
+  bool isActive(DateTime date) {
+    if (start == null && end == null) return false;
+    if (start == null && end != null) return end!.isAfter(date);
+    if (start != null && end == null) return start!.isBefore(date);
+    return start!.isBefore(date) && end!.isAfter(date);
   }
 }

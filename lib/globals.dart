@@ -8,6 +8,8 @@ import 'package:background_fetch/background_fetch.dart' as bf;
 import 'package:ff_alarm/data/database.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/person.dart';
+import 'package:ff_alarm/data/models/station.dart';
+import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/data/prefs.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/main.dart';
@@ -448,8 +450,7 @@ abstract class Globals {
           GoRoute(
             path: 'alarm',
             builder: (BuildContext context, GoRouterState state) {
-              final Alarm alarm = state.extra! as Alarm;
-              return AlarmPage(alarm: alarm);
+              return AlarmPage(alarm: state.extra! as Alarm);
             },
           ),
           GoRoute(
@@ -463,8 +464,7 @@ abstract class Globals {
           GoRoute(
             path: 'alarmsettings',
             builder: (BuildContext context, GoRouterState state) {
-              final String stationId = state.extra! as String;
-              return SettingsAlarmInformationPage(stationId: stationId);
+              return SettingsAlarmInformationPage(stationId: state.extra! as String);
             },
           ),
           GoRoute(
@@ -477,22 +477,19 @@ abstract class Globals {
           GoRoute(
             path: 'station',
             builder: (BuildContext context, GoRouterState state) {
-              final String stationId = state.extra! as String;
-              return StationPage(stationId: stationId);
+              return StationPage(station: state.extra! as Station);
             },
           ),
           GoRoute(
             path: 'unit',
             builder: (BuildContext context, GoRouterState state) {
-              final String unitId = state.extra! as String;
-              return UnitPage(unitId: unitId);
+              return UnitPage(unit: state.extra! as Unit);
             },
           ),
           GoRoute(
             path: 'person',
             builder: (BuildContext context, GoRouterState state) {
-              final String personId = state.extra! as String;
-              return PersonPage(personId: personId);
+              return PersonPage(person: state.extra! as Person);
             },
           ),
         ],

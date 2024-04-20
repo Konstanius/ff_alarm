@@ -1,3 +1,4 @@
+import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
@@ -76,5 +77,19 @@ abstract class UnitInterface {
     }
 
     return units;
+  }
+
+  static Future<void> removePerson({required String server, required int unitId, required int personId}) async {
+    Request response = await Request('unitRemovePerson', {'unitId': unitId, 'personId': personId}, server).emit(true);
+
+    Person newPerson = Person.fromJson(response.ackData!);
+    await Person.update(newPerson, true);
+  }
+
+  static Future<void> addPerson({required String server, required int unitId, required int personId}) async {
+    Request response = await Request('unitAddPerson', {'unitId': unitId, 'personId': personId}, server).emit(true);
+
+    Person newPerson = Person.fromJson(response.ackData!);
+    await Person.update(newPerson, true);
   }
 }
