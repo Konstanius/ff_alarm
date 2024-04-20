@@ -38,7 +38,6 @@ dependencies:
   photo_view: 0.14.0
   url_launcher: 6.2.5
   package_info_plus: 7.0.0
-  responsive_navigation_bar: 4.0.4
   flutter_background_geolocation:
     path: ./packages/flutter_background_geolocation-4.15.1/
   background_fetch:

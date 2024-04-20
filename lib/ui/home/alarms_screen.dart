@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/station.dart';
@@ -52,7 +51,7 @@ class AlarmsFilter {
   }
 }
 
-class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClientMixin, Updates {
+class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClientMixin, Updates, SingleTickerProviderStateMixin {
   @override
   bool get wantKeepAlive => true;
 
@@ -62,10 +61,18 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
   AlarmsFilter filter = AlarmsFilter();
   TextEditingController searchController = TextEditingController();
 
+  late AnimationController controller;
+
   @override
   void initState() {
     super.initState();
     setupListener({UpdateType.alarm, UpdateType.ui});
+
+    controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    controller.repeat(reverse: true);
 
     if (Globals.localPersons.isEmpty) return;
 
@@ -75,12 +82,14 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
       alarms.addAll(value);
       alarms.sort((a, b) => b.date.compareTo(a.date));
       setState(() {});
+      resetBadge();
     });
   }
 
   @override
   void dispose() {
     searchController.dispose();
+    controller.dispose();
     super.dispose();
   }
 
@@ -223,23 +232,85 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
               return Column(
                 children: <Widget>[
                   if (dateDivider) SettingsDivider(text: DateFormat('EEEE, dd.MM.yyyy').format(alarm.date)),
-                  Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                    elevation: 10,
-                    surfaceTintColor: ownResponse?.getResponseInfo().responseType.color.withOpacity(0.5) ?? Colors.grey.withOpacity(0.5),
-                    child: ListTile(
-                      title: Text(alarm.word),
-                      subtitle: Text(() {
-                        Position? pos = alarm.positionFromAddressIfCoordinates;
-                        if (pos == null) return alarm.address;
-                        return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
-                      }()),
-                      trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
-                      onTap: () {
-                        Globals.router.push('/alarm', extra: alarm);
-                      },
-                    ),
+                  Stack(
+                    children: [
+                      if (ownResponse?.getResponseInfo().responseType != AlarmResponseType.notReady && !alarm.responseTimeExpired)
+                        FadeTransition(
+                          opacity: controller,
+                          child: Card(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            clipBehavior: Clip.antiAliasWithSaveLayer,
+                            elevation: 10,
+                            color: Colors.red.withOpacity(0.4),
+                            surfaceTintColor: Colors.transparent,
+                            child: ListTile(
+                              title: Text(alarm.word),
+                              subtitle: Text(() {
+                                Position? pos = alarm.positionFromAddressIfCoordinates;
+                                if (pos == null) return alarm.address;
+                                return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
+                              }()),
+                              trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
+                            ),
+                          ),
+                        )
+                      else
+                        // same card with a gradient
+                        Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          clipBehavior: Clip.antiAliasWithSaveLayer,
+                          elevation: 10,
+                          color: Colors.transparent,
+                          surfaceTintColor: Colors.transparent,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) ...[
+                                    Colors.transparent,
+                                    ownResponse.getResponseInfo().responseType.color,
+                                  ],
+                                ],
+                                stops: [
+                                  if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) ...[
+                                    0.4,
+                                    1.0,
+                                  ],
+                                ],
+                              ),
+                            ),
+                            child: ListTile(
+                              title: Text(alarm.word),
+                              subtitle: Text(() {
+                                Position? pos = alarm.positionFromAddressIfCoordinates;
+                                if (pos == null) return alarm.address;
+                                return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
+                              }()),
+                              trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
+                            ),
+                          ),
+                        ),
+                      Card(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        elevation: 10,
+                        color: Colors.transparent,
+                        child: ListTile(
+                          title: Text(alarm.word),
+                          subtitle: Text(() {
+                            Position? pos = alarm.positionFromAddressIfCoordinates;
+                            if (pos == null) return alarm.address;
+                            return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
+                          }()),
+                          trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
+                          onTap: () {
+                            Globals.router.push('/alarm', extra: alarm);
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               );
@@ -440,6 +511,16 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
     );
   }
 
+  void resetBadge() {
+    int badge = 0;
+    for (var alarm in alarms) {
+      if (alarm.ownResponse?.getResponseInfo().responseType == AlarmResponseType.notSet && !alarm.responseTimeExpired) {
+        badge++;
+      }
+    }
+    widget.badge.value = badge;
+  }
+
   @override
   void onUpdate(UpdateInfo info) async {
     if (info.type == UpdateType.alarm) {
@@ -478,14 +559,17 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
 
       if (!mounted) return;
       setState(() {});
+
+      resetBadge();
     } else if (info.type == UpdateType.ui && info.ids.contains("3")) {
       alarms.clear();
-      Alarm.getBatched(limit: 25).then((List<Alarm> value) {
+      Alarm.getAllStreamed().listen((List<Alarm> value) {
         if (!mounted) return;
-        value.sort((a, b) => b.date.compareTo(a.date));
-        setState(() {
-          alarms = value;
-        });
+        loading = false;
+        alarms.addAll(value);
+        alarms.sort((a, b) => b.date.compareTo(a.date));
+        setState(() {});
+        resetBadge();
       });
     }
   }

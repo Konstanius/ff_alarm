@@ -140,7 +140,22 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                 clipBehavior: Clip.antiAliasWithSaveLayer,
                 elevation: 10,
                 margin: const EdgeInsets.symmetric(vertical: 4),
-                child: InkWell(
+                child: ListTile(
+                  leading: const Icon(Icons.storage_outlined),
+                  title: Text(uri.host),
+                  subtitle: Row(
+                    children: [
+                      if (localUser.server.startsWith('s')) ...[
+                        const Icon(Icons.lock_outlined, color: Colors.green, size: kDefaultFontSize),
+                        const SizedBox(width: 4),
+                        const Text('Verschlüsselt'),
+                      ] else ...[
+                        const Icon(Icons.lock_person_outlined, color: Colors.red, size: kDefaultFontSize),
+                        const SizedBox(width: 4),
+                        const Text('Nicht verschlüsselt'),
+                      ],
+                    ],
+                  ),
                   onTap: () async {
                     Globals.context!.loaderOverlay.show();
 
@@ -218,66 +233,49 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                       ],
                     );
                   },
-                  child: ListTile(
-                    leading: const Icon(Icons.storage_outlined),
-                    title: Text(uri.host),
-                    subtitle: Row(
-                      children: [
-                        if (localUser.server.startsWith('s')) ...[
-                          const Icon(Icons.lock_outlined, color: Colors.green, size: kDefaultFontSize),
-                          const SizedBox(width: 4),
-                          const Text('Verschlüsselt'),
-                        ] else ...[
-                          const Icon(Icons.lock_person_outlined, color: Colors.red, size: kDefaultFontSize),
-                          const SizedBox(width: 4),
-                          const Text('Nicht verschlüsselt'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.delete_outline),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size.zero)),
+                    onPressed: () {
+                      generalDialog(
+                        color: Colors.blue,
+                        title: 'Quelle löschen',
+                        content: Text('Möchtest du die Daten-Quelle ${uri.host} wirklich löschen?\n\n'
+                            'Alle Daten, die von dieser Quelle stammen, werden ebenfalls gelöscht.\n\n'
+                            'Zur erneuten Registrierung musst du von einem Wachen-Admin hinzugefügt werden.'),
+                        actions: [
+                          DialogActionButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            },
+                            text: 'Abbrechen',
+                          ),
+                          DialogActionButton(
+                            onPressed: () async {
+                              Globals.context!.loaderOverlay.show();
+                              try {
+                                var data = {
+                                  "sessionId": Globals.prefs.getInt('auth_session_${localUser.server}'),
+                                  "token": Globals.prefs.getString('auth_token_${localUser.server}'),
+                                  "fcmToken": "${Platform.isAndroid ? "A" : "I"}${Globals.prefs.getString('fcm_token')}",
+                                };
+                                await Request('logout', data, localUser.server).emit(true, guest: true);
+                                Navigator.of(Globals.context!).pop();
+                                await Future.delayed(const Duration(milliseconds: 20));
+                                await logout(localUser.server);
+                                Globals.context!.loaderOverlay.hide();
+                              } catch (e, s) {
+                                exceptionToast(e, s);
+                                Globals.context!.loaderOverlay.hide();
+                              }
+                            },
+                            text: 'Löschen',
+                          ),
                         ],
-                      ],
-                    ),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline),
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      style: ButtonStyle(minimumSize: MaterialStateProperty.all(Size.zero)),
-                      onPressed: () {
-                        generalDialog(
-                          color: Colors.blue,
-                          title: 'Quelle löschen',
-                          content: Text('Möchtest du die Daten-Quelle ${uri.host} wirklich löschen?\n\n'
-                              'Alle Daten, die von dieser Quelle stammen, werden ebenfalls gelöscht.\n\n'
-                              'Zur erneuten Registrierung musst du von einem Wachen-Admin hinzugefügt werden.'),
-                          actions: [
-                            DialogActionButton(
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                              text: 'Abbrechen',
-                            ),
-                            DialogActionButton(
-                              onPressed: () async {
-                                Globals.context!.loaderOverlay.show();
-                                try {
-                                  var data = {
-                                    "sessionId": Globals.prefs.getInt('auth_session_${localUser.server}'),
-                                    "token": Globals.prefs.getString('auth_token_${localUser.server}'),
-                                    "fcmToken": "${Platform.isAndroid ? "A" : "I"}${Globals.prefs.getString('fcm_token')}",
-                                  };
-                                  await Request('logout', data, localUser.server).emit(true, guest: true);
-                                  Navigator.of(Globals.context!).pop();
-                                  await Future.delayed(const Duration(milliseconds: 20));
-                                  await logout(localUser.server);
-                                  Globals.context!.loaderOverlay.hide();
-                                } catch (e, s) {
-                                  exceptionToast(e, s);
-                                  Globals.context!.loaderOverlay.hide();
-                                }
-                              },
-                              text: 'Löschen',
-                            ),
-                          ],
-                        );
-                      },
-                    ),
+                      );
+                    },
                   ),
                 ),
               );
@@ -293,21 +291,19 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
             clipBehavior: Clip.antiAliasWithSaveLayer,
             elevation: 10,
             margin: const EdgeInsets.symmetric(vertical: 4),
-            child: InkWell(
+            child: ListTile(
+              leading: const Icon(Icons.settings_outlined),
               onTap: () {
                 Globals.router.push('/lifecycle');
               },
-              child: ListTile(
-                leading: const Icon(Icons.settings_outlined),
-                title: const Text('Optimierungen'),
-                subtitle: lifeCycleBad > 0 ? Text('Aktion${lifeCycleBad > 1 ? 'en' : ''} erforderlich') : null,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (lifeCycleBad > 0) const Icon(Icons.warning_outlined, color: Colors.red),
-                    const Icon(Icons.arrow_forward_outlined),
-                  ],
-                ),
+              title: const Text('Optimierungen'),
+              subtitle: lifeCycleBad > 0 ? Text('Aktion${lifeCycleBad > 1 ? 'en' : ''} erforderlich') : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (lifeCycleBad > 0) const Icon(Icons.warning_outlined, color: Colors.red),
+                  const Icon(Icons.arrow_forward_outlined),
+                ],
               ),
             ),
           ),
@@ -315,21 +311,19 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
             clipBehavior: Clip.antiAliasWithSaveLayer,
             elevation: 10,
             margin: const EdgeInsets.symmetric(vertical: 4),
-            child: InkWell(
+            child: ListTile(
               onTap: () {
                 Globals.router.push('/notifications');
               },
-              child: ListTile(
-                leading: const Icon(Icons.notifications_outlined),
-                title: const Text('Benachrichtigungen'),
-                subtitle: notificationsBad > 0 ? Text('Aktion${notificationsBad > 1 ? 'en' : ''} erforderlich') : null,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (notificationsBad > 0) const Icon(Icons.warning_outlined, color: Colors.red),
-                    const Icon(Icons.arrow_forward_outlined),
-                  ],
-                ),
+              leading: const Icon(Icons.notifications_outlined),
+              title: const Text('Benachrichtigungen'),
+              subtitle: notificationsBad > 0 ? Text('Aktion${notificationsBad > 1 ? 'en' : ''} erforderlich') : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (notificationsBad > 0) const Icon(Icons.warning_outlined, color: Colors.red),
+                  const Icon(Icons.arrow_forward_outlined),
+                ],
               ),
             ),
           ),
@@ -342,29 +336,27 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
                 clipBehavior: Clip.antiAliasWithSaveLayer,
                 elevation: 10,
                 margin: const EdgeInsets.symmetric(vertical: 4),
-                child: InkWell(
+                child: ListTile(
                   onTap: () {
                     Globals.router.push('/alarmsettings', extra: station.id);
                   },
-                  child: ListTile(
-                    leading: allNotificationSettings.containsKey(station.id) ? const Icon(Icons.settings_outlined) : const Icon(Icons.question_mark_outlined),
-                    title: Text(station.descriptiveName),
-                    subtitle: () {
-                      LatLng? lastPosition;
-                      if (Globals.lastPosition != null) {
-                        lastPosition = Formats.positionToLatLng(Globals.lastPosition!);
-                      }
-                      if (allNotificationSettings.containsKey(station.id)) {
-                        return Text(
-                          'Zu deiner Position & Zeit:\n'
-                          '${allNotificationSettings[station.id]!.shouldNotify(lastPosition) ? 'EINGESCHALTET' : 'ALLE ABSAGEN'}',
-                        );
-                      } else {
-                        return const Text('Nicht konfiguriert');
-                      }
-                    }(),
-                    trailing: const Icon(Icons.arrow_forward_outlined),
-                  ),
+                  leading: allNotificationSettings.containsKey(station.id) ? const Icon(Icons.settings_outlined) : const Icon(Icons.question_mark_outlined),
+                  title: Text(station.descriptiveName),
+                  subtitle: () {
+                    LatLng? lastPosition;
+                    if (Globals.lastPosition != null) {
+                      lastPosition = Formats.positionToLatLng(Globals.lastPosition!);
+                    }
+                    if (allNotificationSettings.containsKey(station.id)) {
+                      return Text(
+                        'Zu deiner Position & Zeit:\n'
+                        '${allNotificationSettings[station.id]!.shouldNotify(lastPosition) ? 'EINGESCHALTET' : 'ALLE ABSAGEN'}',
+                      );
+                    } else {
+                      return const Text('Nicht konfiguriert');
+                    }
+                  }(),
+                  trailing: const Icon(Icons.arrow_forward_outlined),
                 ),
               ),
           ],
@@ -536,15 +528,13 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
               clipBehavior: Clip.antiAliasWithSaveLayer,
               elevation: 10,
               margin: const EdgeInsets.symmetric(vertical: 4),
-              child: InkWell(
+              child: ListTile(
+                leading: const Icon(Icons.warning_amber_outlined),
+                title: const Text('Alarme stummschalten'),
                 onTap: () => onChanged(),
-                child: ListTile(
-                  leading: const Icon(Icons.warning_amber_outlined),
-                  title: const Text('Alarme stummschalten'),
-                  trailing: Switch(
-                    value: Globals.prefs.getBool('alarms_muted') ?? false,
-                    onChanged: (_) => onChanged(),
-                  ),
+                trailing: Switch(
+                  value: Globals.prefs.getBool('alarms_muted') ?? false,
+                  onChanged: (_) => onChanged(),
                 ),
               ),
             );
@@ -553,22 +543,20 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
             clipBehavior: Clip.antiAliasWithSaveLayer,
             elevation: 10,
             margin: const EdgeInsets.symmetric(vertical: 4),
-            child: InkWell(
+            child: ListTile(
               onTap: () {
                 bool muted = Globals.prefs.getBool('alarms_testsMuted') ?? false;
                 Globals.prefs.setBool('alarms_testsMuted', !muted);
                 if (mounted) setState(() {});
               },
-              child: ListTile(
-                leading: const Icon(Icons.assignment_turned_in_outlined),
-                title: const Text('Tests stummschalten'),
-                trailing: Switch(
-                  value: Globals.prefs.getBool('alarms_testsMuted') ?? false,
-                  onChanged: (value) {
-                    Globals.prefs.setBool('alarms_testsMuted', value);
-                    if (mounted) setState(() {});
-                  },
-                ),
+              leading: const Icon(Icons.assignment_turned_in_outlined),
+              title: const Text('Tests stummschalten'),
+              trailing: Switch(
+                value: Globals.prefs.getBool('alarms_testsMuted') ?? false,
+                onChanged: (value) {
+                  Globals.prefs.setBool('alarms_testsMuted', value);
+                  if (mounted) setState(() {});
+                },
               ),
             ),
           ),

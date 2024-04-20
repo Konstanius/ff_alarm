@@ -73,64 +73,22 @@ class _NotificationSettingsState extends State<NotificationSettings> {
         children: [
           const SettingsDivider(text: 'Funktionsnotwendig'),
           // notification
-          ListTile(
-            leading: const Icon(Icons.notifications_outlined),
-            title: const Text('Benachrichtigungen'),
-            subtitle: const Text('Erlaubt der App, dir Benachrichtigungen anzuzeigen'),
-            trailing: notifications ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.close_outlined, color: Colors.red),
-            onTap: () async {
-              if (notifications) {
-                infoToast('Einstellung bereits aktiviert!');
-                return;
-              }
-
-              final status = await Permission.notification.request();
-              if (status.isGranted) {
-                successToast('Einstellung aktiviert!');
-              } else {
-                errorToast('Einstellung fehlgeschlagen!');
-              }
-              checkSettings();
-            },
-          ),
-          if (Platform.isAndroid)
-            // scheduleExactAlarm
-            ListTile(
-              leading: const Icon(Icons.alarm_outlined),
-              title: const Text('Genauer Alarm'),
-              subtitle: const Text('Ermöglicht der App, Benachrichtigungen ohne Verzögerung anzuzeigen'),
-              trailing: scheduleExactAlarm ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.close_outlined, color: Colors.red),
+          Card(
+            clipBehavior: Clip.antiAliasWithSaveLayer,
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            elevation: 10,
+            child: ListTile(
+              leading: const Icon(Icons.notifications_outlined),
+              title: const Text('Benachrichtigungen'),
+              subtitle: const Text('Erlaubt der App, dir Benachrichtigungen anzuzeigen'),
+              trailing: notifications ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.close_outlined, color: Colors.red),
               onTap: () async {
-                if (scheduleExactAlarm) {
+                if (notifications) {
                   infoToast('Einstellung bereits aktiviert!');
                   return;
                 }
 
-                var res = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Genauer Alarm',
-                  content: const Text(
-                    'Diese Einstellung ermöglicht es der App, Benachrichtigungen ohne Verzögerung anzuzeigen.\n\n'
-                    'Dadurch können Alarmierungen schneller und zuverlässiger empfangen werden.',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Abbrechen',
-                    ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Fortfahren',
-                    ),
-                  ],
-                );
-                if (res != true) return;
-
-                final status = await Permission.scheduleExactAlarm.request();
+                final status = await Permission.notification.request();
                 if (status.isGranted) {
                   successToast('Einstellung aktiviert!');
                 } else {
@@ -139,239 +97,311 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                 checkSettings();
               },
             ),
+          ),
+          if (Platform.isAndroid)
+            // scheduleExactAlarm
+            Card(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              elevation: 10,
+              child: ListTile(
+                leading: const Icon(Icons.alarm_outlined),
+                title: const Text('Genauer Alarm'),
+                subtitle: const Text('Ermöglicht der App, Benachrichtigungen ohne Verzögerung anzuzeigen'),
+                trailing: scheduleExactAlarm ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.close_outlined, color: Colors.red),
+                onTap: () async {
+                  if (scheduleExactAlarm) {
+                    infoToast('Einstellung bereits aktiviert!');
+                    return;
+                  }
+
+                  var res = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Genauer Alarm',
+                    content: const Text(
+                      'Diese Einstellung ermöglicht es der App, Benachrichtigungen ohne Verzögerung anzuzeigen.\n\n'
+                      'Dadurch können Alarmierungen schneller und zuverlässiger empfangen werden.',
+                    ),
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Abbrechen',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Fortfahren',
+                      ),
+                    ],
+                  );
+                  if (res != true) return;
+
+                  final status = await Permission.scheduleExactAlarm.request();
+                  if (status.isGranted) {
+                    successToast('Einstellung aktiviert!');
+                  } else {
+                    errorToast('Einstellung fehlgeschlagen!');
+                  }
+                  checkSettings();
+                },
+              ),
+            ),
           if (Platform.isAndroid)
             // accessNotificationPolicy
-            ListTile(
-              leading: const Icon(Icons.policy_outlined),
-              title: const Text('Benachrichtigungspolitik'),
-              subtitle: const Text('Ermöglicht der App, Alarmierungen auch bei stummgeschaltetem Gerät zu empfangen und laut zu signalisieren'),
-              trailing: accessNotificationPolicy ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.close_outlined, color: Colors.red),
-              onTap: () async {
-                if (accessNotificationPolicy) {
-                  infoToast('Einstellung bereits aktiviert!');
-                  return;
-                }
+            Card(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              elevation: 10,
+              child: ListTile(
+                leading: const Icon(Icons.policy_outlined),
+                title: const Text('Benachrichtigungspolitik'),
+                subtitle: const Text('Ermöglicht der App, Alarmierungen auch bei stummgeschaltetem Gerät zu empfangen und laut zu signalisieren'),
+                trailing: accessNotificationPolicy ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.close_outlined, color: Colors.red),
+                onTap: () async {
+                  if (accessNotificationPolicy) {
+                    infoToast('Einstellung bereits aktiviert!');
+                    return;
+                  }
 
-                var res = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Nachrichtenverwaltung',
-                  content: const Text(
-                    'Diese Einstellung ermöglicht es der App, Alarmierungen auch bei stummgeschaltetem Gerät zu empfangen und laut zu signalisieren.\n\n'
-                    'Der "Nicht-Stören"-Modus kann weiterhin Alarmierungen verhindern, außer du deaktivierst Diesen unten.\n\n'
-                    'Beim Fortfahren musst du in der folgenden Liste für die App "FF Alarm" die Benachrichtigungspolitik für den "Nicht-Stören"-Modus aktivieren.',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Abbrechen',
+                  var res = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Nachrichtenverwaltung',
+                    content: const Text(
+                      'Diese Einstellung ermöglicht es der App, Alarmierungen auch bei stummgeschaltetem Gerät zu empfangen und laut zu signalisieren.\n\n'
+                      'Der "Nicht-Stören"-Modus kann weiterhin Alarmierungen verhindern, außer du deaktivierst Diesen unten.\n\n'
+                      'Beim Fortfahren musst du in der folgenden Liste für die App "FF Alarm" die Benachrichtigungspolitik für den "Nicht-Stören"-Modus aktivieren.',
                     ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Fortfahren',
-                    ),
-                  ],
-                );
-                if (res != true) return;
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Abbrechen',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Fortfahren',
+                      ),
+                    ],
+                  );
+                  if (res != true) return;
 
-                final status = await Permission.accessNotificationPolicy.request();
-                if (status.isGranted) {
-                  successToast('Einstellung aktiviert!');
-                } else {
-                  errorToast('Einstellung fehlgeschlagen!');
-                }
-                checkSettings();
-              },
+                  final status = await Permission.accessNotificationPolicy.request();
+                  if (status.isGranted) {
+                    successToast('Einstellung aktiviert!');
+                  } else {
+                    errorToast('Einstellung fehlgeschlagen!');
+                  }
+                  checkSettings();
+                },
+              ),
             ),
           const SettingsDivider(text: 'Nicht-Stören-Modus'),
           if (Platform.isIOS)
             // criticalAlerts
-            ListTile(
-              leading: const Icon(Icons.warning_outlined),
-              title: const Text('Kritische Alarme'),
-              subtitle: const Text('Erlaubt der App, den "Nicht-Stören"-Modus zu umgehen'),
-              trailing: criticalAlerts ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
-              onTap: () async {
-                if (criticalAlerts) {
-                  infoToast('Einstellung bereits aktiviert!');
-                  return;
-                }
+            Card(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              elevation: 10,
+              child: ListTile(
+                leading: const Icon(Icons.warning_outlined),
+                title: const Text('Kritische Alarme'),
+                subtitle: const Text('Erlaubt der App, den "Nicht-Stören"-Modus zu umgehen'),
+                trailing: criticalAlerts ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
+                onTap: () async {
+                  if (criticalAlerts) {
+                    infoToast('Einstellung bereits aktiviert!');
+                    return;
+                  }
 
-                var res = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Kritische Alarme',
-                  content: const Text(
-                    'Diese Einstellung ermöglicht es der App, den "Nicht-Stören"-Modus zu umgehen und Alarmierungen auch bei komplett stummgeschaltetem Gerät zu empfangen und laut zu signalisieren.',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Abbrechen',
+                  var res = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Kritische Alarme',
+                    content: const Text(
+                      'Diese Einstellung ermöglicht es der App, den "Nicht-Stören"-Modus zu umgehen und Alarmierungen auch bei komplett stummgeschaltetem Gerät zu empfangen und laut zu signalisieren.',
                     ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Fortfahren',
-                    ),
-                  ],
-                );
-                if (res != true) return;
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Abbrechen',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Fortfahren',
+                      ),
+                    ],
+                  );
+                  if (res != true) return;
 
-                // request via method channel from Globals
-                final response = await Globals.channel.invokeMethod('requestCriticalAlertPermission');
-                if (response == true) {
-                  successToast('Einstellung aktiviert!');
-                } else {
-                  errorToast('Einstellung fehlgeschlagen!');
-                }
-                checkSettings();
-              },
+                  // request via method channel from Globals
+                  final response = await Globals.channel.invokeMethod('requestCriticalAlertPermission');
+                  if (response == true) {
+                    successToast('Einstellung aktiviert!');
+                  } else {
+                    errorToast('Einstellung fehlgeschlagen!');
+                  }
+                  checkSettings();
+                },
+              ),
             ),
           if (Platform.isAndroid)
             // criticalAlerts
-            ListTile(
-              leading: const Icon(Icons.warning_outlined),
-              title: const Text('Kritische Alarme'),
-              subtitle: const Text('Erlaubt der App, den "Nicht-Stören"-Modus zu umgehen'),
-              trailing: criticalAlerts ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
-              onTap: () async {
-                var res = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Kritische Alarme',
-                  content: const Text(
-                    'Diese Einstellung ermöglicht es der App, den "Nicht-Stören"-Modus zu umgehen und Alarmierungen auch bei komplett stummgeschaltetem Gerät zu empfangen und laut zu signalisieren.\n\n'
-                    'Bitte aktiviere dazu in der folgenden Seite unten die Einstellung "Nicht-Stören"-Erlaubnis (oder Ähnlich).\n\n'
-                    'Dies gilt NICHT für Test-Alarmierungen!',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Abbrechen',
+            Card(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              elevation: 10,
+              child: ListTile(
+                leading: const Icon(Icons.warning_outlined),
+                title: const Text('Kritische Alarme'),
+                subtitle: const Text('Erlaubt der App, den "Nicht-Stören"-Modus zu umgehen'),
+                trailing: criticalAlerts ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
+                onTap: () async {
+                  var res = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Kritische Alarme',
+                    content: const Text(
+                      'Diese Einstellung ermöglicht es der App, den "Nicht-Stören"-Modus zu umgehen und Alarmierungen auch bei komplett stummgeschaltetem Gerät zu empfangen und laut zu signalisieren.\n\n'
+                      'Bitte aktiviere dazu in der folgenden Seite unten die Einstellung "Nicht-Stören"-Erlaubnis (oder Ähnlich).\n\n'
+                      'Dies gilt NICHT für Test-Alarmierungen!',
                     ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Fortfahren',
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Abbrechen',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Fortfahren',
+                      ),
+                    ],
+                  );
+                  if (res != true) return;
+
+                  AwesomeNotifications().showNotificationConfigPage(channelKey: 'alarm');
+
+                  await Future.delayed(const Duration(seconds: 1));
+
+                  var result = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Kritische Alarme',
+                    content: const Text(
+                      'Hast du die Einstellung für "Nicht-Stören"-Erlaubnis (oder Ähnlich) gefunden und aktiviert?',
                     ),
-                  ],
-                );
-                if (res != true) return;
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Nein',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Ja',
+                      ),
+                    ],
+                  );
 
-                AwesomeNotifications().showNotificationConfigPage(channelKey: 'alarm');
+                  if (result == true) {
+                    Globals.prefs.setBool('critical_alerts', true);
+                    successToast('Einstellung erfolgreich!');
+                  } else {
+                    Globals.prefs.remove('critical_alerts');
+                    errorToast('Einstellung fehlgeschlagen!');
+                  }
 
-                await Future.delayed(const Duration(seconds: 1));
-
-                var result = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Kritische Alarme',
-                  content: const Text(
-                    'Hast du die Einstellung für "Nicht-Stören"-Erlaubnis (oder Ähnlich) gefunden und aktiviert?',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Nein',
-                    ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Ja',
-                    ),
-                  ],
-                );
-
-                if (result == true) {
-                  Globals.prefs.setBool('critical_alerts', true);
-                  successToast('Einstellung erfolgreich!');
-                } else {
-                  Globals.prefs.remove('critical_alerts');
-                  errorToast('Einstellung fehlgeschlagen!');
-                }
-
-                checkSettings();
-              },
+                  checkSettings();
+                },
+              ),
             ),
           if (Platform.isAndroid)
             // criticalAlertsTest
-            ListTile(
-              leading: const Icon(Icons.assignment_turned_in_outlined),
-              title: const Text('Kritische Alarme (Tests)'),
-              subtitle: const Text('Erlaubt der App, den "Nicht-Stören"-Modus für Test-Alarmierungen zu umgehen'),
-              trailing: criticalAlertsTests ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
-              onTap: () async {
-                var res = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Kritische Alarme (Tests)',
-                  content: const Text(
-                    'Diese Einstellung ermöglicht es der App, den "Nicht-Stören"-Modus zu umgehen und Test-Alarmierungen auch bei komplett stummgeschaltetem Gerät zu empfangen und laut zu signalisieren.\n\n'
-                    'Bitte aktiviere dazu in der folgenden Seite unten die Einstellung "Nicht-Stören"-Erlaubnis (oder Ähnlich).\n\n'
-                    'Dies gilt NUR für Test-Alarmierungen!',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Abbrechen',
+            Card(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              elevation: 10,
+              child: ListTile(
+                leading: const Icon(Icons.assignment_turned_in_outlined),
+                title: const Text('Kritische Alarme (Tests)'),
+                subtitle: const Text('Erlaubt der App, den "Nicht-Stören"-Modus für Test-Alarmierungen zu umgehen'),
+                trailing: criticalAlertsTests ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
+                onTap: () async {
+                  var res = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Kritische Alarme (Tests)',
+                    content: const Text(
+                      'Diese Einstellung ermöglicht es der App, den "Nicht-Stören"-Modus zu umgehen und Test-Alarmierungen auch bei komplett stummgeschaltetem Gerät zu empfangen und laut zu signalisieren.\n\n'
+                      'Bitte aktiviere dazu in der folgenden Seite unten die Einstellung "Nicht-Stören"-Erlaubnis (oder Ähnlich).\n\n'
+                      'Dies gilt NUR für Test-Alarmierungen!',
                     ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Fortfahren',
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Abbrechen',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Fortfahren',
+                      ),
+                    ],
+                  );
+                  if (res != true) return;
+
+                  AwesomeNotifications().showNotificationConfigPage(channelKey: 'test');
+
+                  await Future.delayed(const Duration(seconds: 1));
+
+                  var result = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Kritische Alarme',
+                    content: const Text(
+                      'Hast du die Einstellung für "Nicht-Stören"-Erlaubnis (oder Ähnlich) gefunden und aktiviert?',
                     ),
-                  ],
-                );
-                if (res != true) return;
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Nein',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Ja',
+                      ),
+                    ],
+                  );
 
-                AwesomeNotifications().showNotificationConfigPage(channelKey: 'test');
+                  if (result == true) {
+                    Globals.prefs.setBool('critical_alerts_test', true);
+                    successToast('Einstellung erfolgreich!');
+                  } else {
+                    Globals.prefs.remove('critical_alerts_test');
+                    errorToast('Einstellung fehlgeschlagen!');
+                  }
 
-                await Future.delayed(const Duration(seconds: 1));
-
-                var result = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Kritische Alarme',
-                  content: const Text(
-                    'Hast du die Einstellung für "Nicht-Stören"-Erlaubnis (oder Ähnlich) gefunden und aktiviert?',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Nein',
-                    ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Ja',
-                    ),
-                  ],
-                );
-
-                if (result == true) {
-                  Globals.prefs.setBool('critical_alerts_test', true);
-                  successToast('Einstellung erfolgreich!');
-                } else {
-                  Globals.prefs.remove('critical_alerts_test');
-                  errorToast('Einstellung fehlgeschlagen!');
-                }
-
-                checkSettings();
-              },
+                  checkSettings();
+                },
+              ),
             ),
         ],
       ),

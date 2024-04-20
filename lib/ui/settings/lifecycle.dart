@@ -95,372 +95,407 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
           if (Platform.isAndroid) ...[
             const SettingsDivider(text: 'Funktionsnotwendig'),
             // ignoreBatteryOptimizations
-            ListTile(
-              leading: const Icon(Icons.battery_unknown_outlined),
-              title: const Text('Akkuoptimierungen ignorieren'),
-              subtitle: const Text('Erlaubt der App, im Hintergrund weiterzulaufen.'),
-              trailing: ignoreBatteryOptimizations ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.close_outlined, color: Colors.red),
-              onTap: () async {
-                if (ignoreBatteryOptimizations) {
-                  infoToast('Einstellung bereits aktiviert!');
-                  return;
-                }
+            Card(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              elevation: 10,
+              child: ListTile(
+                leading: const Icon(Icons.battery_unknown_outlined),
+                title: const Text('Akkuoptimierungen ignorieren'),
+                subtitle: const Text('Erlaubt der App, im Hintergrund weiterzulaufen.'),
+                trailing: ignoreBatteryOptimizations ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.close_outlined, color: Colors.red),
+                onTap: () async {
+                  if (ignoreBatteryOptimizations) {
+                    infoToast('Einstellung bereits aktiviert!');
+                    return;
+                  }
 
-                var res = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Akkuoptimierungen ignorieren',
-                  content: const Text(
-                    'Durch das Ignorieren der Akkuoptimierungen wird die App nicht mehr automatisch beendet und kann im Hintergrund weiterlaufen.\n\n'
-                    'Dies kann Probleme in der Alarmierungs- und Standortbestimmungsfunktion beheben, aber auch die Akkulaufzeit beeinträchtigen.',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Abbrechen',
+                  var res = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Akkuoptimierungen ignorieren',
+                    content: const Text(
+                      'Durch das Ignorieren der Akkuoptimierungen wird die App nicht mehr automatisch beendet und kann im Hintergrund weiterlaufen.\n\n'
+                      'Dies kann Probleme in der Alarmierungs- und Standortbestimmungsfunktion beheben, aber auch die Akkulaufzeit beeinträchtigen.',
                     ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Fortfahren',
-                    ),
-                  ],
-                );
-                if (res != true) return;
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Abbrechen',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Fortfahren',
+                      ),
+                    ],
+                  );
+                  if (res != true) return;
 
-                var result = await Permission.ignoreBatteryOptimizations.request();
-                if (result.isGranted) {
-                  successToast('Einstellung erfolgreich!');
-                } else {
-                  errorToast('Einstellung fehlgeschlagen!');
-                }
+                  var result = await Permission.ignoreBatteryOptimizations.request();
+                  if (result.isGranted) {
+                    successToast('Einstellung erfolgreich!');
+                  } else {
+                    errorToast('Einstellung fehlgeschlagen!');
+                  }
 
-                checkSettings();
-              },
+                  checkSettings();
+                },
+              ),
             ),
             // disable remove permissions if app isn't used / disable pause activity if app isn't used
-            ListTile(
-              leading: const Icon(Icons.remove_moderator_outlined),
-              title: const Text('App-Optimierungen'),
-              subtitle: const Text('Verhindert, dass Berechtigungen bei Inaktivität entfernt werden.'),
-              trailing: appOptimizations ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.close_outlined, color: Colors.red),
-              onTap: () async {
-                var res = await generalDialog(
-                  color: Colors.blue,
-                  title: 'App-Optimierungen',
-                  content: const Text(
-                    'Durch das Deaktivieren der App-Optimierungen wird verhindert, dass Berechtigungen bei Inaktivität von Android entfernt werden.\n\n'
-                    'Dies ist notwendig, damit die App über längere Zeit funktionstüchtig bleibt und Alarmierungen zuverlässig empfangen werden können.\n\n'
-                    'Beim Fortfahren musst du in der folgenden Seite erst auf "Berechtigungen" klicken, dann ganz unten die Einstellung "Berechtigungen bei Nicht-Nutzung entfernen" (oder Ähnlich) deaktivieren.',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Abbrechen',
+            Card(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              elevation: 10,
+              child: ListTile(
+                leading: const Icon(Icons.remove_moderator_outlined),
+                title: const Text('App-Optimierungen'),
+                subtitle: const Text('Verhindert, dass Berechtigungen bei Inaktivität entfernt werden.'),
+                trailing: appOptimizations ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.close_outlined, color: Colors.red),
+                onTap: () async {
+                  var res = await generalDialog(
+                    color: Colors.blue,
+                    title: 'App-Optimierungen',
+                    content: const Text(
+                      'Durch das Deaktivieren der App-Optimierungen wird verhindert, dass Berechtigungen bei Inaktivität von Android entfernt werden.\n\n'
+                      'Dies ist notwendig, damit die App über längere Zeit funktionstüchtig bleibt und Alarmierungen zuverlässig empfangen werden können.\n\n'
+                      'Beim Fortfahren musst du in der folgenden Seite erst auf "Berechtigungen" klicken, dann ganz unten die Einstellung "Berechtigungen bei Nicht-Nutzung entfernen" (oder Ähnlich) deaktivieren.',
                     ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Fortfahren',
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Abbrechen',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Fortfahren',
+                      ),
+                    ],
+                  );
+                  if (res != true) return;
+
+                  openAppSettings();
+
+                  await Future.delayed(const Duration(seconds: 1));
+
+                  var result = await generalDialog(
+                    color: Colors.blue,
+                    title: 'App-Optimierungen',
+                    content: const Text(
+                      'Hast du die Einstellung "Berechtigungen bei Nicht-Nutzung entfernen" (oder Ähnlich) deaktiviert?',
                     ),
-                  ],
-                );
-                if (res != true) return;
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Nein',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Ja',
+                      ),
+                    ],
+                  );
 
-                openAppSettings();
+                  if (result == true) {
+                    Globals.prefs.setBool('appOptimizations', true);
+                    successToast('Einstellung erfolgreich!');
+                  } else {
+                    Globals.prefs.remove('appOptimizations');
+                    errorToast('Einstellung fehlgeschlagen!');
+                  }
 
-                await Future.delayed(const Duration(seconds: 1));
-
-                var result = await generalDialog(
-                  color: Colors.blue,
-                  title: 'App-Optimierungen',
-                  content: const Text(
-                    'Hast du die Einstellung "Berechtigungen bei Nicht-Nutzung entfernen" (oder Ähnlich) deaktiviert?',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Nein',
-                    ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Ja',
-                    ),
-                  ],
-                );
-
-                if (result == true) {
-                  Globals.prefs.setBool('appOptimizations', true);
-                  successToast('Einstellung erfolgreich!');
-                } else {
-                  Globals.prefs.remove('appOptimizations');
-                  errorToast('Einstellung fehlgeschlagen!');
-                }
-
-                checkSettings();
-              },
+                  checkSettings();
+                },
+              ),
             ),
             // backgroundData
-            ListTile(
-              leading: const Icon(Icons.data_usage_outlined),
-              title: const Text('Hintergrunddaten'),
-              subtitle: const Text('Erlaubt der App, im Hintergrund auf das Internet zuzugreifen.'),
-              trailing: backgroundData ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.close_outlined, color: Colors.red),
-              onTap: () async {
-                if (backgroundData) {
-                  infoToast('Einstellung bereits aktiviert!');
-                  return;
-                }
+            Card(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              elevation: 10,
+              child: ListTile(
+                leading: const Icon(Icons.data_usage_outlined),
+                title: const Text('Hintergrunddaten'),
+                subtitle: const Text('Erlaubt der App, im Hintergrund auf das Internet zuzugreifen.'),
+                trailing: backgroundData ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.close_outlined, color: Colors.red),
+                onTap: () async {
+                  if (backgroundData) {
+                    infoToast('Einstellung bereits aktiviert!');
+                    return;
+                  }
 
-                var res = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Hintergrunddaten',
-                  content: const Text(
-                    'Durch das Aktivieren der Hintergrunddaten wird die App auch im Hintergrund weiterhin auf das Internet zugreifen können.\n\n'
-                    'Dies ist notwendig, wenn du bei einer Alarmierung auch im Hintergrund auf dem Laufenden gehalten werden möchtest.\n\n'
-                    'Beim Fortfahren musst du in der folgenden Seite die Datennutzungsdetails öffnen und Hintergrunddaten erlauben.',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Abbrechen',
+                  var res = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Hintergrunddaten',
+                    content: const Text(
+                      'Durch das Aktivieren der Hintergrunddaten wird die App auch im Hintergrund weiterhin auf das Internet zugreifen können.\n\n'
+                      'Dies ist notwendig, wenn du bei einer Alarmierung auch im Hintergrund auf dem Laufenden gehalten werden möchtest.\n\n'
+                      'Beim Fortfahren musst du in der folgenden Seite die Datennutzungsdetails öffnen und Hintergrunddaten erlauben.',
                     ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Fortfahren',
-                    ),
-                  ],
-                );
-                if (res != true) return;
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Abbrechen',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Fortfahren',
+                      ),
+                    ],
+                  );
+                  if (res != true) return;
 
-                openAppSettings();
-              },
+                  openAppSettings();
+                },
+              ),
             ),
             const SettingsDivider(text: 'Optional - Empfohlen'),
             // batteryUsage -> background activity
-            ListTile(
-              leading: const Icon(Icons.phonelink_outlined),
-              title: const Text('Hintergrundaktivität'),
-              subtitle: const Text('Erlaubt der App, im Hintergrund weiterzulaufen.'),
-              trailing: backgroundActivity ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
-              onTap: () async {
-                var res = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Hintergrundaktivität',
-                  content: const Text(
-                    'Durch das Aktivieren der Hintergrundaktivität wird die App auch im Hintergrund weiterlaufen können.\n\n'
-                    'Dies ist notwendig, wenn du bei einer Alarmierung auch im Hintergrund auf dem Laufenden gehalten werden möchtest.\n\n'
-                    'Beim Fortfahren musst du in der folgenden Seite die Batterienutzung öffnen und die Einstellung "Hintergrundaktivität" (oder Ähnlich) aktivieren.',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Abbrechen',
+            Card(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              elevation: 10,
+              child: ListTile(
+                leading: const Icon(Icons.phonelink_outlined),
+                title: const Text('Hintergrundaktivität'),
+                subtitle: const Text('Erlaubt der App, im Hintergrund weiterzulaufen.'),
+                trailing: backgroundActivity ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
+                onTap: () async {
+                  var res = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Hintergrundaktivität',
+                    content: const Text(
+                      'Durch das Aktivieren der Hintergrundaktivität wird die App auch im Hintergrund weiterlaufen können.\n\n'
+                      'Dies ist notwendig, wenn du bei einer Alarmierung auch im Hintergrund auf dem Laufenden gehalten werden möchtest.\n\n'
+                      'Beim Fortfahren musst du in der folgenden Seite die Batterienutzung öffnen und die Einstellung "Hintergrundaktivität" (oder Ähnlich) aktivieren.',
                     ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Fortfahren',
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Abbrechen',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Fortfahren',
+                      ),
+                    ],
+                  );
+                  if (res != true) return;
+
+                  openAppSettings();
+
+                  await Future.delayed(const Duration(seconds: 1));
+
+                  var result = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Hintergrundaktivität',
+                    content: const Text(
+                      'Hast du die Einstellung "Hintergrundaktivität" (oder Ähnlich) aktiviert?',
                     ),
-                  ],
-                );
-                if (res != true) return;
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Nein',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Ja',
+                      ),
+                    ],
+                  );
+                  if (result == true) {
+                    Globals.prefs.setBool('backgroundActivity', true);
+                    successToast('Einstellung erfolgreich!');
+                  } else {
+                    Globals.prefs.remove('backgroundActivity');
+                    errorToast('Einstellung fehlgeschlagen!');
+                  }
 
-                openAppSettings();
-
-                await Future.delayed(const Duration(seconds: 1));
-
-                var result = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Hintergrundaktivität',
-                  content: const Text(
-                    'Hast du die Einstellung "Hintergrundaktivität" (oder Ähnlich) aktiviert?',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Nein',
-                    ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Ja',
-                    ),
-                  ],
-                );
-                if (result == true) {
-                  Globals.prefs.setBool('backgroundActivity', true);
-                  successToast('Einstellung erfolgreich!');
-                } else {
-                  Globals.prefs.remove('backgroundActivity');
-                  errorToast('Einstellung fehlgeschlagen!');
-                }
-
-                checkSettings();
-              },
+                  checkSettings();
+                },
+              ),
             ),
             // batteryUsage -> allow auto launch
-            ListTile(
-              leading: const Icon(Icons.restart_alt_outlined),
-              title: const Text('Automatischer Start'),
-              subtitle: const Text('Erlaubt der App, Sich und Seine Dienste von selbst zu starten.'),
-              trailing: allowAutoLaunch ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
-              onTap: () async {
-                var res = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Automatischer Start',
-                  content: const Text(
-                    'Durch das Aktivieren des automatischen Starts kann die App gestoppte Dienste von selbst starten können.\n\n'
-                    'Dies ist notwendig, damit die App auch im Hintergrund weiterlaufen kann und Alarmierungen zuverlässig empfangen werden können.\n\n'
-                    'Beim Fortfahren musst du in der folgenden Seite die Batterienutzung öffnen und die Einstellung "Automatischer Start" (oder Ähnlich) aktivieren.',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Abbrechen',
+            Card(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              elevation: 10,
+              child: ListTile(
+                leading: const Icon(Icons.restart_alt_outlined),
+                title: const Text('Automatischer Start'),
+                subtitle: const Text('Erlaubt der App, Sich und Seine Dienste von selbst zu starten.'),
+                trailing: allowAutoLaunch ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
+                onTap: () async {
+                  var res = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Automatischer Start',
+                    content: const Text(
+                      'Durch das Aktivieren des automatischen Starts kann die App gestoppte Dienste von selbst starten können.\n\n'
+                      'Dies ist notwendig, damit die App auch im Hintergrund weiterlaufen kann und Alarmierungen zuverlässig empfangen werden können.\n\n'
+                      'Beim Fortfahren musst du in der folgenden Seite die Batterienutzung öffnen und die Einstellung "Automatischer Start" (oder Ähnlich) aktivieren.',
                     ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Fortfahren',
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Abbrechen',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Fortfahren',
+                      ),
+                    ],
+                  );
+                  if (res != true) return;
+
+                  openAppSettings();
+
+                  await Future.delayed(const Duration(seconds: 1));
+
+                  var result = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Automatischer Start',
+                    content: const Text(
+                      'Hast du die Einstellung "Automatischer Start" (oder Ähnlich) aktiviert?',
                     ),
-                  ],
-                );
-                if (res != true) return;
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Nein',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Ja',
+                      ),
+                    ],
+                  );
+                  if (result == true) {
+                    Globals.prefs.setBool('allowAutoLaunch', true);
+                    successToast('Einstellung erfolgreich!');
+                  } else {
+                    Globals.prefs.remove('allowAutoLaunch');
+                    errorToast('Einstellung fehlgeschlagen!');
+                  }
 
-                openAppSettings();
-
-                await Future.delayed(const Duration(seconds: 1));
-
-                var result = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Automatischer Start',
-                  content: const Text(
-                    'Hast du die Einstellung "Automatischer Start" (oder Ähnlich) aktiviert?',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Nein',
-                    ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Ja',
-                    ),
-                  ],
-                );
-                if (result == true) {
-                  Globals.prefs.setBool('allowAutoLaunch', true);
-                  successToast('Einstellung erfolgreich!');
-                } else {
-                  Globals.prefs.remove('allowAutoLaunch');
-                  errorToast('Einstellung fehlgeschlagen!');
-                }
-
-                checkSettings();
-              },
+                  checkSettings();
+                },
+              ),
             ),
             const SettingsDivider(text: 'Optional'),
           ],
           // locationWhenInUse and locationAlways
-          ListTile(
-            leading: const Icon(Icons.location_on_outlined),
-            title: const Text('Standortzugriff'),
-            subtitle: const Text('Erlaubt der App, auf deinen Standort zuzugreifen.'),
-            trailing: () {
-              if (locationAlways && locationWhenInUse) return const Icon(Icons.check_outlined, color: Colors.green);
-              return const Icon(Icons.warning_amber_outlined, color: Colors.amber);
-            }(),
-            onTap: () async {
-              if (locationAlways) {
-                infoToast('Einstellung bereits aktiviert!');
-                return;
-              }
-
-              await requestLocationPermission();
-              checkSettings();
-            },
-          ),
-          // motionSensors
-          if (Platform.isIOS)
-            ListTile(
-              leading: const Icon(Icons.motion_photos_on_outlined),
-              title: const Text('Bewegungssensoren'),
-              subtitle: const Text('Erlaubt der App, genauere Positionsabfragen zu stellen.'),
-              trailing: motionSensors ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
+          Card(
+            clipBehavior: Clip.antiAliasWithSaveLayer,
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            elevation: 10,
+            child: ListTile(
+              leading: const Icon(Icons.location_on_outlined),
+              title: const Text('Standortzugriff'),
+              subtitle: const Text('Erlaubt der App, auf deinen Standort zuzugreifen.'),
+              trailing: () {
+                if (locationAlways && locationWhenInUse) return const Icon(Icons.check_outlined, color: Colors.green);
+                return const Icon(Icons.warning_amber_outlined, color: Colors.amber);
+              }(),
               onTap: () async {
-                if (motionSensors) {
+                if (locationAlways) {
                   infoToast('Einstellung bereits aktiviert!');
                   return;
                 }
 
-                var res = await generalDialog(
-                  color: Colors.blue,
-                  title: 'Bewegungssensoren',
-                  content: const Text(
-                    'Durch das Aktivieren der Bewegungssensoren kann die App genauere Positionsabfragen stellen.\n\n'
-                    'Dies erlaubt dem Geofence Feature, genauer zu bestimmen, ob du dich in einem Alarmierungs-Gebiet befindest.',
-                  ),
-                  actions: [
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      text: 'Abbrechen',
-                    ),
-                    DialogActionButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      text: 'Fortfahren',
-                    ),
-                  ],
-                );
-                if (res != true) return;
-
-                var state = await bg.BackgroundGeolocation.ready(Globals.iosBackgroundLocationConfig..disableMotionActivityUpdates = false);
-
-                int result = await bg.BackgroundGeolocation.requestPermission();
-                if (result == bg.ProviderChangeEvent.AUTHORIZATION_STATUS_ALWAYS) {
-                  successToast('Einstellung erfolgreich!');
-                  if (!state.enabled) {
-                    await bg.BackgroundGeolocation.start();
-                  }
-                } else {
-                  errorToast('Einstellung fehlgeschlagen!');
-                  if (state.enabled) {
-                    await bg.BackgroundGeolocation.stop();
-                  }
-                }
-
+                await requestLocationPermission();
                 checkSettings();
               },
+            ),
+          ),
+          // motionSensors
+          if (Platform.isIOS)
+            Card(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              elevation: 10,
+              child: ListTile(
+                leading: const Icon(Icons.motion_photos_on_outlined),
+                title: const Text('Bewegungssensoren'),
+                subtitle: const Text('Erlaubt der App, genauere Positionsabfragen zu stellen.'),
+                trailing: motionSensors ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
+                onTap: () async {
+                  if (motionSensors) {
+                    infoToast('Einstellung bereits aktiviert!');
+                    return;
+                  }
+
+                  var res = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Bewegungssensoren',
+                    content: const Text(
+                      'Durch das Aktivieren der Bewegungssensoren kann die App genauere Positionsabfragen stellen.\n\n'
+                      'Dies erlaubt dem Geofence Feature, genauer zu bestimmen, ob du dich in einem Alarmierungs-Gebiet befindest.',
+                    ),
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Abbrechen',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Fortfahren',
+                      ),
+                    ],
+                  );
+                  if (res != true) return;
+
+                  var state = await bg.BackgroundGeolocation.ready(Globals.iosBackgroundLocationConfig..disableMotionActivityUpdates = false);
+
+                  int result = await bg.BackgroundGeolocation.requestPermission();
+                  if (result == bg.ProviderChangeEvent.AUTHORIZATION_STATUS_ALWAYS) {
+                    successToast('Einstellung erfolgreich!');
+                    if (!state.enabled) {
+                      await bg.BackgroundGeolocation.start();
+                    }
+                  } else {
+                    errorToast('Einstellung fehlgeschlagen!');
+                    if (state.enabled) {
+                      await bg.BackgroundGeolocation.stop();
+                    }
+                  }
+
+                  checkSettings();
+                },
+              ),
             ),
         ],
       ),

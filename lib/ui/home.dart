@@ -14,12 +14,11 @@ import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/home/units_screen.dart';
 import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
+import 'package:ff_alarm/ui/utils/responsive_navigation_bar.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:responsive_navigation_bar/responsive_navigation_bar.dart';
 import 'home/calendar_screen.dart';
 
 class FFAlarmApp extends StatelessWidget {
@@ -143,6 +142,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Up
     pageController.addListener(() {
       if (pageController.page!.round() != currentPage.value) currentPage.value = pageController.page!.round();
     });
+
+    badgeAlarms.addListener(() {
+      combinedNotifier.value = (alarms: badgeAlarms.value, calendar: badgeCalendar.value, units: badgeUnits.value, settings: badgeSettings.value);
+    });
+
+    badgeCalendar.addListener(() {
+      combinedNotifier.value = (alarms: badgeAlarms.value, calendar: badgeCalendar.value, units: badgeUnits.value, settings: badgeSettings.value);
+    });
+
+    badgeUnits.addListener(() {
+      combinedNotifier.value = (alarms: badgeAlarms.value, calendar: badgeCalendar.value, units: badgeUnits.value, settings: badgeSettings.value);
+    });
+
+    badgeSettings.addListener(() {
+      combinedNotifier.value = (alarms: badgeAlarms.value, calendar: badgeCalendar.value, units: badgeUnits.value, settings: badgeSettings.value);
+    });
   }
 
   @override
@@ -156,6 +171,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Up
     badgeCalendar.dispose();
     badgeUnits.dispose();
     badgeSettings.dispose();
+
+    combinedNotifier.dispose();
     super.dispose();
   }
 
@@ -163,6 +180,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Up
   final ValueNotifier<int> badgeCalendar = ValueNotifier<int>(0);
   final ValueNotifier<int> badgeUnits = ValueNotifier<int>(0);
   final ValueNotifier<int> badgeSettings = ValueNotifier<int>(0);
+
+  final ValueNotifier<({int alarms, int calendar, int units, int settings})> combinedNotifier = ValueNotifier((alarms: 0, calendar: 0, units: 0, settings: 0));
 
   @override
   Widget build(BuildContext context) {
@@ -179,45 +198,54 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Up
           ],
         ),
         bottomNavigationBar: ValueListenableBuilder(
-          valueListenable: currentPage,
-          builder: (context, currentTab, child) {
-            return ResponsiveNavigationBar(
-              selectedIndex: currentTab,
-              backgroundColor: Theme.of(context).dialogBackgroundColor,
-              fontSize: kDefaultFontSize * 1.2,
-              activeButtonFlexFactor: 200,
-              inactiveButtonsFlexFactor: 60,
-              navigationBarButtons: [
-                NavigationBarButton(
-                  icon: Icons.local_fire_department_outlined,
-                  text: 'Alarmierungen',
-                  backgroundColor: Colors.blue.withOpacity(0.5),
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                ),
-                NavigationBarButton(
-                  icon: Icons.calendar_month_outlined,
-                  text: 'Kalender',
-                  backgroundColor: Colors.blue.withOpacity(0.5),
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                ),
-                NavigationBarButton(
-                  icon: Icons.fire_truck_outlined,
-                  text: 'Einheiten',
-                  backgroundColor: Colors.blue.withOpacity(0.5),
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                ),
-                NavigationBarButton(
-                  icon: Icons.settings_outlined,
-                  text: 'Einstellungen',
-                  backgroundColor: Colors.blue.withOpacity(0.5),
-                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                ),
-              ],
-              onTabChange: (index) {
-                pageController.animateToPage(
-                  index,
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
+          valueListenable: combinedNotifier,
+          builder: (context, badges, child) {
+            return ValueListenableBuilder(
+              valueListenable: currentPage,
+              builder: (context, currentTab, child) {
+                return ResponsiveNavigationBar(
+                  selectedIndex: currentTab,
+                  backgroundColor: Theme.of(context).dialogBackgroundColor,
+                  fontSize: kDefaultFontSize * 1.2,
+                  activeButtonFlexFactor: 200,
+                  inactiveButtonsFlexFactor: 60,
+                  navigationBarButtons: [
+                    NavigationBarButton(
+                      icon: Icons.local_fire_department_outlined,
+                      text: 'Alarmierungen',
+                      badge: badges.alarms > 0 ? badges.alarms.toString() : null,
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                      backgroundGradient: const LinearGradient(colors: [Colors.red, Colors.orange]),
+                    ),
+                    NavigationBarButton(
+                      icon: Icons.calendar_month_outlined,
+                      text: 'Kalender',
+                      badge: badges.calendar > 0 ? badges.calendar.toString() : null,
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                      backgroundGradient: const LinearGradient(colors: [Colors.purple, Colors.pink]),
+                    ),
+                    NavigationBarButton(
+                      icon: Icons.fire_truck_outlined,
+                      text: 'Einheiten',
+                      badge: badges.units > 0 ? badges.units.toString() : null,
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                      backgroundGradient: const LinearGradient(colors: [Colors.lightGreen, Colors.green]),
+                    ),
+                    NavigationBarButton(
+                      icon: Icons.settings_outlined,
+                      text: 'Einstellungen',
+                      badge: badges.settings > 0 ? badges.settings.toString() : null,
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                      backgroundGradient: const LinearGradient(colors: [Colors.lightBlue, Colors.blue]),
+                    ),
+                  ],
+                  onTabChange: (index) {
+                    pageController.animateToPage(
+                      index,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
                 );
               },
             );
