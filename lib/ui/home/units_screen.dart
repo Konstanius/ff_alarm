@@ -264,7 +264,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Wachen & Einheiten'),
+        title: const Text('FF Alarm'),
       ),
       body: bodyWidget,
     );

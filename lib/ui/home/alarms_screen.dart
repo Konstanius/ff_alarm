@@ -93,6 +93,8 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
     super.dispose();
   }
 
+  bool opening = false;
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -318,11 +320,13 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Alarmierungen'),
+        title: const Text('FF Alarm'),
         actions: [
           IconButton(
             icon: Icon(Icons.filter_alt_outlined, color: filter.noFilters ? null : Colors.blue),
             onPressed: () async {
+              if (opening) return;
+              opening = true;
               searchController.text = filter.search ?? '';
 
               var stations = await Station.getAll();
@@ -499,6 +503,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                   );
                 },
               );
+              opening = false;
             },
           ),
         ],
