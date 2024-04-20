@@ -268,16 +268,12 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                                 colors: [
-                                  if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) ...[
-                                    Colors.transparent,
-                                    ownResponse.getResponseInfo().responseType.color,
-                                  ],
+                                  Colors.transparent,
+                                  if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) ownResponse.getResponseInfo().responseType.color,
                                 ],
                                 stops: [
-                                  if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) ...[
-                                    0.4,
-                                    1.0,
-                                  ],
+                                  0.4,
+                                  if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) 1.0,
                                 ],
                               ),
                             ),
