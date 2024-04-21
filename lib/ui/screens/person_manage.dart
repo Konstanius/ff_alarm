@@ -170,8 +170,9 @@ class _PersonManageScreenState extends State<PersonManageScreen> {
                       Navigator.of(Globals.context!).pop();
                       await Future.delayed(const Duration(milliseconds: 20));
 
+                      Globals.router.go('/person', extra: {"person": result.person, "registrationKey": result.key});
+
                       successToast('Die Person wurde erstellt und der Wache hinzugefügt');
-                      // TODO
                     } else {
                       await PersonInterface.update(
                         server: widget.station.server,

@@ -21,6 +21,7 @@ class Person {
   String get fullName => "$firstName $lastName";
 
   DateTime birthday;
+  int get age => DateTime.now().difference(birthday).inDays ~/ 365;
 
   /// The ids of the units that this user is allowed to operate
   /// If an integer is negative, that means the user has been removed from the unit, and the id shall not be added to the list, when the unit is changed to or from the station

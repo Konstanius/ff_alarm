@@ -3,7 +3,7 @@ import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/notifications/awn_init.dart';
-import 'package:ff_alarm/ui/screens/alarm_info.dart';
+import 'package:ff_alarm/ui/screens/alarm_screen.dart';
 import 'package:ff_alarm/ui/settings/alarm_settings.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';

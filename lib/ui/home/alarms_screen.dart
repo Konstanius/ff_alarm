@@ -5,7 +5,7 @@ import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
-import 'package:ff_alarm/ui/screens/alarm_info.dart';
+import 'package:ff_alarm/ui/screens/alarm_screen.dart';
 import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/no_data.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';

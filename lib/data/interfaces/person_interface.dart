@@ -204,4 +204,12 @@ abstract class PersonInterface {
       Globals.context!.loaderOverlay.hide();
     }
   }
+
+  static Future<String> generateRegistrationKey({required String server, required int personId}) async {
+    Map<String, dynamic> data = {'personId': personId};
+
+    Request response = await Request('personGenerateRegistration', data, server).emit(true);
+
+    return response.ackData!['key'];
+  }
 }

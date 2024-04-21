@@ -5,7 +5,7 @@ import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/server/request.dart';
-import 'package:ff_alarm/ui/screens/alarm_info.dart';
+import 'package:ff_alarm/ui/screens/alarm_screen.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 
 import '../../globals.dart';

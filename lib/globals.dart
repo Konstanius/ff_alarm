@@ -15,7 +15,7 @@ import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/main.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/home.dart';
-import 'package:ff_alarm/ui/screens/alarm_info.dart';
+import 'package:ff_alarm/ui/screens/alarm_screen.dart';
 import 'package:ff_alarm/ui/screens/login_screen.dart';
 import 'package:ff_alarm/ui/screens/person_screen.dart';
 import 'package:ff_alarm/ui/screens/station_screen.dart';
@@ -489,7 +489,15 @@ abstract class Globals {
           GoRoute(
             path: 'person',
             builder: (BuildContext context, GoRouterState state) {
-              return PersonPage(person: state.extra! as Person);
+              Person? person;
+              String? registrationKey;
+              if (state.extra is Person) {
+                person = state.extra as Person;
+              } else {
+                person = (state.extra as Map<String, dynamic>)['person'] as Person;
+                registrationKey = (state.extra as Map<String, dynamic>)['registrationKey'] as String?;
+              }
+              return PersonPage(person: person, registrationKey: registrationKey);
             },
           ),
         ],

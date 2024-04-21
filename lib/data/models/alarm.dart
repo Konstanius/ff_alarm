@@ -6,7 +6,7 @@ import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:floor/floor.dart';
 import 'package:geolocator/geolocator.dart';
 
-import '../../ui/screens/alarm_info.dart';
+import '../../ui/screens/alarm_screen.dart';
 
 @entity
 class Alarm {

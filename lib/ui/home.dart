@@ -73,11 +73,14 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Up
 
     if (!Globals.foreground && state == AppLifecycleState.resumed) {
       UpdateInfo(UpdateType.ui, {"0"});
-      AwesomeNotifications().dismissNotificationsByChannelKey('alarm');
-      AwesomeNotifications().dismissNotificationsByChannelKey('test');
-      AwesomeNotifications().cancelNotificationsByChannelKey('alarm');
-      AwesomeNotifications().cancelNotificationsByChannelKey('test');
-      resetAndroidNotificationVolume();
+
+      if (false) {
+        AwesomeNotifications().dismissNotificationsByChannelKey('alarm');
+        AwesomeNotifications().dismissNotificationsByChannelKey('test');
+        AwesomeNotifications().cancelNotificationsByChannelKey('alarm');
+        AwesomeNotifications().cancelNotificationsByChannelKey('test');
+        resetAndroidNotificationVolume();
+      }
 
       if (lastUpdate + 10000 > DateTime.now().millisecondsSinceEpoch) {
         Globals.foreground = state == AppLifecycleState.resumed;
