@@ -1,3 +1,4 @@
+import 'package:ff_alarm/data/interfaces/person_interface.dart';
 import 'package:ff_alarm/data/interfaces/station_interface.dart';
 import 'package:ff_alarm/data/interfaces/unit_interface.dart';
 import 'package:ff_alarm/data/models/person.dart';
@@ -7,6 +8,7 @@ import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/screens/person_manage.dart';
+import 'package:ff_alarm/ui/screens/person_picker.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/large_card.dart';
@@ -35,9 +37,16 @@ class StationPageState extends State<StationPage> with Updates {
 
   ScrollController scrollController = ScrollController();
 
+  TextEditingController firstNameController = TextEditingController();
+  TextEditingController lastNameController = TextEditingController();
+  TextEditingController birthdayController = TextEditingController(text: Formats.date(DateTime.now()));
+
   @override
   void dispose() {
     scrollController.dispose();
+    firstNameController.dispose();
+    lastNameController.dispose();
+    birthdayController.dispose();
     super.dispose();
   }
 
@@ -45,7 +54,7 @@ class StationPageState extends State<StationPage> with Updates {
   void initState() {
     super.initState();
     _loadStation();
-    
+
     station = widget.station;
 
     setupListener({UpdateType.station, UpdateType.person, UpdateType.unit});
@@ -117,8 +126,108 @@ class StationPageState extends State<StationPage> with Updates {
                         elevation: 4,
                         clipBehavior: Clip.antiAliasWithSaveLayer,
                         child: InkWell(
-                          onTap: () {
-                            // TODO
+                          onTap: () async {
+                            bool? result = await generalDialog(
+                              color: Colors.blue,
+                              title: 'Person suchen',
+                              content: Column(
+                                children: [
+                                  TextField(
+                                    controller: firstNameController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Vorname',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    textCapitalization: TextCapitalization.words,
+                                  ),
+                                  const SizedBox(height: 24),
+                                  TextField(
+                                    controller: lastNameController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Nachname',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    textCapitalization: TextCapitalization.words,
+                                  ),
+                                  const SizedBox(height: 24),
+                                  TextField(
+                                    controller: birthdayController,
+                                    readOnly: true,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Geburtstag',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    onTap: () async {
+                                      DateTime? date = await showDatePicker(
+                                        context: context,
+                                        initialDate: DateTime.now(),
+                                        firstDate: DateTime(1900),
+                                        lastDate: DateTime.now(),
+                                        initialDatePickerMode: DatePickerMode.year,
+                                        initialEntryMode: DatePickerEntryMode.input,
+                                      );
+                                      if (date != null) {
+                                        birthdayController.text = Formats.date(date);
+                                      }
+                                    },
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                DialogActionButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(false);
+                                  },
+                                  text: 'Abbrechen',
+                                ),
+                                DialogActionButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop(true);
+                                  },
+                                  text: 'Suchen',
+                                ),
+                              ],
+                            );
+                            String firstName = firstNameController.text.trim();
+                            String lastName = lastNameController.text.trim();
+                            DateTime birthday = Formats.parseDate(birthdayController.text);
+                            if (result != true) return;
+
+                            try {
+                              Globals.context!.loaderOverlay.show();
+
+                              var persons = await PersonInterface.search(firstName: firstName, lastName: lastName, birthday: birthday, server: station!.server);
+                              if (persons.isEmpty) {
+                                errorToast('Keine Person gefunden');
+                                return;
+                              }
+                              Globals.context!.loaderOverlay.hide();
+
+                              Person? picked = await Navigator.of(Globals.context!).push(MaterialPageRoute(builder: (context) => PersonPicker(persons: persons)));
+                              if (picked == null) return;
+
+                              Globals.context!.loaderOverlay.show();
+
+                              await StationInterface.addPerson(
+                                server: station!.server,
+                                stationId: station!.idNumber,
+                                personId: picked.idNumber,
+                              );
+
+                              Navigator.of(Globals.context!).pop();
+
+                              await Future.delayed(const Duration(milliseconds: 20));
+
+                              successToast('Die Person wurde der Wache erfolgreich hinzugefügt');
+
+                              firstNameController.clear();
+                              lastNameController.clear();
+                              birthdayController.text = Formats.date(DateTime.now());
+                            } catch (e, s) {
+                              exceptionToast(e, s);
+                            } finally {
+                              Globals.context!.loaderOverlay.hide();
+                            }
                           },
                           child: const Padding(
                             padding: EdgeInsets.all(8.0),
@@ -893,69 +1002,83 @@ class StationPageState extends State<StationPage> with Updates {
       for (int i = 0; i < persons.length; i++) ...[
         () {
           var person = persons[i];
-          return Card(
-            clipBehavior: Clip.antiAliasWithSaveLayer,
-            elevation: 2,
-            margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
-            child: ListTile(
-              onTap: () => onTap(person),
-              title: Text(
-                person.fullName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: kDefaultFontSize * 1.3,
-                ),
-              ),
-              subtitle: RichText(
-                text: TextSpan(
-                  children: () {
-                    var children = <InlineSpan>[];
-
-                    for (var qualification in person.qualifications) {
-                      Color color = Colors.green;
-                      if (qualification.end != null) {
-                        if (qualification.end!.isBefore(now)) {
-                          color = Colors.grey;
-                        } else if (qualification.end!.difference(now).inDays < 30) {
-                          color = Colors.red;
-                        } else if (qualification.end!.difference(now).inDays < 120) {
-                          color = Colors.orange;
-                        }
-                      }
-
-                      children.add(
-                        TextSpan(
-                          text: () {
-                            if (qualification.type.startsWith('_')) {
-                              return qualification.type.substring(1);
-                            }
-                            return qualification.type;
-                          }(),
-                          style: TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      );
-                      children.add(const TextSpan(text: ',  '));
-                    }
-
-                    if (children.isNotEmpty) children.removeLast();
-
-                    return children;
-                  }(),
-                ),
-              ),
-              trailing: () {
-                if (station.adminPersonProperIds.contains(person.id)) {
-                  return const Icon(Icons.admin_panel_settings_outlined);
-                }
-                return const SizedBox();
-              }(),
-            ),
+          return personDisplayCard(
+            person: person,
+            onTap: onTap,
+            now: now,
+            trailing: (person) {
+              if (station.adminPersonProperIds.contains(person.id)) {
+                return const Icon(Icons.admin_panel_settings_outlined);
+              }
+              return const SizedBox();
+            },
           );
         }(),
       ],
     ];
+  }
+
+  static Card personDisplayCard({
+    required Person person,
+    required void Function(Person person) onTap,
+    required DateTime now,
+    Widget Function(Person person)? trailing,
+  }) {
+    return Card(
+      clipBehavior: Clip.antiAliasWithSaveLayer,
+      elevation: 2,
+      margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+      child: ListTile(
+        onTap: () => onTap(person),
+        title: Text(
+          person.fullName,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: kDefaultFontSize * 1.3,
+          ),
+        ),
+        subtitle: RichText(
+          text: TextSpan(
+            children: () {
+              var children = <InlineSpan>[];
+
+              for (var qualification in person.qualifications) {
+                Color color = Colors.green;
+                if (qualification.end != null) {
+                  if (qualification.end!.isBefore(now)) {
+                    color = Colors.grey;
+                  } else if (qualification.end!.difference(now).inDays < 30) {
+                    color = Colors.red;
+                  } else if (qualification.end!.difference(now).inDays < 120) {
+                    color = Colors.orange;
+                  }
+                }
+
+                children.add(
+                  TextSpan(
+                    text: () {
+                      if (qualification.type.startsWith('_')) {
+                        return qualification.type.substring(1);
+                      }
+                      return qualification.type;
+                    }(),
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                );
+                children.add(const TextSpan(text: ',  '));
+              }
+
+              if (children.isNotEmpty) children.removeLast();
+
+              return children;
+            }(),
+          ),
+        ),
+        trailing: trailing != null ? trailing(person) : null,
+      ),
+    );
   }
 }

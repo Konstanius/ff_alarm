@@ -9,9 +9,7 @@ import 'package:ff_alarm/ui/utils/large_card.dart';
 import 'package:ff_alarm/ui/utils/no_data.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 import 'package:loader_overlay/loader_overlay.dart';
@@ -28,7 +26,7 @@ class PersonPage extends StatefulWidget {
 }
 
 class _PersonScreenState extends State<PersonPage> with Updates {
-  final dm = Barcode.aztec(minECCPercent: 10);
+  final dm = Barcode.aztec(minECCPercent: 30);
 
   DateTime entry = DateTime.now();
 
@@ -135,45 +133,85 @@ class _PersonScreenState extends State<PersonPage> with Updates {
                 elevation: 10,
                 clipBehavior: Clip.antiAliasWithSaveLayer,
                 color: Colors.white,
-                child: Stack(
-                  children: [
-                    if (registrationQrData != null)
-                      SvgPicture.string(
-                        registrationQrData!,
-                        height: MediaQuery.of(context).size.width * 0.5,
-                        width: MediaQuery.of(context).size.width * 0.5,
-                        clipBehavior: Clip.antiAliasWithSaveLayer,
-                        alignment: Alignment.center,
-                        colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
-                        placeholderBuilder: (_) => const Center(child: CircularProgressIndicator()),
-                      )
-                    else
-                      SizedBox(
-                        height: MediaQuery.of(context).size.width * 0.5,
-                        width: MediaQuery.of(context).size.width * 0.5,
-                      ),
-                    if (registrationQrData == null)
-                      const Positioned.fill(
-                        child: Center(
-                          child: Text(
-                            'Kein Registrierungsschlüssel vorhanden. Bitte generieren.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.black),
+                child: InkWell(
+                  onTap: registrationQrData != null
+                      ? () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => Scaffold(
+                                backgroundColor: Colors.white,
+                                appBar: AppBar(
+                                  title: const Text('Registrierungsschlüssel'),
+                                ),
+                                body: SafeArea(
+                                  child: Center(
+                                    child: SvgPicture.string(
+                                      registrationQrData!,
+                                      height: MediaQuery.of(context).size.width * 0.95,
+                                      width: MediaQuery.of(context).size.width * 0.95,
+                                      fit: BoxFit.fitHeight,
+                                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                                      alignment: Alignment.center,
+                                      colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+                      : null,
+                  child: Stack(
+                    children: [
+                      if (registrationQrData != null) ...[
+                        SvgPicture.string(
+                          registrationQrData!,
+                          height: MediaQuery.of(context).size.width * 0.5,
+                          width: MediaQuery.of(context).size.width * 0.5,
+                          fit: BoxFit.contain,
+                          clipBehavior: Clip.antiAliasWithSaveLayer,
+                          alignment: Alignment.center,
+                          colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+                          placeholderBuilder: (_) => const Center(child: CircularProgressIndicator()),
+                        ),
+                        Positioned(
+                          top: 5,
+                          right: 5,
+                          child: IconButton(
+                            icon: Icon(Icons.share_outlined, color: Colors.black, size: MediaQuery.of(context).size.width * 0.08),
+                            onPressed: () {
+                              Share.share(registrationKey!);
+                            },
                           ),
                         ),
-                      ),
-                    if (registrationQrData != null)
-                      Positioned(
-                        top: 5,
-                        right: 5,
-                        child: IconButton(
-                          icon: Icon(Icons.share_outlined, color: Colors.blue, size: MediaQuery.of(context).size.width * 0.08),
-                          onPressed: () {
-                            Share.share(registrationKey!);
-                          },
+                        const Positioned(
+                          bottom: 5,
+                          left: 5,
+                          right: 5,
+                          child: Center(
+                            child: Text(
+                              'Tippen zum Vergrößern',
+                              style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize * 0.7),
+                            ),
+                          ),
                         ),
-                      ),
-                  ],
+                      ] else ...[
+                        SizedBox(
+                          height: MediaQuery.of(context).size.width * 0.5,
+                          width: MediaQuery.of(context).size.width * 0.5,
+                        ),
+                        const Positioned.fill(
+                          child: Center(
+                            child: Text(
+                              'Kein Registrierungsschlüssel vorhanden. Bitte generieren.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.black),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
               if (registrationQrData != null)

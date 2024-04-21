@@ -255,6 +255,8 @@ class _PersonManageScreenState extends State<PersonManageScreen> {
                   initialDate: birthday,
                   firstDate: DateTime(1900),
                   lastDate: DateTime.now(),
+                  initialDatePickerMode: DatePickerMode.year,
+                  initialEntryMode: DatePickerEntryMode.input,
                 );
                 if (newBirthday == null) return;
                 setState(() {

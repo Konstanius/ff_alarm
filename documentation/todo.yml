@@ -13,6 +13,9 @@ Allgemein:
   - Einsatzmonitor via Raspberry Pi ODER Android TV App -> https://github.com/ardera/flutter-pi
   - Alarmierungstest für einzelne Personen (Nur FCM Zustellung verifizieren)
 
+Benachrichtigungen:
+  - Allgemeine Änderungen (Station / Einheit hinzu, entfernt)
+
 Backend:
   - SSL setup manual / with certbot
 

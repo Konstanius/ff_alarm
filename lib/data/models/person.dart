@@ -142,6 +142,13 @@ class Person {
 
   static Future<List<Person>> getAll({bool Function(Person)? filter}) => getBatched(filter: filter);
 
+  static Future<List<Person>> getByIds(Iterable<String> ids) async {
+    var futures = ids.map((e) => Globals.db.personDao.getById(e));
+    var persons = await Future.wait(futures);
+    persons.removeWhere((element) => element == null);
+    return persons.cast<Person>();
+  }
+
   static Future<void> update(Person person, bool bc) async {
     // guarantee, that:
     // id contains a space

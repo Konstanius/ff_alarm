@@ -6,6 +6,7 @@ import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/ui/screens/person_manage.dart';
 import 'package:ff_alarm/ui/screens/station_screen.dart';
+import 'package:ff_alarm/ui/screens/person_picker.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
 import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/large_card.dart';
@@ -111,8 +112,30 @@ class _UnitPageState extends State<UnitPage> with Updates {
                         elevation: 4,
                         clipBehavior: Clip.antiAliasWithSaveLayer,
                         child: InkWell(
-                          onTap: () {
-                            // TODO
+                          onTap: () async {
+                            Globals.context!.loaderOverlay.show();
+                            Set<String> allowedPersonIds = station!.personProperIds.toSet();
+                            for (var person in persons!) {
+                              allowedPersonIds.remove(person.id);
+                            }
+
+                            var stationMembers = await Person.getByIds(allowedPersonIds);
+                            Globals.context!.loaderOverlay.hide();
+
+                            Person? result = await Navigator.of(Globals.context!).push(MaterialPageRoute(builder: (context) => PersonPicker(persons: stationMembers)));
+                            if (result == null) return;
+
+                            Globals.context!.loaderOverlay.show();
+                            try {
+                              await UnitInterface.addPerson(server: unit!.server, unitId: unit!.idNumber, personId: result.idNumber);
+                              Navigator.of(Globals.context!).pop();
+                              await Future.delayed(const Duration(milliseconds: 20));
+                              successToast('Die Person wurde der Einheit erfolgreich hinzugefügt.');
+                            } catch (e, s) {
+                              exceptionToast(e, s);
+                            } finally {
+                              Globals.context!.loaderOverlay.hide();
+                            }
                           },
                           child: const Padding(
                             padding: EdgeInsets.all(8.0),
@@ -121,7 +144,7 @@ class _UnitPageState extends State<UnitPage> with Updates {
                               children: [
                                 Icon(Icons.person_search_outlined),
                                 SizedBox(width: 8),
-                                Flexible(child: Text('Person suchen')),
+                                Flexible(child: Text('Person auswählen')),
                               ],
                             ),
                           ),

@@ -212,4 +212,21 @@ abstract class PersonInterface {
 
     return response.ackData!['key'];
   }
+
+  static Future<List<Person>> search({required String firstName, required String lastName, required DateTime birthday, required String server}) async {
+    Map<String, dynamic> data = {
+      'firstName': firstName,
+      'lastName': lastName,
+      'birthday': birthday.millisecondsSinceEpoch,
+    };
+
+    Request response = await Request('personSearch', data, server).emit(true);
+
+    List<Person> persons = [];
+    for (Map<String, dynamic> person in response.ackData!.values) {
+      persons.add(Person.fromJson(person));
+    }
+
+    return persons;
+  }
 }
