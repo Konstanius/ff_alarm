@@ -104,190 +104,191 @@ class _PersonScreenState extends State<PersonPage> with Updates {
     }
 
     return Scaffold(
-        appBar: AppBar(
-          automaticallyImplyLeading: true,
-          title: const Text('Person'),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(8),
-          children: [
-            LargeCard(firstRow: person!.firstName, secondRow: person!.lastName, sourceString: person!.server),
-            Card(
-              elevation: 4,
-              clipBehavior: Clip.antiAliasWithSaveLayer,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.cake_outlined),
-                    const SizedBox(width: 8),
-                    Text('Geboren: ${Formats.date(person!.birthday)}, Alter: ${person!.age}'),
-                  ],
-                ),
+      appBar: AppBar(
+        automaticallyImplyLeading: true,
+        title: const Text('Person'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(8),
+        children: [
+          LargeCard(firstRow: person!.firstName, secondRow: person!.lastName, sourceString: person!.server),
+          Card(
+            elevation: 4,
+            clipBehavior: Clip.antiAliasWithSaveLayer,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  const Icon(Icons.cake_outlined),
+                  const SizedBox(width: 8),
+                  Text('Geboren: ${Formats.date(person!.birthday)}, Alter: ${person!.age}'),
+                ],
               ),
             ),
-            if (isAdmin) ...[
-              const SettingsDivider(text: 'Registrierungsschlüssel'),
-              const SizedBox(height: 8),
-              Card(
-                elevation: 10,
-                clipBehavior: Clip.antiAliasWithSaveLayer,
-                color: Colors.white,
-                child: InkWell(
-                  onTap: registrationQrData != null
-                      ? () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => Scaffold(
-                                backgroundColor: Colors.white,
-                                appBar: AppBar(
-                                  title: const Text('Registrierungsschlüssel'),
-                                ),
-                                body: SafeArea(
-                                  child: Center(
-                                    child: SvgPicture.string(
-                                      registrationQrData!,
-                                      height: MediaQuery.of(context).size.width * 0.95,
-                                      width: MediaQuery.of(context).size.width * 0.95,
-                                      fit: BoxFit.fitHeight,
-                                      clipBehavior: Clip.antiAliasWithSaveLayer,
-                                      alignment: Alignment.center,
-                                      colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
-                                    ),
+          ),
+          if (isAdmin) ...[
+            const SettingsDivider(text: 'Registrierungsschlüssel'),
+            const SizedBox(height: 8),
+            Card(
+              elevation: 10,
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              color: Colors.white,
+              child: InkWell(
+                onTap: registrationQrData != null
+                    ? () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => Scaffold(
+                              backgroundColor: Colors.white,
+                              appBar: AppBar(
+                                title: const Text('Registrierungsschlüssel'),
+                              ),
+                              body: SafeArea(
+                                child: Center(
+                                  child: SvgPicture.string(
+                                    registrationQrData!,
+                                    height: MediaQuery.of(context).size.width * 0.95,
+                                    width: MediaQuery.of(context).size.width * 0.95,
+                                    fit: BoxFit.fitHeight,
+                                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                                    alignment: Alignment.center,
+                                    colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
                                   ),
                                 ),
                               ),
                             ),
-                          );
-                        }
-                      : null,
-                  child: Stack(
-                    children: [
-                      if (registrationQrData != null) ...[
-                        SvgPicture.string(
-                          registrationQrData!,
-                          height: MediaQuery.of(context).size.width * 0.5,
-                          width: MediaQuery.of(context).size.width * 0.5,
-                          fit: BoxFit.contain,
-                          clipBehavior: Clip.antiAliasWithSaveLayer,
-                          alignment: Alignment.center,
-                          colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
-                          placeholderBuilder: (_) => const Center(child: CircularProgressIndicator()),
-                        ),
-                        Positioned(
-                          top: 5,
-                          right: 5,
-                          child: IconButton(
-                            icon: Icon(Icons.share_outlined, color: Colors.black, size: MediaQuery.of(context).size.width * 0.08),
-                            onPressed: () {
-                              Share.share(registrationKey!);
-                            },
                           ),
-                        ),
-                        const Positioned(
-                          bottom: 5,
-                          left: 5,
-                          right: 5,
-                          child: Center(
-                            child: Text(
-                              'Tippen zum Vergrößern',
-                              style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize * 0.7),
-                            ),
-                          ),
-                        ),
-                      ] else ...[
-                        SizedBox(
-                          height: MediaQuery.of(context).size.width * 0.5,
-                          width: MediaQuery.of(context).size.width * 0.5,
-                        ),
-                        const Positioned.fill(
-                          child: Center(
-                            child: Text(
-                              'Kein Registrierungsschlüssel vorhanden. Bitte generieren.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.black),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-              if (registrationQrData != null)
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                        );
+                      }
+                    : null,
+                child: Stack(
                   children: [
-                    Text(
-                      'Gültig bis: ${DateFormat('dd.MM.yyyy HH:mm').format(entry.add(const Duration(days: 1)))}',
-                      style: const TextStyle(fontSize: kDefaultFontSize * 0.7),
-                    ),
-                  ],
-                ),
-              ElevatedButton(
-                onPressed: () async {
-                  Globals.context!.loaderOverlay.show();
-                  try {
-                    registrationKey = await PersonInterface.generateRegistrationKey(server: person!.server, personId: person!.idNumber);
-                    entry = DateTime.now();
-                    generateQrData();
-                  } catch (e, s) {
-                    exceptionToast(e, s);
-                  } finally {
-                    Globals.context!.loaderOverlay.hide();
-                  }
-                },
-                child: const Text('Neuen Registrierungsschlüssel generieren'),
-              ),
-            ],
-            const SettingsDivider(text: 'Qualifikationen'),
-            for (var qualification in person!.qualifications)
-              Card(
-                elevation: 10,
-                color: () {
-                  if (qualification.isActive(DateTime.now())) {
-                    return Colors.green.withOpacity(0.3);
-                  } else {
-                    return Colors.red.withOpacity(0.2);
-                  }
-                }(),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 2),
-                  dense: true,
-                  leading: qualification.hidden
-                      ? IconButton(
-                          icon: const Icon(Icons.visibility_off_outlined),
-                          enableFeedback: false,
-                          onPressed: () {},
-                        )
-                      : IconButton(
-                          icon: const Icon(Icons.visibility_outlined),
-                          enableFeedback: false,
-                          onPressed: () {},
+                    if (registrationQrData != null) ...[
+                      SvgPicture.string(
+                        registrationQrData!,
+                        height: MediaQuery.of(context).size.width * 0.5,
+                        width: MediaQuery.of(context).size.width * 0.5,
+                        fit: BoxFit.contain,
+                        clipBehavior: Clip.antiAliasWithSaveLayer,
+                        alignment: Alignment.center,
+                        colorFilter: const ColorFilter.mode(Colors.black, BlendMode.srcIn),
+                        placeholderBuilder: (_) => const Center(child: CircularProgressIndicator()),
+                      ),
+                      Positioned(
+                        top: 5,
+                        right: 5,
+                        child: IconButton(
+                          icon: Icon(Icons.share_outlined, color: Colors.black, size: MediaQuery.of(context).size.width * 0.08),
+                          onPressed: () {
+                            Share.share(registrationKey!);
+                          },
                         ),
-                  title: Row(
-                    children: [
-                      Flexible(
-                        child: Text(
-                          qualification.displayString,
-                          style: const TextStyle(
-                            color: Colors.blue,
-                            fontWeight: FontWeight.bold,
+                      ),
+                      const Positioned(
+                        bottom: 5,
+                        left: 5,
+                        right: 5,
+                        child: Center(
+                          child: Text(
+                            'Tippen zum Vergrößern',
+                            style: TextStyle(color: Colors.black, fontSize: kDefaultFontSize * 0.7),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      SizedBox(
+                        height: MediaQuery.of(context).size.width * 0.5,
+                        width: MediaQuery.of(context).size.width * 0.5,
+                      ),
+                      const Positioned.fill(
+                        child: Center(
+                          child: Text(
+                            'Kein Registrierungsschlüssel vorhanden. Bitte generieren.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.black),
                           ),
                         ),
                       ),
                     ],
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (qualification.start != null) Text('Erhalt: ${Formats.date(qualification.start!)}') else const Text('Erhalt: Unbekannt'),
-                      if (qualification.end != null) Text('Ablauf: ${Formats.date(qualification.end!)}') else const Text('Ablauf: Nie'),
-                    ],
-                  ),
+                  ],
                 ),
               ),
+            ),
+            if (registrationQrData != null)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    'Gültig bis: ${DateFormat('dd.MM.yyyy HH:mm').format(entry.add(const Duration(days: 1)))}',
+                    style: const TextStyle(fontSize: kDefaultFontSize * 0.7),
+                  ),
+                ],
+              ),
+            ElevatedButton(
+              onPressed: () async {
+                Globals.context!.loaderOverlay.show();
+                try {
+                  registrationKey = await PersonInterface.generateRegistrationKey(server: person!.server, personId: person!.idNumber);
+                  entry = DateTime.now();
+                  generateQrData();
+                } catch (e, s) {
+                  exceptionToast(e, s);
+                } finally {
+                  Globals.context!.loaderOverlay.hide();
+                }
+              },
+              child: const Text('Neuen Registrierungsschlüssel generieren'),
+            ),
           ],
-        ));
+          const SettingsDivider(text: 'Qualifikationen'),
+          for (var qualification in person!.qualifications)
+            Card(
+              elevation: 10,
+              color: () {
+                if (qualification.isActive(DateTime.now())) {
+                  return Colors.green.withOpacity(0.3);
+                } else {
+                  return Colors.red.withOpacity(0.2);
+                }
+              }(),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 2),
+                dense: true,
+                leading: qualification.hidden
+                    ? IconButton(
+                        icon: const Icon(Icons.visibility_off_outlined),
+                        enableFeedback: false,
+                        onPressed: () {},
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.visibility_outlined),
+                        enableFeedback: false,
+                        onPressed: () {},
+                      ),
+                title: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        qualification.displayString,
+                        style: const TextStyle(
+                          color: Colors.blue,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (qualification.start != null) Text('Erhalt: ${Formats.date(qualification.start!)}') else const Text('Erhalt: Unbekannt'),
+                    if (qualification.end != null) Text('Ablauf: ${Formats.date(qualification.end!)}') else const Text('Ablauf: Nie'),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

@@ -464,7 +464,7 @@ abstract class Globals {
           GoRoute(
             path: 'alarmsettings',
             builder: (BuildContext context, GoRouterState state) {
-              return SettingsAlarmInformationPage(stationId: state.extra! as String);
+              return SettingsAlarmInformationPage(station: state.extra! as Station);
             },
           ),
           GoRoute(

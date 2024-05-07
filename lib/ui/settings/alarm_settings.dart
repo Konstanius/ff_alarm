@@ -26,9 +26,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:pulsator/pulsator.dart';
 
 class SettingsAlarmInformationPage extends StatefulWidget {
-  const SettingsAlarmInformationPage({super.key, required this.stationId});
+  const SettingsAlarmInformationPage({super.key, required this.station});
 
-  final String stationId;
+  final Station station;
 
   @override
   State<SettingsAlarmInformationPage> createState() => _SettingsAlarmInformationPageState();
@@ -60,8 +60,8 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
       });
     }
 
-    current = SettingsNotificationData.loadForStation(widget.stationId);
-    onEntry = SettingsNotificationData.loadForStation(widget.stationId);
+    current = SettingsNotificationData.loadForStation(widget.station.id);
+    onEntry = SettingsNotificationData.loadForStation(widget.station.id);
 
     Permission.locationAlways.isGranted.then((value) {
       if (mounted) {
@@ -172,7 +172,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
   }
 
   Future<void> loadStation() async {
-    station = await Globals.db.stationDao.getById(widget.stationId);
+    station = await Globals.db.stationDao.getById(widget.station.id);
     setCurrentPosition();
     if (!mounted) return;
     setState(() {
@@ -612,7 +612,7 @@ class _SettingsAlarmInformationPageState extends State<SettingsAlarmInformationP
 
   @override
   void onUpdate(UpdateInfo info) {
-    if (info.type == UpdateType.station && info.ids.contains(widget.stationId)) {
+    if (info.type == UpdateType.station && info.ids.contains(widget.station.id)) {
       loadStation();
     }
     if (info.type == UpdateType.ui && info.ids.contains("2")) {
