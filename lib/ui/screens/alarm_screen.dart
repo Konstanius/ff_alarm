@@ -115,7 +115,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
               }
             }
 
-            if (type == AlarmResponseType.notReady) {
+            if (type == AlarmResponseType.notReady && stations.length > 1) {
               stationIdCopy = null;
             }
 

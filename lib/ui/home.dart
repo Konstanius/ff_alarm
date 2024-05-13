@@ -67,20 +67,22 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Up
 
   static int lastUpdate = DateTime.now().millisecondsSinceEpoch;
 
+  ValueNotifier<List<Widget>> actionWidgets = ValueNotifier<List<Widget>>([]);
+  Map<int, List<Widget>> savedActionWidgets = {};
+
+  void setActionWidgets(List<Widget> widgets, int page) {
+    savedActionWidgets[page] = widgets;
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      actionWidgets.value = widgets;
+    });
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
     if (!Globals.foreground && state == AppLifecycleState.resumed) {
       UpdateInfo(UpdateType.ui, {"0"});
-
-      if (false) {
-        AwesomeNotifications().dismissNotificationsByChannelKey('alarm');
-        AwesomeNotifications().dismissNotificationsByChannelKey('test');
-        AwesomeNotifications().cancelNotificationsByChannelKey('alarm');
-        AwesomeNotifications().cancelNotificationsByChannelKey('test');
-        resetAndroidNotificationVolume();
-      }
 
       if (lastUpdate + 10000 > DateTime.now().millisecondsSinceEpoch) {
         Globals.foreground = state == AppLifecycleState.resumed;
@@ -143,7 +145,17 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Up
     }
 
     pageController.addListener(() {
-      if (pageController.page!.round() != currentPage.value) currentPage.value = pageController.page!.round();
+      if (pageController.page!.round() != currentPage.value) {
+        currentPage.value = pageController.page!.round();
+      }
+    });
+
+    currentPage.addListener(() {
+      if (savedActionWidgets.containsKey(currentPage.value)) {
+        actionWidgets.value = savedActionWidgets[currentPage.value]!;
+      } else {
+        actionWidgets.value = [];
+      }
     });
 
     badgeAlarms.addListener(() {
@@ -190,14 +202,29 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Up
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        appBar: AppBar(
+          title: const Text('FF Alarm'),
+          actions: [
+            ValueListenableBuilder(
+              valueListenable: actionWidgets,
+              builder: (context, widgets, child) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisSize: MainAxisSize.min,
+                  children: widgets,
+                );
+              },
+            ),
+          ],
+        ),
         extendBody: true,
         body: PageView(
           controller: pageController,
           children: <Widget>[
-            AlarmsScreen(badge: badgeAlarms),
-            CalendarScreen(badge: badgeCalendar),
-            UnitsScreen(badge: badgeUnits),
-            SettingsScreen(badge: badgeSettings),
+            AlarmsScreen(badge: badgeAlarms, setActionWidgets: (List<Widget> widgets) => setActionWidgets(widgets, 0)),
+            CalendarScreen(badge: badgeCalendar, setActionWidgets: (List<Widget> widgets) => setActionWidgets(widgets, 1)),
+            UnitsScreen(badge: badgeUnits, setActionWidgets: (List<Widget> widgets) => setActionWidgets(widgets, 2)),
+            SettingsScreen(badge: badgeSettings, setActionWidgets: (List<Widget> widgets) => setActionWidgets(widgets, 3)),
           ],
         ),
         bottomNavigationBar: ValueListenableBuilder(

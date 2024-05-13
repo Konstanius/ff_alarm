@@ -403,6 +403,7 @@ class _PersonManageScreenState extends State<PersonManageScreen> {
                               );
                               if (newStart == null) return;
                               startController.text = Formats.date(newStart);
+                              sbSetState(() {});
                             },
                           ),
                         ),
@@ -412,6 +413,7 @@ class _PersonManageScreenState extends State<PersonManageScreen> {
                             icon: const Icon(Icons.clear),
                             onPressed: () {
                               startController.text = 'Unbekannt';
+                              sbSetState(() {});
                             },
                           ),
                       ],
@@ -436,6 +438,7 @@ class _PersonManageScreenState extends State<PersonManageScreen> {
                               );
                               if (newEnd == null) return;
                               endController.text = Formats.date(newEnd);
+                              sbSetState(() {});
                             },
                           ),
                         ),
@@ -445,6 +448,7 @@ class _PersonManageScreenState extends State<PersonManageScreen> {
                             icon: const Icon(Icons.clear),
                             onPressed: () {
                               endController.text = 'Nie';
+                              sbSetState(() {});
                             },
                           ),
                       ],

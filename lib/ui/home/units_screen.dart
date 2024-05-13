@@ -9,9 +9,10 @@ import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 
 class UnitsScreen extends StatefulWidget {
-  const UnitsScreen({super.key, required this.badge});
+  const UnitsScreen({super.key, required this.badge, required this.setActionWidgets});
 
   final ValueNotifier<int> badge;
+  final void Function(List<Widget>) setActionWidgets;
 
   @override
   State<UnitsScreen> createState() => UnitsScreenState();
@@ -39,6 +40,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
   void initState() {
     super.initState();
     setupListener({UpdateType.unit, UpdateType.station, UpdateType.ui});
+    widget.setActionWidgets(<Widget>[]);
 
     timer = Timer.periodic(const Duration(minutes: 1), (timer) {
       if (!Globals.foreground || stations.isEmpty) return;

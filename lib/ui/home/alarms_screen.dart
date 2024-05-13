@@ -15,9 +15,10 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 
 class AlarmsScreen extends StatefulWidget {
-  const AlarmsScreen({super.key, required this.badge});
+  const AlarmsScreen({super.key, required this.badge, required this.setActionWidgets});
 
   final ValueNotifier<int> badge;
+  final void Function(List<Widget>) setActionWidgets;
 
   @override
   State<AlarmsScreen> createState() => _AlarmsScreenState();
@@ -74,6 +75,193 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
       vsync: this,
     );
     controller.repeat(reverse: true);
+
+    widget.setActionWidgets([
+      IconButton(
+        icon: Icon(Icons.filter_alt_outlined, color: filter.noFilters ? null : Colors.blue),
+        onPressed: () async {
+          if (opening) return;
+          opening = true;
+          searchController.text = filter.search ?? '';
+
+          var stations = await Station.getAll();
+
+          showDialog(
+            context: Globals.context!,
+            builder: (BuildContext context) {
+              return StatefulBuilder(
+                builder: (BuildContext context, StateSetter sbSetState) {
+                  return AlertDialog(
+                    title: const Text('Alarmierungen filtern'),
+                    content: LimitedBox(
+                      maxHeight: MediaQuery.of(context).size.height * 0.8,
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Datum'),
+                                TextButton(
+                                  onPressed: () async {
+                                    DateTime lowest = DateTime.now();
+                                    for (var alarm in alarms) {
+                                      if (alarm.date.isBefore(lowest)) lowest = alarm.date;
+                                    }
+                                    DateTime? date = await showDatePicker(
+                                      context: context,
+                                      initialDate: filter.date ?? DateTime.now(),
+                                      firstDate: lowest,
+                                      lastDate: DateTime.now(),
+                                    );
+                                    if (date == null) return;
+                                    sbSetState(() {
+                                      filter.date = date;
+                                    });
+                                    setState(() {});
+                                  },
+                                  child: Text(filter.date == null ? 'Alle' : Formats.date(filter.date!)),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Tests'),
+                                DropdownButton<bool>(
+                                  value: filter.testsMode,
+                                  onChanged: (bool? value) {
+                                    sbSetState(() {
+                                      filter.testsMode = value;
+                                    });
+                                    setState(() {});
+                                  },
+                                  items: const [
+                                    DropdownMenuItem<bool>(
+                                      value: null,
+                                      child: Text('Zeigen'),
+                                    ),
+                                    DropdownMenuItem<bool>(
+                                      value: true,
+                                      child: Text('Nur Tests'),
+                                    ),
+                                    DropdownMenuItem<bool>(
+                                      value: false,
+                                      child: Text('Verstecken'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Antwort'),
+                                DropdownButton(
+                                  value: filter.responseType ?? (filter.responseNotSet ? -1 : null),
+                                  onChanged: (dynamic value) {
+                                    sbSetState(() {
+                                      filter.responseNotSet = false;
+                                      filter.responseType = value;
+                                    });
+                                    setState(() {});
+                                  },
+                                  items: [
+                                    const DropdownMenuItem<dynamic>(
+                                      value: null,
+                                      child: Text('Alle'),
+                                    ),
+                                    for (var type in AlarmResponseType.values)
+                                      DropdownMenuItem<dynamic>(
+                                        value: type,
+                                        child: Text(type.name),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text('Wache'),
+                                DropdownButton<String?>(
+                                  value: filter.station,
+                                  onChanged: (String? value) {
+                                    sbSetState(() {
+                                      filter.station = value;
+                                    });
+                                    setState(() {});
+                                  },
+                                  items: [
+                                    const DropdownMenuItem<String>(
+                                      value: null,
+                                      child: Text('Alle'),
+                                    ),
+                                    for (var station in stations)
+                                      DropdownMenuItem<String>(
+                                        value: station.id,
+                                        child: Text(station.name),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: searchController,
+                                    onChanged: (String value) {
+                                      if (value.trim().isEmpty) {
+                                        sbSetState(() {
+                                          filter.search = null;
+                                        });
+                                        setState(() {});
+                                        return;
+                                      }
+                                      sbSetState(() {
+                                        filter.search = value.toLowerCase();
+                                      });
+                                      setState(() {});
+                                    },
+                                    decoration: const InputDecoration(hintText: 'Suche'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    actions: [
+                      if (!filter.noFilters)
+                        TextButton(
+                          onPressed: () {
+                            sbSetState(() {
+                              filter = AlarmsFilter();
+                              searchController.clear();
+                            });
+                            setState(() {});
+                          },
+                          child: const Text('Zurücksetzen'),
+                        ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: const Text('Schließen'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          );
+          opening = false;
+        },
+      ),
+    ]);
 
     if (Globals.localPersons.isEmpty) return;
 
@@ -320,195 +508,6 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('FF Alarm'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.filter_alt_outlined, color: filter.noFilters ? null : Colors.blue),
-            onPressed: () async {
-              if (opening) return;
-              opening = true;
-              searchController.text = filter.search ?? '';
-
-              var stations = await Station.getAll();
-
-              showDialog(
-                context: Globals.context!,
-                builder: (BuildContext context) {
-                  return StatefulBuilder(
-                    builder: (BuildContext context, StateSetter sbSetState) {
-                      return AlertDialog(
-                        title: const Text('Alarmierungen filtern'),
-                        content: LimitedBox(
-                          maxHeight: MediaQuery.of(context).size.height * 0.8,
-                          child: SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Datum'),
-                                    TextButton(
-                                      onPressed: () async {
-                                        DateTime lowest = DateTime.now();
-                                        for (var alarm in alarms) {
-                                          if (alarm.date.isBefore(lowest)) lowest = alarm.date;
-                                        }
-                                        DateTime? date = await showDatePicker(
-                                          context: context,
-                                          initialDate: filter.date ?? DateTime.now(),
-                                          firstDate: lowest,
-                                          lastDate: DateTime.now(),
-                                        );
-                                        if (date == null) return;
-                                        sbSetState(() {
-                                          filter.date = date;
-                                        });
-                                        setState(() {});
-                                      },
-                                      child: Text(filter.date == null ? 'Alle' : Formats.date(filter.date!)),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Tests'),
-                                    DropdownButton<bool>(
-                                      value: filter.testsMode,
-                                      onChanged: (bool? value) {
-                                        sbSetState(() {
-                                          filter.testsMode = value;
-                                        });
-                                        setState(() {});
-                                      },
-                                      items: const [
-                                        DropdownMenuItem<bool>(
-                                          value: null,
-                                          child: Text('Zeigen'),
-                                        ),
-                                        DropdownMenuItem<bool>(
-                                          value: true,
-                                          child: Text('Nur Tests'),
-                                        ),
-                                        DropdownMenuItem<bool>(
-                                          value: false,
-                                          child: Text('Verstecken'),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Antwort'),
-                                    DropdownButton(
-                                      value: filter.responseType ?? (filter.responseNotSet ? -1 : null),
-                                      onChanged: (dynamic value) {
-                                        sbSetState(() {
-                                          filter.responseNotSet = false;
-                                          filter.responseType = value;
-                                        });
-                                        setState(() {});
-                                      },
-                                      items: [
-                                        const DropdownMenuItem<dynamic>(
-                                          value: null,
-                                          child: Text('Alle'),
-                                        ),
-                                        for (var type in AlarmResponseType.values)
-                                          DropdownMenuItem<dynamic>(
-                                            value: type,
-                                            child: Text(type.name),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Wache'),
-                                    DropdownButton<String?>(
-                                      value: filter.station,
-                                      onChanged: (String? value) {
-                                        sbSetState(() {
-                                          filter.station = value;
-                                        });
-                                        setState(() {});
-                                      },
-                                      items: [
-                                        const DropdownMenuItem<String>(
-                                          value: null,
-                                          child: Text('Alle'),
-                                        ),
-                                        for (var station in stations)
-                                          DropdownMenuItem<String>(
-                                            value: station.id,
-                                            child: Text(station.name),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: TextFormField(
-                                        controller: searchController,
-                                        onChanged: (String value) {
-                                          if (value.trim().isEmpty) {
-                                            sbSetState(() {
-                                              filter.search = null;
-                                            });
-                                            setState(() {});
-                                            return;
-                                          }
-                                          sbSetState(() {
-                                            filter.search = value.toLowerCase();
-                                          });
-                                          setState(() {});
-                                        },
-                                        decoration: const InputDecoration(hintText: 'Suche'),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        actions: [
-                          if (!filter.noFilters)
-                            TextButton(
-                              onPressed: () {
-                                sbSetState(() {
-                                  filter = AlarmsFilter();
-                                  searchController.clear();
-                                });
-                                setState(() {});
-                              },
-                              child: const Text('Zurücksetzen'),
-                            ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: const Text('Schließen'),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              );
-              opening = false;
-            },
-          ),
-        ],
-      ),
       body: bodyWidget,
     );
   }

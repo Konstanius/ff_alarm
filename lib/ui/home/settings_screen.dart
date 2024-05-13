@@ -26,9 +26,10 @@ import '../../log/logger.dart';
 import '../utils/format.dart';
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key, required this.badge});
+  const SettingsScreen({super.key, required this.badge, required this.setActionWidgets});
 
   final ValueNotifier<int> badge;
+  final void Function(List<Widget>) setActionWidgets;
 
   @override
   State<SettingsScreen> createState() => SettingsScreenState();
@@ -109,6 +110,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
     super.initState();
     checkSettings();
     setupListener({UpdateType.ui, UpdateType.station});
+    widget.setActionWidgets(<Widget>[]);
 
     Station.getAll().then((value) {
       stations = value;
