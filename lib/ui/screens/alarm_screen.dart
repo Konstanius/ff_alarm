@@ -918,7 +918,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                                     if (station != null)
                                       Flexible(child: Text('Deine Wachenzusage: ${station.name}, um ${DateFormat('HH:mm').format(ownResponse.time)}'))
                                     else
-                                      const Text('Du hast dich von dieser Alarmierung abgemeldet'),
+                                      const Flexible(child: Text('Du hast dich von dieser Alarmierung abgemeldet')),
                                   ],
                                 ),
                               ),

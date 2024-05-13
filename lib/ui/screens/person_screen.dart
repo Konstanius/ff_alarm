@@ -26,7 +26,7 @@ class PersonPage extends StatefulWidget {
 }
 
 class _PersonScreenState extends State<PersonPage> with Updates {
-  final dm = Barcode.aztec(minECCPercent: 30);
+  final dm = Barcode.qrCode(errorCorrectLevel: BarcodeQRCorrectionLevel.medium);
 
   DateTime entry = DateTime.now();
 
