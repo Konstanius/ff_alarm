@@ -1,5 +1,5 @@
 Alarmierungstöne:
-  - Android Ton ändert sich nicht (Channel cant be edited)
+  - Android Ton ändert sich nicht (Channel cant be edited) -> MP3 export und in Kanal einbinden
   - Mehr Töne, in höherer Qualität (kein Hintergrundrauschen)
 
 Distanzen:
@@ -20,7 +20,7 @@ Backend:
   - SSL setup manual / with certbot
 
 Bereitschaft:
-  - Swift Background Fetch not working properly yet (might be due to it taking days before it triggers regularly)
+  - Swift Background Fetch never triggers
 
 Sonstige Features:
   - Umfragen, Termine, Personalmangel, Einsatzberichte

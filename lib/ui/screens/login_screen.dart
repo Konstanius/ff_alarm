@@ -133,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ElevatedButton(
             onPressed: () async {
               try {
-                String code = codeController.text;
+                String code = codeController.text.trim();
                 var json = jsonDecode(utf8.decode(gzip.decode(base64.decode(code))));
 
                 String? authKey = json['a'];

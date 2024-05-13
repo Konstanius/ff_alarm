@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:app_group_directory/app_group_directory.dart';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:background_fetch/background_fetch.dart' as bf;
 import 'package:ff_alarm/data/database.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
@@ -213,7 +214,6 @@ abstract class Globals {
             bf.BackgroundFetch.configure(
               iosBackgroundFetchConfig,
               (String taskId) async {
-                print('STARTED BACKGROUND FETCH');
                 try {
                   await initialize(false);
 
@@ -245,10 +245,8 @@ abstract class Globals {
                   } catch (e, s) {
                     Logger.warn('Failed to send location: $e\n$s');
                   }
-                  print('FINISHED BACKGROUND FETCH');
                 } catch (e, s) {
                   Logger.error('Failed to run background fetch: $e\n$s');
-                  print('FAILED TO RUN BACKGROUND FETCH');
                 }
 
                 bf.BackgroundFetch.finish(taskId);
@@ -590,6 +588,45 @@ void onServiceStartAndroid(ServiceInstance instance) async {
     var result = await backgroundGPSSync(previousPos, previousTime);
     previousPos = result.pos;
     previousTime = result.lastTime;
+
+    try {
+      var stations = await Station.getAll(
+        filter: (station) {
+          var p = Globals.localPersonForServer(station.server);
+          return station.personProperIds.contains(p);
+        },
+      );
+      int toAlarmStations = stations.length;
+      var notificationSettings = SettingsNotificationData.getAll();
+      for (var setting in notificationSettings.values) {
+        if (!setting.shouldNotify(previousPos)) {
+          toAlarmStations--;
+        }
+      }
+      String body = "Alarmierung aktiv für $toAlarmStations Wache";
+      if (toAlarmStations != 1) {
+        body += "n";
+      }
+
+      if (previousPos == null) {
+        body += " - Standortfehler!";
+      }
+
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: 112233,
+          channelKey: 'geofence',
+          title: "FF Alarm Geofence",
+          body: body,
+          locked: true,
+          autoDismissible: false,
+          actionType: ActionType.Default,
+          notificationLayout: NotificationLayout.BigText,
+        ),
+      );
+    } catch (e, s) {
+      Logger.error('Failed to create notification: $e\n$s');
+    }
 
     int delay = 60;
     while (delay > 0) {
