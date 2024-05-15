@@ -1,13 +1,9 @@
-import 'dart:convert';
-
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/globals.dart';
-import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/utils/format.dart';
 import 'package:ff_alarm/ui/utils/no_data.dart';
-import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -52,7 +48,7 @@ class AlarmsFilter {
   }
 }
 
-class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClientMixin, Updates, SingleTickerProviderStateMixin {
+class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClientMixin, Updates, SingleTickerProviderStateMixin, DateTimeChangeListener {
   @override
   bool get wantKeepAlive => true;
 
@@ -65,9 +61,19 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
   late AnimationController controller;
 
   @override
+  void onDateTimeChangeExecution() {
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  @override
   void initState() {
     super.initState();
     setupListener({UpdateType.alarm, UpdateType.ui});
+
+    DateTime now = DateTime.now();
+    DateTime minute = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+    setupDateTimeChangeListener(const Duration(minutes: 1), minute);
 
     controller = AnimationController(
       duration: const Duration(milliseconds: 1000),
@@ -307,182 +313,31 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
         ),
       );
     } else {
-      bodyWidget = ListView(
+      bodyWidget = ListView.builder(
         padding: const EdgeInsets.all(8),
-        children: <Widget>[
-          ElevatedButton(
-            onPressed: () async {
-              String registeredUsers = Globals.prefs.getString('registered_users') ?? '[]';
-              List<String> users;
-              try {
-                users = jsonDecode(registeredUsers).cast<String>();
-              } catch (e) {
-                users = [];
-              }
+        itemCount: alarmsList.length + 1,
+        itemBuilder: (context, i) {
+          if (i == alarmsList.length) return const SizedBox(height: kBottomNavigationBarHeight);
 
-              List<String> servers = [];
-              for (String user in users) {
-                servers.add(user.split(' ')[0]);
-              }
+          Alarm alarm = alarmsList[i];
+          bool dateDivider = i == 0 || alarm.date.day != alarmsList[i - 1].date.day || alarm.date.month != alarmsList[i - 1].date.month || alarm.date.year != alarmsList[i - 1].date.year;
 
-              // dialog to select server
-              String? server = await showDialog<String>(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('Server auswählen'),
-                    content: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          for (String server in servers)
-                            ListTile(
-                              title: Text(server),
-                              onTap: () {
-                                Navigator.of(context).pop(server);
-                              },
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-              if (server == null) return;
+          AlarmResponse? ownResponse = alarm.ownResponse;
 
-              try {
-                await Request('test', {}, server).emit(true);
-              } catch (e, s) {
-                exceptionToast(e, s);
-              }
-            },
-            child: const Text('Test Alarmierung'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              String registeredUsers = Globals.prefs.getString('registered_users') ?? '[]';
-              List<String> users;
-              try {
-                users = jsonDecode(registeredUsers).cast<String>();
-              } catch (e) {
-                users = [];
-              }
-
-              List<String> servers = [];
-              for (String user in users) {
-                servers.add(user.split(' ')[0]);
-              }
-
-              // dialog to select server
-              String? server = await showDialog<String>(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    title: const Text('Server auswählen'),
-                    content: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          for (String server in servers)
-                            ListTile(
-                              title: Text(server),
-                              onTap: () {
-                                Navigator.of(context).pop(server);
-                              },
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              );
-              if (server == null) return;
-
-              Map<String, dynamic> data = {
-                "type": "Brand 1",
-                "word": "BMA Alarmierung",
-                "number": 240400002,
-                "address": "Carl Zeiss Promenade 10, 07745 Jena",
-                "units": [1],
-              };
-
-              try {
-                await Request('alarmSendExample', data, server).emit(true);
-              } catch (e, s) {
-                exceptionToast(e, s);
-              }
-            },
-            child: const Text('Beispiel Alarmierung'),
-          ),
-          for (int i = 0; i < alarmsList.length; i++)
-            () {
-              Alarm alarm = alarmsList[i];
-              bool dateDivider = i == 0 || alarm.date.day != alarmsList[i - 1].date.day || alarm.date.month != alarmsList[i - 1].date.month || alarm.date.year != alarmsList[i - 1].date.year;
-
-              AlarmResponse? ownResponse = alarm.ownResponse;
-
-              return Column(
-                children: <Widget>[
-                  if (dateDivider) SettingsDivider(text: DateFormat('EEEE, dd.MM.yyyy').format(alarm.date)),
-                  Stack(
-                    children: [
-                      if (ownResponse?.getResponseInfo().responseType != AlarmResponseType.notReady && !alarm.responseTimeExpired)
-                        FadeTransition(
-                          opacity: controller,
-                          child: Card(
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            clipBehavior: Clip.antiAliasWithSaveLayer,
-                            elevation: 10,
-                            color: Colors.red.withOpacity(0.4),
-                            surfaceTintColor: Colors.transparent,
-                            child: ListTile(
-                              title: Text(alarm.word),
-                              subtitle: Text(() {
-                                Position? pos = alarm.positionFromAddressIfCoordinates;
-                                if (pos == null) return alarm.address;
-                                return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
-                              }()),
-                              trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
-                            ),
-                          ),
-                        )
-                      else
-                        // same card with a gradient
-                        Card(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          clipBehavior: Clip.antiAliasWithSaveLayer,
-                          elevation: 10,
-                          color: Colors.transparent,
-                          surfaceTintColor: Colors.transparent,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                                colors: [
-                                  Colors.transparent,
-                                  if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) ownResponse.getResponseInfo().responseType.color,
-                                ],
-                                stops: [
-                                  0.4,
-                                  if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) 1.0,
-                                ],
-                              ),
-                            ),
-                            child: ListTile(
-                              title: Text(alarm.word),
-                              subtitle: Text(() {
-                                Position? pos = alarm.positionFromAddressIfCoordinates;
-                                if (pos == null) return alarm.address;
-                                return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
-                              }()),
-                              trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
-                            ),
-                          ),
-                        ),
-                      Card(
+          return Column(
+            children: <Widget>[
+              if (dateDivider) SettingsDivider(text: DateFormat('EEEE, dd.MM.yyyy').format(alarm.date)),
+              Stack(
+                children: [
+                  if (ownResponse?.getResponseInfo().responseType != AlarmResponseType.notReady && !alarm.responseTimeExpired)
+                    FadeTransition(
+                      opacity: controller,
+                      child: Card(
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         clipBehavior: Clip.antiAliasWithSaveLayer,
                         elevation: 10,
-                        color: Colors.transparent,
+                        color: Colors.red.withOpacity(0.4),
+                        surfaceTintColor: Colors.transparent,
                         child: ListTile(
                           title: Text(alarm.word),
                           subtitle: Text(() {
@@ -491,18 +346,66 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
                             return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
                           }()),
                           trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
-                          onTap: () {
-                            Globals.router.push('/alarm', extra: alarm);
-                          },
                         ),
                       ),
-                    ],
+                    )
+                  else
+                    // same card with a gradient
+                    Card(
+                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      clipBehavior: Clip.antiAliasWithSaveLayer,
+                      elevation: 10,
+                      color: Colors.transparent,
+                      surfaceTintColor: Colors.transparent,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            colors: [
+                              Colors.transparent,
+                              if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) ownResponse.getResponseInfo().responseType.color,
+                            ],
+                            stops: [
+                              0.4,
+                              if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) 1.0,
+                            ],
+                          ),
+                        ),
+                        child: ListTile(
+                          title: Text(alarm.word),
+                          subtitle: Text(() {
+                            Position? pos = alarm.positionFromAddressIfCoordinates;
+                            if (pos == null) return alarm.address;
+                            return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
+                          }()),
+                          trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
+                        ),
+                      ),
+                    ),
+                  Card(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    clipBehavior: Clip.antiAliasWithSaveLayer,
+                    elevation: 10,
+                    color: Colors.transparent,
+                    child: ListTile(
+                      title: Text(alarm.word),
+                      subtitle: Text(() {
+                        Position? pos = alarm.positionFromAddressIfCoordinates;
+                        if (pos == null) return alarm.address;
+                        return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
+                      }()),
+                      trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
+                      onTap: () {
+                        Globals.router.push('/alarm', extra: alarm);
+                      },
+                    ),
                   ),
                 ],
-              );
-            }(),
-          const SizedBox(height: kBottomNavigationBarHeight),
-        ],
+              ),
+            ],
+          );
+        },
       );
     }
 

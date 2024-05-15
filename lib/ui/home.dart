@@ -17,6 +17,7 @@ import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:flutter/material.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:preload_page_view/preload_page_view.dart';
 import 'home/calendar_screen.dart';
 
 class FFAlarmApp extends StatelessWidget {
@@ -58,7 +59,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Updates {
-  final PageController pageController = PageController();
+  final PreloadPageController pageController = PreloadPageController();
   final ValueNotifier<int> currentPage = ValueNotifier<int>(0);
 
   Timer? _timer;
@@ -216,7 +217,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Up
           ],
         ),
         extendBody: true,
-        body: PageView(
+        body: PreloadPageView(
+          preloadPagesCount: 3,
           controller: pageController,
           children: <Widget>[
             AlarmsScreen(badge: badgeAlarms, setActionWidgets: (List<Widget> widgets) => setActionWidgets(widgets, 0)),

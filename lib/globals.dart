@@ -14,6 +14,7 @@ import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/data/prefs.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/main.dart';
+import 'package:ff_alarm/notifications/awn_init.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/home.dart';
 import 'package:ff_alarm/ui/screens/alarm_screen.dart';
@@ -147,7 +148,7 @@ abstract class Globals {
                   isForegroundMode: true,
                   autoStart: true,
                   autoStartOnBoot: true,
-                  foregroundServiceNotificationId: 112233,
+                  foregroundServiceNotificationId: AWNInit.gpsServiceId,
                   initialNotificationTitle: "FF Alarm Geofence",
                   initialNotificationContent: "FF Alarm Geofencing ist aktiv im Hintergrund.",
                   onStart: onServiceStartAndroid,
@@ -553,12 +554,6 @@ void onServiceStartAndroid(ServiceInstance instance) async {
   Globals.isService = true;
   DartPluginRegistrant.ensureInitialized();
 
-  bool locationGranted = await Permission.locationAlways.isGranted;
-  if (!locationGranted) {
-    Globals.positionSubscription?.cancel();
-    await instance.stopSelf();
-    return;
-  }
   await Globals.initialize(true);
 
   var all = SettingsNotificationData.getAll();
@@ -585,6 +580,100 @@ void onServiceStartAndroid(ServiceInstance instance) async {
   LatLng? previousPos;
   int? previousTime;
   while (true) {
+    bool gpsEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!gpsEnabled) {
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: AWNInit.gpsServiceId,
+          channelKey: 'geofence',
+          title: "FF Alarm Geofence",
+          body: "GPS ist deaktiviert!",
+          locked: true,
+          autoDismissible: false,
+          actionType: ActionType.Default,
+          notificationLayout: NotificationLayout.BigText,
+        ),
+      );
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: AWNInit.gpsDisabledId,
+          channelKey: 'other',
+          title: "GPS ist deaktiviert!",
+          body: "FF Alarm benötigt GPS, um Geofences zu nutzen.",
+          actionType: ActionType.Default,
+          notificationLayout: NotificationLayout.BigText,
+        ),
+      );
+
+      while (!gpsEnabled) {
+        await Future.delayed(const Duration(seconds: 5));
+        gpsEnabled = await Geolocator.isLocationServiceEnabled();
+      }
+
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: AWNInit.gpsServiceId,
+          channelKey: 'geofence',
+          title: "FF Alarm Geofence",
+          body: "FF Alarm Geofencing ist aktiv im Hintergrund.",
+          locked: true,
+          autoDismissible: false,
+          actionType: ActionType.Default,
+          notificationLayout: NotificationLayout.BigText,
+        ),
+      );
+      await AwesomeNotifications().cancel(AWNInit.gpsDisabledId);
+
+      await Globals.initGeoLocator();
+    }
+
+    bool locationGranted = await Permission.locationAlways.isGranted;
+    if (!locationGranted) {
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: AWNInit.gpsServiceId,
+          channelKey: 'geofence',
+          title: "FF Alarm Geofence",
+          body: "Standortberechtigung fehlt!",
+          locked: true,
+          autoDismissible: false,
+          actionType: ActionType.Default,
+          notificationLayout: NotificationLayout.BigText,
+        ),
+      );
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: AWNInit.gpsPermissionDeniedId,
+          channelKey: 'other',
+          title: "Standortberechtigung fehlt!",
+          body: "FF Alarm benötigt die Standortberechtigung, um Geofences zu nutzen.",
+          actionType: ActionType.Default,
+          notificationLayout: NotificationLayout.BigText,
+        ),
+      );
+
+      while (!locationGranted) {
+        await Future.delayed(const Duration(seconds: 5));
+        locationGranted = await Permission.locationAlways.isGranted;
+      }
+
+      await AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: AWNInit.gpsServiceId,
+          channelKey: 'geofence',
+          title: "FF Alarm Geofence",
+          body: "FF Alarm Geofencing ist aktiv im Hintergrund.",
+          locked: true,
+          autoDismissible: false,
+          actionType: ActionType.Default,
+          notificationLayout: NotificationLayout.BigText,
+        ),
+      );
+      await AwesomeNotifications().cancel(AWNInit.gpsPermissionDeniedId);
+
+      await Globals.initGeoLocator();
+    }
+
     var result = await backgroundGPSSync(previousPos, previousTime);
     previousPos = result.pos;
     previousTime = result.lastTime;
@@ -614,7 +703,7 @@ void onServiceStartAndroid(ServiceInstance instance) async {
 
       await AwesomeNotifications().createNotification(
         content: NotificationContent(
-          id: 112233,
+          id: AWNInit.gpsServiceId,
           channelKey: 'geofence',
           title: "FF Alarm Geofence",
           body: body,
@@ -628,7 +717,7 @@ void onServiceStartAndroid(ServiceInstance instance) async {
       Logger.error('Failed to create notification: $e\n$s');
     }
 
-    int delay = 60;
+    int delay = 5;
     while (delay > 0) {
       await Future.delayed(const Duration(seconds: 1));
 

@@ -281,7 +281,7 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                     title: 'Hintergrundaktivität & Auto-Start',
                     content: const Text(
                       'Diese Einstellung ist notwendig, wenn du Geofences zuverlässig nutzen möchtest. Ansonsten könnte das System den Service beenden.\n\n'
-                      'Diese Einstellung ist nicht bei allen Geräten verfügbar, oder an der gleichen Stelle zu finden.\n\n'
+                      'Diese Einstellung ist nicht bei allen Geräten verfügbar, oder an der gleichen Stelle zu finden, meistens aber unter "Batterie" oder "Auto Start".\n\n'
                       'Wenn du auf der folgenden Seite die Einstellungen nicht findest, informiere dich online, wie du die Hintergrundaktivität und / oder den Auto-Start für dein Gerät aktivieren kannst.',
                     ),
                     actions: [
