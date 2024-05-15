@@ -4,9 +4,8 @@ import 'dart:io';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:floor/floor.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-
-import '../../ui/screens/alarm_screen.dart';
 
 @entity
 class Alarm {
@@ -325,5 +324,57 @@ class AlarmResponse {
     responseType ??= AlarmResponseType.notReady;
 
     return (stationId: stationId, responseType: responseType);
+  }
+}
+
+enum AlarmResponseType {
+  onStation(0),
+  under5(5),
+  under10(10),
+  under15(15),
+  onCall(-1),
+  notReady(-2),
+  notSet(-3);
+
+  final int timeAmount;
+
+  const AlarmResponseType(this.timeAmount);
+
+  Color get color {
+    switch (this) {
+      case AlarmResponseType.onStation:
+        return Colors.green;
+      case AlarmResponseType.under5:
+        return Colors.cyanAccent;
+      case AlarmResponseType.under10:
+        return Colors.yellow;
+      case AlarmResponseType.under15:
+        return Colors.orange;
+      case AlarmResponseType.onCall:
+        return Colors.purpleAccent;
+      case AlarmResponseType.notReady:
+        return Colors.red;
+      case AlarmResponseType.notSet:
+        return Colors.grey;
+    }
+  }
+
+  String get name {
+    switch (this) {
+      case AlarmResponseType.onStation:
+        return 'An Wache';
+      case AlarmResponseType.under5:
+        return '< 5 Min';
+      case AlarmResponseType.under10:
+        return '< 10 Min';
+      case AlarmResponseType.under15:
+        return '< 15 Min';
+      case AlarmResponseType.onCall:
+        return 'Auf Abruf dazu';
+      case AlarmResponseType.notReady:
+        return 'Nicht bereit';
+      case AlarmResponseType.notSet:
+        return 'Nicht gesetzt';
+    }
   }
 }

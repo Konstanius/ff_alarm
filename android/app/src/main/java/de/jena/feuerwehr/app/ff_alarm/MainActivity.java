@@ -16,6 +16,7 @@ import android.os.Bundle;
 
 // ConnectivityManager for background data
 import android.net.ConnectivityManager;
+import android.provider.Settings;
 
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "app.feuerwehr.jena.de/methods";
@@ -28,6 +29,9 @@ public class MainActivity extends FlutterActivity {
                         (call, result) -> {
                             if (call.method.equals("backgroundData")) {
                                 result.success(getBackgroundDataEnabled());
+                            } else if (call.method.equals("batterySaverSettings")) {
+                                Intent intent = new Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS);
+                                startActivity(intent);
                             } else {
                                 result.notImplemented();
                             }
@@ -36,6 +40,10 @@ public class MainActivity extends FlutterActivity {
     }
 
     private boolean getBackgroundDataEnabled() {
+        if (VERSION.SDK_INT < VERSION_CODES.N) {
+            return true;
+        }
+
         ConnectivityManager cm = (ConnectivityManager) getSystemService(ContextWrapper.CONNECTIVITY_SERVICE);
         boolean backgroundData = cm.getBackgroundDataSetting();
         boolean restrictBackground = cm.getRestrictBackgroundStatus() == ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED;

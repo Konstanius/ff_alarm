@@ -264,12 +264,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('FF Alarm'),
-      ),
-      body: bodyWidget,
-    );
+    return Scaffold(body: bodyWidget);
   }
 
   static Widget unitCard(Unit unit, Station station, margin, bool canClick) {

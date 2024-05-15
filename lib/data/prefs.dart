@@ -62,10 +62,12 @@ class Prefs {
 
   void remove(String key) {
     _prefs.remove(key);
+    save();
   }
 
   void clear() {
     _prefs.clear();
+    save();
   }
 
   bool containsKey(String key) {

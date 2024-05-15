@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:ff_alarm/data/interfaces/alarm_interface.dart';
 import 'package:ff_alarm/data/interfaces/person_interface.dart';
 import 'package:ff_alarm/data/interfaces/station_interface.dart';
 import 'package:ff_alarm/data/interfaces/unit_interface.dart';
 import 'package:ff_alarm/globals.dart';
-import 'package:ff_alarm/notifications/awn_init.dart';
 import 'package:ff_alarm/server/realtime.dart';
 import 'package:ff_alarm/ui/home/alarms_screen.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';

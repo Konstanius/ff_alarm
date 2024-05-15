@@ -122,9 +122,6 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('FF Alarm'),
-      ),
       body: ListView(
         padding: const EdgeInsets.all(8),
         children: <Widget>[

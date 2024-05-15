@@ -25,7 +25,6 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
   bool motionSensors = false;
   bool appOptimizations = false;
   bool backgroundActivity = false;
-  bool allowAutoLaunch = false;
   bool backgroundData = false;
 
   late Timer _timer;
@@ -48,7 +47,6 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
 
       appOptimizations = Globals.prefs.getBool('appOptimizations') ?? false;
       backgroundActivity = Globals.prefs.getBool('backgroundActivity') ?? false;
-      allowAutoLaunch = Globals.prefs.getBool('allowAutoLaunch') ?? false;
     } else {
       motionSensors = await Permission.sensors.isGranted;
     }
@@ -264,7 +262,9 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                 },
               ),
             ),
-            const SettingsDivider(text: 'Optional - Empfohlen'),
+          ],
+          const SettingsDivider(text: 'Optional'),
+          if (Platform.isAndroid)
             // batteryUsage -> background activity
             Card(
               clipBehavior: Clip.antiAliasWithSaveLayer,
@@ -272,17 +272,17 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
               elevation: 10,
               child: ListTile(
                 leading: const Icon(Icons.phonelink_outlined),
-                title: const Text('Hintergrundaktivität'),
+                title: const Text('Hintergrundaktivität & Auto-Start'),
                 subtitle: const Text('Erlaubt der App, im Hintergrund weiterzulaufen.'),
                 trailing: backgroundActivity ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
                 onTap: () async {
                   var res = await generalDialog(
                     color: Colors.blue,
-                    title: 'Hintergrundaktivität',
+                    title: 'Hintergrundaktivität & Auto-Start',
                     content: const Text(
-                      'Durch das Aktivieren der Hintergrundaktivität wird die App auch im Hintergrund weiterlaufen können.\n\n'
-                      'Dies ist notwendig, wenn du bei einer Alarmierung auch im Hintergrund auf dem Laufenden gehalten werden möchtest.\n\n'
-                      'Beim Fortfahren musst du in der folgenden Seite die Batterienutzung öffnen und die Einstellung "Hintergrundaktivität" (oder Ähnlich) aktivieren.',
+                      'Diese Einstellung ist notwendig, wenn du Geofences zuverlässig nutzen möchtest. Ansonsten könnte das System den Service beenden.\n\n'
+                      'Diese Einstellung ist nicht bei allen Geräten verfügbar, oder an der gleichen Stelle zu finden.\n\n'
+                      'Wenn du auf der folgenden Seite die Einstellungen nicht findest, informiere dich online, wie du die Hintergrundaktivität und / oder den Auto-Start für dein Gerät aktivieren kannst.',
                     ),
                     actions: [
                       DialogActionButton(
@@ -307,9 +307,9 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
 
                   var result = await generalDialog(
                     color: Colors.blue,
-                    title: 'Hintergrundaktivität',
+                    title: 'Hintergrundaktivität & Auto-Start',
                     content: const Text(
-                      'Hast du die Einstellung "Hintergrundaktivität" (oder Ähnlich) aktiviert?',
+                      'Hast du die Einstellungen "Hintergrundaktivität" und / oder "Auto-Start" aktiviert?',
                     ),
                     actions: [
                       DialogActionButton(
@@ -338,81 +338,6 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
                 },
               ),
             ),
-            // batteryUsage -> allow auto launch
-            Card(
-              clipBehavior: Clip.antiAliasWithSaveLayer,
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              elevation: 10,
-              child: ListTile(
-                leading: const Icon(Icons.restart_alt_outlined),
-                title: const Text('Automatischer Start'),
-                subtitle: const Text('Erlaubt der App, Sich und Seine Dienste von selbst zu starten.'),
-                trailing: allowAutoLaunch ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
-                onTap: () async {
-                  var res = await generalDialog(
-                    color: Colors.blue,
-                    title: 'Automatischer Start',
-                    content: const Text(
-                      'Durch das Aktivieren des automatischen Starts kann die App gestoppte Dienste von selbst starten können.\n\n'
-                      'Dies ist notwendig, damit die App auch im Hintergrund weiterlaufen kann und Alarmierungen zuverlässig empfangen werden können.\n\n'
-                      'Beim Fortfahren musst du in der folgenden Seite die Batterienutzung öffnen und die Einstellung "Automatischer Start" (oder Ähnlich) aktivieren.',
-                    ),
-                    actions: [
-                      DialogActionButton(
-                        onPressed: () {
-                          Navigator.pop(context, false);
-                        },
-                        text: 'Abbrechen',
-                      ),
-                      DialogActionButton(
-                        onPressed: () {
-                          Navigator.pop(context, true);
-                        },
-                        text: 'Fortfahren',
-                      ),
-                    ],
-                  );
-                  if (res != true) return;
-
-                  openAppSettings();
-
-                  await Future.delayed(const Duration(seconds: 1));
-
-                  var result = await generalDialog(
-                    color: Colors.blue,
-                    title: 'Automatischer Start',
-                    content: const Text(
-                      'Hast du die Einstellung "Automatischer Start" (oder Ähnlich) aktiviert?',
-                    ),
-                    actions: [
-                      DialogActionButton(
-                        onPressed: () {
-                          Navigator.pop(context, false);
-                        },
-                        text: 'Nein',
-                      ),
-                      DialogActionButton(
-                        onPressed: () {
-                          Navigator.pop(context, true);
-                        },
-                        text: 'Ja',
-                      ),
-                    ],
-                  );
-                  if (result == true) {
-                    Globals.prefs.setBool('allowAutoLaunch', true);
-                    successToast('Einstellung erfolgreich!');
-                  } else {
-                    Globals.prefs.remove('allowAutoLaunch');
-                    errorToast('Einstellung fehlgeschlagen!');
-                  }
-
-                  checkSettings();
-                },
-              ),
-            ),
-            const SettingsDivider(text: 'Optional'),
-          ],
           // locationWhenInUse and locationAlways
           Card(
             clipBehavior: Clip.antiAliasWithSaveLayer,
@@ -539,7 +464,7 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
           title: 'Standortzugriff',
           content: const Text(
             'Durch das Aktivieren des dauerhaften Standortzugriffs wird FF Alarm bei aktivierten Geofences im Hintergrund deinen Standort mit dem Server teilen.\n\n'
-            'DEIN STANDORT WIRD NIEMALS MIT ANDEREN GETEILT ODER DAUERHAFT GESPEICHERT!\n\n'
+            'Dein Standort kann von den von dir eingestellten Servern beliebig genutzt werden, wird aber normalerweise nie gespeichert.\n\n'
             'Beim Fortfahren musst du in der folgenden Seite den Standortzugriff auf "Immer erlauben" setzen.',
           ),
           actions: [

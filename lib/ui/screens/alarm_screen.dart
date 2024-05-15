@@ -359,14 +359,14 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               margin: const EdgeInsets.only(bottom: 8, right: 8, left: 8),
               elevation: selectedStation == station.id ? 5 : 0,
-              child: stationCard(station),
+              child: stationCard(station, true),
             ),
         ],
       ),
     );
   }
 
-  Widget stationCard(Station station) {
+  Widget stationCard(Station station, bool canSelect) {
     return ListTile(
       splashColor: Colors.blue,
       title: Row(
@@ -465,82 +465,74 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
               ],
             ),
             const SettingsDivider(text: 'Antworten'),
-            Row(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.circle, color: AlarmResponseType.onStation.color),
-                          const SizedBox(width: 5),
-                          Text('(An Wache) ${responses[0]}'),
-                        ],
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.circle, color: AlarmResponseType.under10.color),
-                          const SizedBox(width: 5),
-                          Text('(<10 min) ${responses[2]}'),
-                        ],
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.circle, color: AlarmResponseType.onCall.color),
-                          const SizedBox(width: 5),
-                          Text('(Abruf) ${responses[4]}'),
-                        ],
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.circle, color: AlarmResponseType.notSet.color),
-                          const SizedBox(width: 5),
-                          Text('(Unklar) ${responses[6]}'),
-                        ],
-                      ),
-                    ],
-                  ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: ClipRRect(
+                clipBehavior: Clip.antiAliasWithSaveLayer,
+                borderRadius: BorderRadius.circular(10),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ColoredBox(
+                            color: AlarmResponseType.onStation.color,
+                            child: Text('  ${responses[0]} (An Wache)', style: const TextStyle(color: Colors.black)),
+                          ),
+                        ),
+                        Expanded(
+                          child: ColoredBox(
+                            color: AlarmResponseType.under5.color,
+                            child: Text('  ${responses[1]} (<5 min)', style: const TextStyle(color: Colors.black)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ColoredBox(
+                            color: AlarmResponseType.under10.color,
+                            child: Text('  ${responses[2]} (<10 min)', style: const TextStyle(color: Colors.black)),
+                          ),
+                        ),
+                        Expanded(
+                          child: ColoredBox(
+                            color: AlarmResponseType.under15.color,
+                            child: Text('  ${responses[3]} (<15 min)', style: const TextStyle(color: Colors.black)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ColoredBox(
+                            color: AlarmResponseType.onCall.color,
+                            child: Text('  ${responses[4]} (Abruf)', style: const TextStyle(color: Colors.black)),
+                          ),
+                        ),
+                        Expanded(
+                          child: ColoredBox(
+                            color: AlarmResponseType.notReady.color,
+                            child: Text('  ${responses[5]} (Absage)', style: const TextStyle(color: Colors.black)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ColoredBox(
+                            color: AlarmResponseType.notSet.color,
+                            child: Text('  ${responses[6]} (Unklar)', style: const TextStyle(color: Colors.black)),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.circle, color: AlarmResponseType.under5.color),
-                          const SizedBox(width: 5),
-                          Text('(<5 min) ${responses[1]}'),
-                        ],
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.circle, color: AlarmResponseType.under15.color),
-                          const SizedBox(width: 5),
-                          Text('(<15 min) ${responses[3]}'),
-                        ],
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.circle, color: AlarmResponseType.notReady.color),
-                          const SizedBox(width: 5),
-                          Text('(Absage) ${responses[5]}'),
-                        ],
-                      ),
-                      const Row(mainAxisSize: MainAxisSize.min, children: [Text('')]),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
             const SettingsDivider(text: 'Alarmierte Einheiten'),
             for (var unit in dispatchedUnits)
@@ -551,13 +543,13 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
           ],
         );
       }(),
-      onTap: selectedStation == station.id
-          ? null
-          : () {
+      onTap: canSelect
+          ? () {
               setState(() {
                 selectedStation = station.id;
               });
-            },
+            }
+          : null,
     );
   }
 
@@ -680,7 +672,7 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 margin: const EdgeInsets.all(8),
                 elevation: 5,
-                child: stationCard(station),
+                child: stationCard(station, false),
               );
             }()
           ],
@@ -1851,57 +1843,5 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
           ),
         ),
     ];
-  }
-}
-
-enum AlarmResponseType {
-  onStation(0),
-  under5(5),
-  under10(10),
-  under15(15),
-  onCall(-1),
-  notReady(-2),
-  notSet(-3);
-
-  final int timeAmount;
-
-  const AlarmResponseType(this.timeAmount);
-
-  Color get color {
-    switch (this) {
-      case AlarmResponseType.onStation:
-        return Colors.green;
-      case AlarmResponseType.under5:
-        return Colors.cyanAccent;
-      case AlarmResponseType.under10:
-        return Colors.yellow;
-      case AlarmResponseType.under15:
-        return Colors.orange;
-      case AlarmResponseType.onCall:
-        return Colors.purpleAccent;
-      case AlarmResponseType.notReady:
-        return Colors.red;
-      case AlarmResponseType.notSet:
-        return Colors.grey;
-    }
-  }
-
-  String get name {
-    switch (this) {
-      case AlarmResponseType.onStation:
-        return 'An Wache';
-      case AlarmResponseType.under5:
-        return '< 5 Min';
-      case AlarmResponseType.under10:
-        return '< 10 Min';
-      case AlarmResponseType.under15:
-        return '< 15 Min';
-      case AlarmResponseType.onCall:
-        return 'Auf Abruf dazu';
-      case AlarmResponseType.notReady:
-        return 'Nicht bereit';
-      case AlarmResponseType.notSet:
-        return 'Nicht gesetzt';
-    }
   }
 }
