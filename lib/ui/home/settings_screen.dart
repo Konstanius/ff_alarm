@@ -362,7 +362,7 @@ class SettingsScreenState extends State<SettingsScreen> with AutomaticKeepAliveC
           const SettingsDivider(text: 'Alarmierungs-Ton'),
           Card(
             clipBehavior: Clip.antiAliasWithSaveLayer,
-            elevation: Platform.isAndroid ? 10 : 2,
+            elevation: Platform.isIOS ? 10 : 2,
             margin: const EdgeInsets.symmetric(vertical: 4),
             child: InkWell(
               onTap: () async {

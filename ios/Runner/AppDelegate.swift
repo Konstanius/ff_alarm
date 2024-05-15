@@ -4,6 +4,7 @@ import UserNotifications
 import awesome_notifications
 import FirebaseMessaging
 import CoreLocation
+import CoreMotion
 
 
 @UIApplicationMain
@@ -36,13 +37,22 @@ import CoreLocation
                 }
             }
 
-            if call.method == "checkCriticalAlertPermission" {
+            else if call.method == "checkCriticalAlertPermission" {
                 UNUserNotificationCenter.current().getNotificationSettings { settings in
                     if settings.criticalAlertSetting == .enabled {
                         result(true)
                     } else {
                         result(false)
                     }
+                }
+            }
+
+            else if call.method == "checkMotionSensorsPermission" {
+                let status = CMMotionActivityManager.authorizationStatus()
+                if status == .authorized {
+                    result(true)
+                } else {
+                    result(false)
                 }
             }
         })

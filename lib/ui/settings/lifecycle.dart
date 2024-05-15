@@ -48,7 +48,7 @@ class LifeCycleSettingsState extends State<LifeCycleSettings> {
       appOptimizations = Globals.prefs.getBool('appOptimizations') ?? false;
       backgroundActivity = Globals.prefs.getBool('backgroundActivity') ?? false;
     } else {
-      motionSensors = await Permission.sensors.isGranted;
+      motionSensors = await Globals.channel.invokeMethod('checkMotionSensorsPermission');
     }
 
     UpdateInfo(UpdateType.ui, {"1"});

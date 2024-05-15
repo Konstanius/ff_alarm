@@ -358,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Up
 
     bool granted = await Permission.locationAlways.isGranted;
     if (granted && Platform.isIOS) {
-      granted = await Permission.sensors.isGranted;
+      granted = await Globals.channel.invokeMethod('checkMotionSensorsPermission');
     }
 
     if (granted) return;
