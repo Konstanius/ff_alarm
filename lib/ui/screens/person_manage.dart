@@ -224,6 +224,7 @@ class _PersonManageScreenState extends State<PersonManageScreen> {
             const SizedBox(height: 8),
             TextField(
               controller: firstNameController,
+              textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(
                 labelText: 'Vorname',
                 border: OutlineInputBorder(),
@@ -234,6 +235,7 @@ class _PersonManageScreenState extends State<PersonManageScreen> {
             const SizedBox(height: 24),
             TextField(
               controller: lastNameController,
+              textCapitalization: TextCapitalization.words,
               decoration: const InputDecoration(
                 labelText: 'Nachname',
                 border: OutlineInputBorder(),

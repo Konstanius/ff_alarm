@@ -9,7 +9,7 @@ Distanzen:
 
 Allgemein:
   - externe TETRA API aufbauen
-  - Web Admin Panel aufbauen
+  - Web Admin Panel fertigstellen
   - Einsatzmonitor via Raspberry Pi ODER Android TV App -> https://github.com/ardera/flutter-pi
   - Alarmierungstest für einzelne Personen (Nur FCM Zustellung verifizieren)
 
@@ -27,7 +27,6 @@ Sonstige Features:
   - Realtime Chat
   - Datei Speicher
   - Formulare zur Meldung von Sonstigem
-  - Bildschirm Helligkeit auf Alarmbildschirm bei Alarmierung erhöhen auf 100%
 
   - Pager-Integration
   - FAX-Integration

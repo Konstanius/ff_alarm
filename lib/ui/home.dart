@@ -71,6 +71,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Up
 
   void setActionWidgets(List<Widget> widgets, int page) {
     savedActionWidgets[page] = widgets;
+    if (page != currentPage.value) return;
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       actionWidgets.value = widgets;
     });
@@ -203,6 +204,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver, Up
       child: Scaffold(
         appBar: AppBar(
           title: const Text('FF Alarm'),
+          centerTitle: true,
           actions: [
             ValueListenableBuilder(
               valueListenable: actionWidgets,

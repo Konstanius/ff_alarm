@@ -117,20 +117,9 @@ Future<void> aboutDialog() async {
           children: <Widget>[
             TextButton(
               onPressed: () {
-                launchUrlString('https://github.com/Konstanius/ff_alarm');
+                launchUrlString('https://github.com/Konstanius/FF-Alarm');
               },
-              child: const Text('GitHub (App-Repository)'),
-            ),
-          ],
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            TextButton(
-              onPressed: () {
-                launchUrlString('https://github.com/Konstanius/ff_alarm_server');
-              },
-              child: const Text('GitHub (Server-Repository)'),
+              child: const Text('GitHub Repositories'),
             ),
           ],
         ),

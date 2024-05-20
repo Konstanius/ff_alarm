@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ff_alarm/data/models/alarm.dart';
 import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/globals.dart';
@@ -64,6 +66,7 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
   void onDateTimeChangeExecution() {
     if (!mounted) return;
     setState(() {});
+    resetBadge();
   }
 
   @override
@@ -268,15 +271,20 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
       ),
     ]);
 
-    if (Globals.localPersons.isEmpty) return;
-
-    Alarm.getAllStreamed().listen((List<Alarm> value) {
+    StreamSubscription subscription = Alarm.getAllStreamed().listen((List<Alarm> value) {
       if (!mounted) return;
       loading = false;
       alarms.addAll(value);
       alarms.sort((a, b) => b.date.compareTo(a.date));
       setState(() {});
       resetBadge();
+    });
+
+    subscription.onDone(() {
+      subscription.cancel();
+      if (!mounted || !loading) return;
+      loading = false;
+      setState(() {});
     });
   }
 
@@ -464,13 +472,20 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
       resetBadge();
     } else if (info.type == UpdateType.ui && info.ids.contains("3")) {
       alarms.clear();
-      Alarm.getAllStreamed().listen((List<Alarm> value) {
+      StreamSubscription subscription = Alarm.getAllStreamed().listen((List<Alarm> value) {
         if (!mounted) return;
         loading = false;
         alarms.addAll(value);
         alarms.sort((a, b) => b.date.compareTo(a.date));
         setState(() {});
         resetBadge();
+      });
+
+      subscription.onDone(() {
+        subscription.cancel();
+        if (!mounted || !loading) return;
+        loading = false;
+        setState(() {});
       });
     }
   }
