@@ -1,7 +1,6 @@
 package de.jena.feuerwehr.app;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -34,15 +33,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
 
 public class GeofenceService extends Service {
-    public static final int SERVICE_ID = 1;
+    public static final int serviceNotificationId = 1;
     private HandlerThread handlerThread;
     private Handler handler;
     private boolean isRunning = false;
@@ -120,7 +116,7 @@ public class GeofenceService extends Service {
         }
 
         try {
-            ServiceCompat.startForeground(this, SERVICE_ID, notification.build(), serviceCode);
+            ServiceCompat.startForeground(this, serviceNotificationId, notification.build(), serviceCode);
         } catch (Exception e) {
             log("GeofenceService failed to update notification");
             onDestroy();
@@ -376,20 +372,19 @@ public class GeofenceService extends Service {
         notificationManager.cancel(id);
     }
 
-    private static final int gpsDisabledId = 1;
-    private static final int gpsPermissionMissingId = 2;
+    private static final int gpsDisabledId = 2;
+    private static final int gpsPermissionMissingId = 3;
 
     private void sendNotification(String title, String body, int id) {
         Notification.Builder notification = new Notification.Builder(this)
                 .setContentTitle(title)
                 .setContentText(body)
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setGroup("other")
                 .setStyle(new Notification.BigTextStyle().bigText(body))
                 .setAutoCancel(true);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            notification.setChannelId("geofence");
+            notification.setChannelId("other");
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -407,16 +402,27 @@ public class GeofenceService extends Service {
                 try {
                     // check if gps permission is granted
                     if (ContextCompat.checkSelfPermission(GeofenceService.this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                        gpsPermissionMissing = true;
-                        updateNotification("FF Alarm benötigt die Standortberechtigung, um Geofences zu nutzen.");
+                        if (!gpsPermissionMissing) {
+                            gpsPermissionMissing = true;
+                            updateNotification("FF Alarm benötigt die Standortberechtigung, um Geofences zu nutzen.");
+                            sendNotification("Standortberechtigung fehlt!", "FF Alarm benötigt die Standortberechtigung, um Geofences zu nutzen.", gpsPermissionMissingId);
+                        }
                         log("GPS permission is missing");
-                        sendNotification("Standortberechtigung fehlt!", "FF Alarm benötigt die Standortberechtigung, um Geofences zu nutzen.", gpsPermissionMissingId);
 
                         handler.postDelayed(this, 5000);
                         return;
                     } else if (gpsPermissionMissing) {
                         gpsPermissionMissing = false;
                         removeNotification(gpsPermissionMissingId);
+                        updateNotification("FF Alarm Geofencing ist aktiv im Hintergrund.");
+                        if (locationManager != null) {
+                            try {
+                                locationManager.removeUpdates(locationListener);
+                            } catch (Exception ignored) {
+                            }
+                            subscribedToLocationUpdates = false;
+                            locationManager = null;
+                        }
                     }
 
                     if (locationManager == null) {
@@ -431,16 +437,31 @@ public class GeofenceService extends Service {
 
                     // check if gps is enabled
                     if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                        gpsDisabled = true;
-                        updateNotification("GPS ist deaktiviert!");
+                        if (!gpsDisabled) {
+                            gpsDisabled = true;
+                            updateNotification("GPS ist deaktiviert!");
+                            sendNotification("GPS deaktiviert!", "FF Alarm benötigt GPS, um Geofences zu nutzen.", gpsDisabledId);
+                        }
                         log("GPS is disabled");
-                        sendNotification("GPS deaktiviert!", "FF Alarm benötigt GPS, um Geofences zu nutzen.", gpsDisabledId);
 
                         handler.postDelayed(this, 5000);
                         return;
                     } else if (gpsDisabled) {
                         gpsDisabled = false;
                         removeNotification(gpsDisabledId);
+                        updateNotification("FF Alarm Geofencing ist aktiv im Hintergrund.");
+                        try {
+                            locationManager.removeUpdates(locationListener);
+                        } catch (Exception ignored) {
+                        }
+                        subscribedToLocationUpdates = false;
+                        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                        if (locationManager == null) {
+                            updateNotification("Es besteht ein Fehler mit dem Standortdienst.");
+                            log("LocationManager is null");
+                            handler.postDelayed(this, 5000);
+                            return;
+                        }
                     }
 
                     if (!subscribedToLocationUpdates) {
