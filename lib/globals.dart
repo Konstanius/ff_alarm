@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:ui';
 
 import 'package:app_group_directory/app_group_directory.dart';
-import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:background_fetch/background_fetch.dart' as bf;
 import 'package:ff_alarm/data/database.dart';
 import 'package:ff_alarm/data/models/alarm.dart';
@@ -14,7 +12,6 @@ import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/data/prefs.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/main.dart';
-import 'package:ff_alarm/notifications/awn_init.dart';
 import 'package:ff_alarm/server/request.dart';
 import 'package:ff_alarm/ui/home.dart';
 import 'package:ff_alarm/ui/screens/alarm_screen.dart';
@@ -29,10 +26,8 @@ import 'package:ff_alarm/ui/utils/updater.dart';
 import 'package:ff_alarm/ui/utils/versioning.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
-import 'package:latlong2/latlong.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_background_geolocation/flutter_background_geolocation.dart' as bg;
@@ -140,23 +135,9 @@ abstract class Globals {
 
         if (geofenceActive) {
           if (Platform.isAndroid) {
-            var service = FlutterBackgroundService();
-
-            if (!await service.isRunning()) {
-              await service.configure(
-                androidConfiguration: AndroidConfiguration(
-                  isForegroundMode: true,
-                  autoStart: true,
-                  autoStartOnBoot: true,
-                  foregroundServiceNotificationId: AWNInit.gpsServiceId,
-                  initialNotificationTitle: "FF Alarm Geofence",
-                  initialNotificationContent: "FF Alarm Geofencing ist aktiv im Hintergrund.",
-                  onStart: onServiceStartAndroid,
-                  notificationChannelId: 'geofence',
-                ),
-              );
-
-              await service.startService();
+            bool active = await AndroidServiceManager.checkService();
+            if (!active) {
+              AndroidServiceManager.startService();
             }
           } else if (Platform.isIOS) {
             bg.BackgroundGeolocation.onLocation((bg.Location location) async {
@@ -286,7 +267,7 @@ abstract class Globals {
           }
         } else {
           if (Platform.isAndroid) {
-            // none, stops itself
+            AndroidServiceManager.stopService();
           } else if (Platform.isIOS) {
             bg.BackgroundGeolocation.ready(iosBackgroundLocationConfig).then((bg.State state) {
               if (state.enabled) {
@@ -357,7 +338,7 @@ abstract class Globals {
   );
 
   static Future<void> initializeTemporary(bool geo) async {
-    if (geo) await initGeoLocator();
+    if (geo) initGeoLocator();
 
     String registeredUsers = prefs.getString('registered_users') ?? '[]';
     List<String> users;
@@ -505,256 +486,16 @@ abstract class Globals {
   );
 }
 
-/// Refreshes every 5 minutes, if position changed by 50 meters or more
-/// Serverside treats a position as unreliable after 10 minutes
-Future<({LatLng? pos, int? lastTime})> backgroundGPSSync(LatLng? previousPos, int? lastTime) async {
-  try {
-    if (Globals.lastPositionTime?.isBefore(DateTime.now().subtract(const Duration(minutes: 1))) ?? true) {
-      var location = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high, timeLimit: const Duration(seconds: 30));
-      Globals.lastPosition = location;
-      Globals.lastPositionTime = DateTime.now();
-    }
-
-    if (Globals.lastPosition == null) return (pos: previousPos, lastTime: lastTime);
-
-    String path = '${Globals.filesPath}/last_location.txt';
-    File file = File(path);
-    file.writeAsStringSync("${Globals.lastPosition!.latitude},${Globals.lastPosition!.longitude},${Globals.lastPositionTime!.millisecondsSinceEpoch}");
-
-    int delay = DateTime.now().millisecondsSinceEpoch - (lastTime ?? 0);
-    if (previousPos != null && delay < 600000) {
-      double distance = Geolocator.distanceBetween(previousPos.latitude, previousPos.longitude, Globals.lastPosition!.latitude, Globals.lastPosition!.longitude);
-      if (distance < 50) return (pos: previousPos, lastTime: lastTime);
-    }
-
-    try {
-      var servers = Globals.registeredServers;
-
-      var futures = <Future>[];
-      for (var server in servers) {
-        futures.add(
-          Request('personSetLocation', {'a': Globals.lastPosition!.latitude, 'o': Globals.lastPosition!.longitude, 't': Globals.lastPositionTime!.millisecondsSinceEpoch}, server).emit(true),
-        );
-      }
-
-      await Future.wait(futures);
-    } catch (e, s) {
-      Logger.warn('Failed to send location: $e\n$s');
-    }
-
-    return (pos: LatLng(Globals.lastPosition!.latitude, Globals.lastPosition!.longitude), lastTime: Globals.lastPositionTime!.millisecondsSinceEpoch);
-  } catch (e, s) {
-    Logger.error('Failed to get location: $e\n$s');
-    return (pos: previousPos, lastTime: lastTime);
-  }
-}
-
-@pragma('vm:entry-point')
-void onServiceStartAndroid(ServiceInstance instance) async {
-  Globals.isService = true;
-  DartPluginRegistrant.ensureInitialized();
-
-  await Globals.initialize(true);
-
-  var all = SettingsNotificationData.getAll();
-  if (all.isNotEmpty) {
-    bool geofenceActive = false;
-    for (var data in all.values) {
-      if (data.geofencing.isNotEmpty && data.manualOverride == 1 && data.enabledMode == 3) {
-        geofenceActive = true;
-        break;
-      }
-    }
-
-    if (!geofenceActive) {
-      Globals.positionSubscription?.cancel();
-      await instance.stopSelf();
-      return;
-    }
-  } else {
-    Globals.positionSubscription?.cancel();
-    await instance.stopSelf();
-    return;
+abstract class AndroidServiceManager {
+  static Future<void> startService() async {
+    await Globals.channel.invokeMethod('startGeofenceService');
   }
 
-  LatLng? previousPos;
-  int? previousTime;
-  while (true) {
-    bool gpsEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!gpsEnabled) {
-      await AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: AWNInit.gpsServiceId,
-          channelKey: 'geofence',
-          title: "FF Alarm Geofence",
-          body: "GPS ist deaktiviert!",
-          locked: true,
-          autoDismissible: false,
-          actionType: ActionType.Default,
-          notificationLayout: NotificationLayout.BigText,
-        ),
-      );
-      await AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: AWNInit.gpsDisabledId,
-          channelKey: 'other',
-          title: "GPS ist deaktiviert!",
-          body: "FF Alarm benötigt GPS, um Geofences zu nutzen.",
-          actionType: ActionType.Default,
-          notificationLayout: NotificationLayout.BigText,
-        ),
-      );
+  static Future<void> stopService() async {
+    await Globals.channel.invokeMethod('stopGeofenceService');
+  }
 
-      while (!gpsEnabled) {
-        await Future.delayed(const Duration(seconds: 5));
-        gpsEnabled = await Geolocator.isLocationServiceEnabled();
-      }
-
-      await AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: AWNInit.gpsServiceId,
-          channelKey: 'geofence',
-          title: "FF Alarm Geofence",
-          body: "FF Alarm Geofencing ist aktiv im Hintergrund.",
-          locked: true,
-          autoDismissible: false,
-          actionType: ActionType.Default,
-          notificationLayout: NotificationLayout.BigText,
-        ),
-      );
-      await AwesomeNotifications().cancel(AWNInit.gpsDisabledId);
-
-      await Globals.initGeoLocator();
-    }
-
-    bool locationGranted = await Permission.locationAlways.isGranted;
-    if (!locationGranted) {
-      await AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: AWNInit.gpsServiceId,
-          channelKey: 'geofence',
-          title: "FF Alarm Geofence",
-          body: "Standortberechtigung fehlt!",
-          locked: true,
-          autoDismissible: false,
-          actionType: ActionType.Default,
-          notificationLayout: NotificationLayout.BigText,
-        ),
-      );
-      await AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: AWNInit.gpsPermissionDeniedId,
-          channelKey: 'other',
-          title: "Standortberechtigung fehlt!",
-          body: "FF Alarm benötigt die Standortberechtigung, um Geofences zu nutzen.",
-          actionType: ActionType.Default,
-          notificationLayout: NotificationLayout.BigText,
-        ),
-      );
-
-      while (!locationGranted) {
-        await Future.delayed(const Duration(seconds: 5));
-        locationGranted = await Permission.locationAlways.isGranted;
-      }
-
-      await AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: AWNInit.gpsServiceId,
-          channelKey: 'geofence',
-          title: "FF Alarm Geofence",
-          body: "FF Alarm Geofencing ist aktiv im Hintergrund.",
-          locked: true,
-          autoDismissible: false,
-          actionType: ActionType.Default,
-          notificationLayout: NotificationLayout.BigText,
-        ),
-      );
-      await AwesomeNotifications().cancel(AWNInit.gpsPermissionDeniedId);
-
-      await Globals.initGeoLocator();
-    }
-
-    var result = await backgroundGPSSync(previousPos, previousTime);
-    previousPos = result.pos;
-    previousTime = result.lastTime;
-
-    try {
-      var stations = await Station.getAll(
-        filter: (station) {
-          var p = Globals.localPersonForServer(station.server);
-          return station.personProperIds.contains(p);
-        },
-      );
-      int toAlarmStations = stations.length;
-      var notificationSettings = SettingsNotificationData.getAll();
-      for (var setting in notificationSettings.values) {
-        if (!setting.shouldNotify(previousPos)) {
-          toAlarmStations--;
-        }
-      }
-      String body = "Alarmierung aktiv für $toAlarmStations Wache";
-      if (toAlarmStations != 1) {
-        body += "n";
-      }
-
-      if (previousPos == null) {
-        body += " - Standortfehler!";
-      }
-
-      await AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: AWNInit.gpsServiceId,
-          channelKey: 'geofence',
-          title: "FF Alarm Geofence",
-          body: body,
-          locked: true,
-          autoDismissible: false,
-          actionType: ActionType.Default,
-          notificationLayout: NotificationLayout.BigText,
-        ),
-      );
-    } catch (e, s) {
-      Logger.error('Failed to create notification: $e\n$s');
-    }
-
-    int delay = 5;
-    while (delay > 0) {
-      await Future.delayed(const Duration(seconds: 1));
-
-      try {
-        File file = File("${Globals.filesPath}/notification_settings.json");
-        bool exists = file.existsSync();
-        if (exists && DateTime.now().difference(file.lastModifiedSync()).inSeconds < 60) {
-          var all = SettingsNotificationData.getAll();
-          if (all.isNotEmpty) {
-            bool geofenceActive = false;
-            for (var data in all.values) {
-              if (data.geofencing.isNotEmpty && data.manualOverride == 1 && data.enabledMode == 3) {
-                geofenceActive = true;
-                break;
-              }
-            }
-
-            if (!geofenceActive) {
-              Globals.positionSubscription?.cancel();
-              await instance.stopSelf();
-              return;
-            }
-          } else {
-            Globals.positionSubscription?.cancel();
-            await instance.stopSelf();
-            return;
-          }
-        } else if (!exists) {
-          Globals.positionSubscription?.cancel();
-          await instance.stopSelf();
-          return;
-        }
-
-        delay--;
-      } catch (e, s) {
-        Logger.error('Failed to check notification settings: $e\n$s');
-      }
-    }
+  static Future<bool> checkService() async {
+    return await Globals.channel.invokeMethod('checkGeofenceService');
   }
 }

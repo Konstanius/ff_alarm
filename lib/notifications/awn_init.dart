@@ -8,12 +8,6 @@ import 'package:ff_alarm/log/logger.dart';
 import 'package:flutter/material.dart';
 import 'package:real_volume/real_volume.dart';
 
-abstract class AWNInit {
-  static const int gpsDisabledId = 1;
-  static const int gpsPermissionDeniedId = 2;
-  static const int gpsServiceId = 3;
-}
-
 Future<void> initializeAwesomeNotifications() async {
   String? alarmSound = Globals.prefs.getString('alarm_soundPath');
   alarmSound ??= "res_alarm_1";

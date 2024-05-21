@@ -436,27 +436,6 @@ packages:
       relative: true
     source: path
     version: "4.15.1"
-  flutter_background_service:
-    dependency: "direct main"
-    description:
-      path: "packages/flutter_background_service-5.0.5"
-      relative: true
-    source: path
-    version: "5.0.5"
-  flutter_background_service_android:
-    dependency: transitive
-    description:
-      path: "packages/flutter_background_service_android-6.2.2"
-      relative: true
-    source: path
-    version: "6.2.2"
-  flutter_background_service_platform_interface:
-    dependency: transitive
-    description:
-      path: "packages/flutter_background_service_platform_interface-5.0.5"
-      relative: true
-    source: path
-    version: "5.0.0"
   flutter_colored_print:
     dependency: "direct main"
     description:
