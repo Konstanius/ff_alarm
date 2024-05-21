@@ -323,32 +323,8 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
     } else {
       bodyWidget = ListView.builder(
         padding: const EdgeInsets.all(8),
-        itemCount: alarmsList.length + 4,
+        itemCount: alarmsList.length + 1,
         itemBuilder: (context, i) {
-          if (i == 0) {
-            return ElevatedButton(
-              onPressed: () async {
-                await Globals.channel.invokeMethod('startGeofenceService');
-              },
-              child: const Text('Service Start'),
-            );
-          } else if (i == 1) {
-            return ElevatedButton(
-              onPressed: () async {
-                await Globals.channel.invokeMethod('stopGeofenceService');
-              },
-              child: const Text('Service Stop'),
-            );
-          } else if (i == 2) {
-            return ElevatedButton(
-              onPressed: () async {
-                var result = await Globals.channel.invokeMethod('checkGeofenceService');
-                print(result);
-              },
-              child: const Text('Background Check'),
-            );
-          }
-          i -= 3;
           if (i == alarmsList.length) return const SizedBox(height: kBottomNavigationBarHeight);
 
           Alarm alarm = alarmsList[i];

@@ -55,6 +55,7 @@ public class GeofenceService extends Service {
     }
 
     private static void log(String message) {
+        if (!BuildConfig.DEBUG) return;
         Log.d("GeofenceService", message);
     }
 
@@ -278,7 +279,11 @@ public class GeofenceService extends Service {
             }
 
             log("Geofences active for " + enabledActive + " / " + enabledTotal + " stations");
-            updateNotification("Geofences aktiv für " + enabledActive + " / " + enabledTotal + " Wachen");
+            String newBody = "Geofences aktiv für " + enabledActive + " / " + enabledTotal + " Wache";
+            if (enabledTotal > 1) {
+                newBody += "n";
+            }
+            updateNotification(newBody);
 
             if (activeServers.isEmpty()) {
                 onDestroy();
