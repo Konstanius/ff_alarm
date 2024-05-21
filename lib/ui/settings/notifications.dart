@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:awesome_notifications/awesome_notifications.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:ff_alarm/globals.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/utils/dialogs.dart';
@@ -23,6 +24,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
   bool accessNotificationPolicy = false;
   bool criticalAlerts = false;
   bool criticalAlertsTests = false;
+  AndroidDeviceInfo? deviceInfo;
 
   Future<void> checkSettings() async {
     notifications = await Permission.notification.isGranted;
@@ -51,6 +53,13 @@ class _NotificationSettingsState extends State<NotificationSettings> {
     super.initState();
     checkSettings();
 
+    if (Platform.isAndroid) {
+      DeviceInfoPlugin().androidInfo.then((value) {
+        deviceInfo = value;
+        if (mounted) setState(() {});
+      });
+    }
+
     _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
       checkSettings();
     });
@@ -64,6 +73,13 @@ class _NotificationSettingsState extends State<NotificationSettings> {
 
   @override
   Widget build(BuildContext context) {
+    if (Platform.isAndroid && deviceInfo == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Benachrichtigungseinstellungen')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Benachrichtigungseinstellungen'),
@@ -253,7 +269,81 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                 },
               ),
             ),
-          if (Platform.isAndroid)
+          if (Platform.isAndroid && deviceInfo!.version.sdkInt < 26)
+            // criticalAlerts
+            Card(
+              clipBehavior: Clip.antiAliasWithSaveLayer,
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              elevation: 10,
+              child: ListTile(
+                leading: const Icon(Icons.warning_outlined),
+                title: const Text('Kritische Alarme'),
+                subtitle: const Text('Erlaubt der App, den "Nicht-Stören"-Modus zu umgehen'),
+                trailing: criticalAlerts ? const Icon(Icons.check_outlined, color: Colors.green) : const Icon(Icons.warning_amber_outlined, color: Colors.amber),
+                onTap: () async {
+                  var res = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Kritische Alarme',
+                    content: const Text(
+                      'Diese Einstellung ermöglicht es der App, den "Nicht-Stören"-Modus zu umgehen und Alarmierungen auch bei komplett stummgeschaltetem Gerät zu empfangen und laut zu signalisieren.\n\n'
+                      'Bitte aktiviere dazu in der folgenden Seite unten die Einstellung "Nicht-Stören"-Erlaubnis (oder Ähnlich).',
+                    ),
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Abbrechen',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Fortfahren',
+                      ),
+                    ],
+                  );
+                  if (res != true) return;
+
+                  AwesomeNotifications().showNotificationConfigPage();
+
+                  await Future.delayed(const Duration(seconds: 1));
+
+                  var result = await generalDialog(
+                    color: Colors.blue,
+                    title: 'Kritische Alarme',
+                    content: const Text(
+                      'Hast du die Einstellung für "Nicht-Stören"-Erlaubnis (oder Ähnlich) gefunden und aktiviert?',
+                    ),
+                    actions: [
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        text: 'Nein',
+                      ),
+                      DialogActionButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        text: 'Ja',
+                      ),
+                    ],
+                  );
+
+                  if (result == true) {
+                    Globals.prefs.setBool('critical_alerts', true);
+                    successToast('Einstellung erfolgreich!');
+                  } else {
+                    Globals.prefs.remove('critical_alerts');
+                    errorToast('Einstellung fehlgeschlagen!');
+                  }
+
+                  checkSettings();
+                },
+              ),
+            ),
+          if (Platform.isAndroid && deviceInfo!.version.sdkInt >= 26)
             // criticalAlerts
             Card(
               clipBehavior: Clip.antiAliasWithSaveLayer,
@@ -328,7 +418,7 @@ class _NotificationSettingsState extends State<NotificationSettings> {
                 },
               ),
             ),
-          if (Platform.isAndroid)
+          if (Platform.isAndroid && deviceInfo!.version.sdkInt >= 26)
             // criticalAlertsTest
             Card(
               clipBehavior: Clip.antiAliasWithSaveLayer,

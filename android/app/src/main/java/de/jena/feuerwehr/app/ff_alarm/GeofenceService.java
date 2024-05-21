@@ -1,6 +1,7 @@
 package de.jena.feuerwehr.app;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -8,7 +9,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
-import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
@@ -54,7 +54,7 @@ public class GeofenceService extends Service {
         return null;
     }
 
-    private static void log(String message) {
+    public static void log(String message) {
         if (!BuildConfig.DEBUG) return;
         Log.d("GeofenceService", message);
     }
@@ -379,6 +379,27 @@ public class GeofenceService extends Service {
     private static final int gpsDisabledId = 1;
     private static final int gpsPermissionMissingId = 2;
 
+    private void sendNotification(String title, String body, int id) {
+        Notification.Builder notification = new Notification.Builder(this)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setGroup("other")
+                .setStyle(new Notification.BigTextStyle().bigText(body))
+                .setAutoCancel(true);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notification.setChannelId("geofence");
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            notification.setAllowSystemGeneratedContextualActions(false);
+        }
+
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        notificationManager.notify(id, notification.build());
+    }
+
     private final Runnable runnableCode = new Runnable() {
         @Override
         public void run() {
@@ -389,7 +410,7 @@ public class GeofenceService extends Service {
                         gpsPermissionMissing = true;
                         updateNotification("FF Alarm benötigt die Standortberechtigung, um Geofences zu nutzen.");
                         log("GPS permission is missing");
-                        // TODO send notification
+                        sendNotification("Standortberechtigung fehlt!", "FF Alarm benötigt die Standortberechtigung, um Geofences zu nutzen.", gpsPermissionMissingId);
 
                         handler.postDelayed(this, 5000);
                         return;
@@ -413,7 +434,7 @@ public class GeofenceService extends Service {
                         gpsDisabled = true;
                         updateNotification("GPS ist deaktiviert!");
                         log("GPS is disabled");
-                        // TODO send notification
+                        sendNotification("GPS deaktiviert!", "FF Alarm benötigt GPS, um Geofences zu nutzen.", gpsDisabledId);
 
                         handler.postDelayed(this, 5000);
                         return;
@@ -423,7 +444,12 @@ public class GeofenceService extends Service {
                     }
 
                     if (!subscribedToLocationUpdates) {
-                        locationManager.requestLocationUpdates(LocationManager.FUSED_PROVIDER, 5000, 20, locationListener);
+                        try {
+                            // Lint here says this is only available from API 31 but tests show otherwise, working at least on API 30
+                            locationManager.requestLocationUpdates(LocationManager.FUSED_PROVIDER, 5000, 20, locationListener);
+                        } catch (Exception e) {
+                            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 20, locationListener);
+                        }
                         subscribedToLocationUpdates = true;
                     }
 
