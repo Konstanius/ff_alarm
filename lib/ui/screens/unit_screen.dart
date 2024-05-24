@@ -120,7 +120,14 @@ class _UnitPageState extends State<UnitPage> with Updates {
                             var stationMembers = await Person.getByIds(allowedPersonIds);
                             Globals.context!.loaderOverlay.hide();
 
-                            Person? result = await Navigator.of(Globals.context!).push(MaterialPageRoute(builder: (context) => PersonPicker(persons: stationMembers)));
+                            Person? result = await Navigator.of(Globals.context!).push(
+                              MaterialPageRoute(
+                                builder: (context) => PersonPicker(
+                                  persons: stationMembers,
+                                  emptyText: 'Alle Personen der Wache wurden bereits hinzugefügt.',
+                                ),
+                              ),
+                            );
                             if (result == null) return;
 
                             Globals.context!.loaderOverlay.show();

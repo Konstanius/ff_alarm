@@ -1,0 +1,62 @@
+Freiwillige Feuerwehr:
+  Features:
+    Alarmierung mit mehr Informationen
+    Rückmeldung über Einsatzbereitschaft
+    Dezentralisiert -> Erlaubt beliebig viele BOS-Leitstellenbereiche und Wachen / Einheiten pro Person
+    Einsicht der Einheiten / Wachen / Kameraden / vergangener Einsätze
+    Übersicht über aktuelle Qualifikationen der Kameraden / von sich selbst / bei einem Einsatz
+    Dynamische Alarmierung / Bereitschaft nach verschiedenen Parametern (Geobasiert, Kalender, Schichtplan, Permanent)
+    Zukünftig Formulare / Dokumente / Chats / Umfragen / Kalender integriert
+  Vorteile:
+    Keine weitere Technik nötig -> Handy reicht aus, weniger Technik zum aufladen / pflegen
+    Mehr Informationen über Einsatz einsehbar, übersichtlicher & schneller
+    dynamisches Abschalten der Alarmierung ohne manuelles Deaktivieren eines Pagers
+    Schnelleres Ausrücken, da Info über anrückende Kameraden vorhanden
+  Nachteile:
+    Benötigt Internet-Verbindung, nicht immer / für jeden verfügbar -> geringes Problem bei moderner Netz-Infrastruktur
+    Smartphone muss in hörbarer Reichweite mitgeführt werden
+
+
+Wehrleiter:
+  Features:
+    Übersicht & schnelles Management von Kameraden & Einheiten & Wache
+    Direkt integrierte Übersicht über Qualifikationen + baldige Ablaufdaten
+  Vorteile:
+    Übersichtlichkeit über Wache & Alarmierungen steigt
+  Nachteile:
+    -
+
+
+Leitstelle / Kommune:
+  Features:
+    kostenfreie, open-source Software-Umgebung mit Backend, App, Monitoren, Web-Administrations-Konsole
+    Linux-basiert, Docker integriert, Nutzung von nginx & PostgreSQL
+    Bereitschaft einer Wache / Einheit schon vor Alarmierung bekannt -> Prediktiv
+    Ausweichen auf weitere Einheit(en), wenn Bereitschaft einer Einheit das Ausrücken verhindert
+  Vorteile:
+    extrem geringe Kosten (lediglich Hosting & optional Instandhaltung)
+    open-source -> Backend / Monitore / Konsole kann frei verändert werden
+    dezentralisiert -> vollständiger Datenschutz, Ausfallsicherheit, Beständigkeit
+    schnelleres Ausrücken von Einheiten / Mehr Besatzung auf diesen Einheiten
+  Nachteile:
+    Pflege aller Einheiten / Wachen muss manuell / per API durchgeführt werden
+
+
+Zivilbevölkerung:
+  Features:
+    Mitarbeit an Projekt frei möglich
+  Vorteile:
+    schnellere Gefahrenabwehr
+    geringere Kosten von Steuergeld
+  Nachteile:
+    -
+
+
+Berufsfeuerwehr:
+  Features:
+    Integration der Berufsfeuerwehr in Einsatz-Monitore
+  Vorteile:
+    Einsicht der Berufsfeuerwehr-Einheiten für weitere Personen in Alarmierungs-App
+  Nachteile:
+    Siehe Freiwillige Feuerwehr Nachteile
+    mobiles Endgerät statt Pager benötigt

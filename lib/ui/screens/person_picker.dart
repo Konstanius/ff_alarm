@@ -6,9 +6,11 @@ class PersonPicker extends StatefulWidget {
   const PersonPicker({
     super.key,
     required this.persons,
+    this.emptyText = 'Keine Personen gefunden',
   });
 
   final List<Person> persons;
+  final String emptyText;
 
   @override
   State<PersonPicker> createState() => _PersonPickerState();
@@ -28,20 +30,26 @@ class _PersonPickerState extends State<PersonPicker> {
       appBar: AppBar(
         title: const Text('Person auswählen'),
       ),
-      body: ListView.builder(
-        itemCount: widget.persons.length,
-        padding: const EdgeInsets.all(8),
-        itemBuilder: (context, index) {
-          final person = widget.persons[index];
-          return StationPageState.personDisplayCard(
-            person: person,
-            onTap: (person) {
-              Navigator.of(context).pop(person);
-            },
-            now: now,
-          );
-        },
-      ),
+      body: () {
+        if (widget.persons.isEmpty) {
+          return Center(child: Text(widget.emptyText));
+        }
+
+        return ListView.builder(
+          itemCount: widget.persons.length,
+          padding: const EdgeInsets.all(8),
+          itemBuilder: (context, index) {
+            final person = widget.persons[index];
+            return StationPageState.personDisplayCard(
+              person: person,
+              onTap: (person) {
+                Navigator.of(context).pop(person);
+              },
+              now: now,
+            );
+          },
+        );
+      }(),
     );
   }
 }
