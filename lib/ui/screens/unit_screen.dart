@@ -51,9 +51,7 @@ class _UnitPageState extends State<UnitPage> with Updates {
   void _loadUnit() async {
     try {
       unit = await Globals.db.unitDao.getById(widget.unit.id);
-      if (unit == null) {
-        throw Exception('Unit not found');
-      }
+      unit ??= widget.unit;
 
       station = await Globals.db.stationDao.getById(unit!.stationProperId);
       if (station == null) {

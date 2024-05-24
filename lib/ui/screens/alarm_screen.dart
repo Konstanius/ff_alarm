@@ -86,7 +86,21 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
     }
     relevantLocalPerson = tempRelevantLocalPerson;
 
-    fetchAlarmDetails();
+    fetchAlarmDetails().then((value) {
+      if (selectedStation != null) return;
+      if (stations.length == 1) {
+        selectedStation = stations.first.id;
+      } else if (alarm.responses.containsKey(relevantLocalPerson.idNumber) && alarm.responses[relevantLocalPerson.idNumber]!.responses.isNotEmpty) {
+        selectedStation = null;
+        for (var entry in alarm.responses[relevantLocalPerson.idNumber]!.responses.entries) {
+          if (entry.value != AlarmResponseType.notReady && entry.value != AlarmResponseType.notSet) {
+            selectedStation = "${alarm.server} ${entry.key}";
+            break;
+          }
+        }
+      }
+      if (mounted) setState(() {});
+    });
 
     setupListener({UpdateType.alarm, UpdateType.ui, UpdateType.station, UpdateType.unit, UpdateType.person});
 
@@ -165,7 +179,6 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
       noteController.text = alarm.responses[relevantLocalPerson.idNumber]!.note;
     }
 
-    // Sets up the alarm
     () async {
       var unitFutures = <Future<Unit?>>[];
       if (alarm.units.isNotEmpty) {
@@ -1624,6 +1637,8 @@ class _AlarmPageState extends State<AlarmPage> with Updates, SingleTickerProvide
     try {
       data = await AlarmInterface.getDetails(alarm);
       alarm = data!.alarm;
+      stations = data!.stations;
+      units = data!.units;
       resetMapInfoNotifiers();
     } catch (e, s) {
       exceptionToast(e, s);

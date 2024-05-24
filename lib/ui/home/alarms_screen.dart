@@ -335,82 +335,69 @@ class _AlarmsScreenState extends State<AlarmsScreen> with AutomaticKeepAliveClie
           return Column(
             children: <Widget>[
               if (dateDivider) SettingsDivider(text: DateFormat('EEEE, dd.MM.yyyy').format(alarm.date)),
-              Stack(
-                children: [
-                  if (ownResponse?.getResponseInfo().responseType != AlarmResponseType.notReady && !alarm.responseTimeExpired)
-                    FadeTransition(
-                      opacity: controller,
-                      child: Card(
+              () {
+                var listTile = ListTile(
+                  title: Text("${alarm.type} - ${alarm.word}"),
+                  subtitle: Text(() {
+                    Position? pos = alarm.positionFromAddressIfCoordinates;
+                    if (pos == null) return alarm.address;
+                    return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
+                  }()),
+                  trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
+                  onTap: () {
+                    Globals.router.push('/alarm', extra: alarm);
+                  },
+                );
+
+                return Stack(
+                  children: [
+                    if (ownResponse?.getResponseInfo().responseType != AlarmResponseType.notReady && !alarm.responseTimeExpired)
+                      FadeTransition(
+                        opacity: controller,
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          clipBehavior: Clip.antiAliasWithSaveLayer,
+                          elevation: 10,
+                          color: Colors.red.withOpacity(0.4),
+                          surfaceTintColor: Colors.transparent,
+                          child: listTile,
+                        ),
+                      )
+                    else
+                      Card(
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         clipBehavior: Clip.antiAliasWithSaveLayer,
                         elevation: 10,
-                        color: Colors.red.withOpacity(0.4),
+                        color: Colors.transparent,
                         surfaceTintColor: Colors.transparent,
-                        child: ListTile(
-                          title: Text(alarm.word),
-                          subtitle: Text(() {
-                            Position? pos = alarm.positionFromAddressIfCoordinates;
-                            if (pos == null) return alarm.address;
-                            return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
-                          }()),
-                          trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                Colors.transparent,
+                                if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) ownResponse.getResponseInfo().responseType.color,
+                              ],
+                              stops: [
+                                0.4,
+                                if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) 1.0,
+                              ],
+                            ),
+                          ),
+                          child: listTile,
                         ),
                       ),
-                    )
-                  else
-                    // same card with a gradient
                     Card(
                       margin: const EdgeInsets.symmetric(vertical: 4),
                       clipBehavior: Clip.antiAliasWithSaveLayer,
                       elevation: 10,
                       color: Colors.transparent,
-                      surfaceTintColor: Colors.transparent,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                            colors: [
-                              Colors.transparent,
-                              if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) ownResponse.getResponseInfo().responseType.color,
-                            ],
-                            stops: [
-                              0.4,
-                              if (ownResponse != null && ownResponse.getResponseInfo().responseType != AlarmResponseType.notSet) 1.0,
-                            ],
-                          ),
-                        ),
-                        child: ListTile(
-                          title: Text(alarm.word),
-                          subtitle: Text(() {
-                            Position? pos = alarm.positionFromAddressIfCoordinates;
-                            if (pos == null) return alarm.address;
-                            return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
-                          }()),
-                          trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
-                        ),
-                      ),
+                      child: listTile,
                     ),
-                  Card(
-                    margin: const EdgeInsets.symmetric(vertical: 4),
-                    clipBehavior: Clip.antiAliasWithSaveLayer,
-                    elevation: 10,
-                    color: Colors.transparent,
-                    child: ListTile(
-                      title: Text(alarm.word),
-                      subtitle: Text(() {
-                        Position? pos = alarm.positionFromAddressIfCoordinates;
-                        if (pos == null) return alarm.address;
-                        return "${pos.latitude.toStringAsFixed(5)} ° N,   ${pos.longitude.toStringAsFixed(5)} ° E";
-                      }()),
-                      trailing: Text("${DateFormat('HH:mm').format(alarm.date)} Uhr"),
-                      onTap: () {
-                        Globals.router.push('/alarm', extra: alarm);
-                      },
-                    ),
-                  ),
-                ],
-              ),
+                  ],
+                );
+              }(),
             ],
           );
         },

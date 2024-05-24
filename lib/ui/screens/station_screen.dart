@@ -63,6 +63,7 @@ class StationPageState extends State<StationPage> with Updates {
   void _loadStation() async {
     try {
       station = await Globals.db.stationDao.getById(widget.station.id);
+      station ??= widget.station;
 
       persons = await Globals.db.personDao.getWhereIn(station!.personProperIds);
       persons!.sort((a, b) {
@@ -675,6 +676,9 @@ class StationPageState extends State<StationPage> with Updates {
     Function(Person person) onTap,
     ScrollController scrollController,
   ) {
+    DateTime in30Days = now.add(const Duration(days: 30));
+    DateTime in120Days = now.add(const Duration(days: 120));
+
     return [
       const SettingsDivider(text: 'Personen'),
       () {
@@ -798,7 +802,7 @@ class StationPageState extends State<StationPage> with Updates {
                               child: Row(
                                 children: [
                                   Text(
-                                    "< ${DateFormat('dd.MM.').format(now.add(const Duration(days: 120)))}",
+                                    "< ${DateFormat('dd.MM.').format(in120Days)}",
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.amber,
@@ -817,7 +821,7 @@ class StationPageState extends State<StationPage> with Updates {
                                         int count = 0;
                                         for (var person in persons) {
                                           for (var qualification in person.visibleQualificationsAt(now)) {
-                                            if (qualification.type == entry.type && qualification.end != null && qualification.end!.difference(now).inDays < 120 && qualification.end!.isAfter(now)) {
+                                            if (qualification.type == entry.type && qualification.end != null && qualification.end!.isBefore(in120Days) && qualification.end!.isAfter(in30Days)) {
                                               count++;
                                             }
                                           }
@@ -840,7 +844,7 @@ class StationPageState extends State<StationPage> with Updates {
                               child: Row(
                                 children: [
                                   Text(
-                                    "< ${DateFormat('dd.MM.').format(now.add(const Duration(days: 30)))}",
+                                    "< ${DateFormat('dd.MM.').format(in30Days)}",
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.red,
@@ -859,7 +863,7 @@ class StationPageState extends State<StationPage> with Updates {
                                         int count = 0;
                                         for (var person in persons) {
                                           for (var qualification in person.visibleQualificationsAt(now)) {
-                                            if (qualification.type == entry.type && qualification.end != null && qualification.end!.difference(now).inDays < 30 && qualification.end!.isAfter(now)) {
+                                            if (qualification.type == entry.type && qualification.end != null && qualification.end!.isBefore(in30Days) && qualification.end!.isAfter(now)) {
                                               count++;
                                             }
                                           }
@@ -901,7 +905,7 @@ class StationPageState extends State<StationPage> with Updates {
                                         int count = 0;
                                         for (var person in persons) {
                                           for (var qualification in person.visibleQualificationsAt(now)) {
-                                            if (qualification.type == entry.type && qualification.end != null && qualification.end!.isAfter(now)) {
+                                            if (qualification.type == entry.type && qualification.end != null && qualification.end!.isBefore(now)) {
                                               count++;
                                             }
                                           }

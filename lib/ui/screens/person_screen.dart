@@ -43,7 +43,9 @@ class _PersonScreenState extends State<PersonPage> with Updates {
     person = widget.person;
 
     registrationKey = widget.registrationKey;
-    if (registrationKey != null) {}
+    if (registrationKey != null) {
+      generateQrData();
+    }
 
     loadData();
     setupListener({UpdateType.station, UpdateType.person});
@@ -67,9 +69,7 @@ class _PersonScreenState extends State<PersonPage> with Updates {
   Future<void> loadData() async {
     try {
       person = await Globals.db.personDao.getById(widget.person.id);
-      if (person == null) {
-        throw Exception('Person not found');
-      }
+      person ??= widget.person;
       person!.qualifications.sort((a, b) => a.type.startsWith('_') ? a.type.substring(1).compareTo(b.type.startsWith('_') ? b.type.substring(1) : b.type) : a.type.compareTo(b.type));
 
       stations = await Station.getAll(filter: (station) => station.persons.contains(person!.idNumber));

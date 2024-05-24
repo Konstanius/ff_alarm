@@ -130,10 +130,6 @@ class _PersonManageScreenState extends State<PersonManageScreen> {
                     errorToast('Nachname darf nicht leer sein');
                     return;
                   }
-                  if (qualifications.isEmpty) {
-                    errorToast('Qualifikationen dürfen nicht leer sein');
-                    return;
-                  }
 
                   bool? confirm = await generalDialog(
                     color: Colors.blue,
@@ -170,7 +166,7 @@ class _PersonManageScreenState extends State<PersonManageScreen> {
                       Navigator.of(Globals.context!).pop();
                       await Future.delayed(const Duration(milliseconds: 20));
 
-                      Globals.router.go('/person', extra: {"person": result.person, "registrationKey": result.key});
+                      Globals.router.push('/person', extra: {"person": result.person, "registrationKey": result.key});
 
                       successToast('Die Person wurde erstellt und der Wache hinzugefügt');
                     } else {
@@ -504,6 +500,14 @@ class _PersonManageScreenState extends State<PersonManageScreen> {
                     if (start != null && end != null && start.isAfter(end)) {
                       errorToast('Erhalt darf nicht nach Ablauf liegen');
                       return;
+                    }
+
+                    for (var existing in qualifications) {
+                      if (existing == qualification) continue;
+                      if (existing.type == (existing.hidden ? "_" : "") + typeController.text) {
+                        errorToast('Typ wird bereits verwendet');
+                        return;
+                      }
                     }
 
                     qualification.type = (hidden ? "_" : "") + typeController.text;
