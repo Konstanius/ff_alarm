@@ -319,12 +319,14 @@ abstract class Globals {
         disableStopDetection: true,
         disableMotionActivityUpdates: true,
         disableLocationAuthorizationAlert: true,
-        preventSuspend: true,
         startOnBoot: true,
         stopOnTerminate: false,
         allowIdenticalLocations: true,
         heartbeatInterval: 120,
         pausesLocationUpdatesAutomatically: false,
+        showsBackgroundLocationIndicator: true,
+        preventSuspend: true,
+        stopOnStationary: false,
       );
 
   static bf.BackgroundFetchConfig iosBackgroundFetchConfig = bf.BackgroundFetchConfig(
