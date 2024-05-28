@@ -14,13 +14,13 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
-
-import androidx.annotation.Nullable;
-import androidx.core.app.ServiceCompat;
-import androidx.core.content.ContextCompat;
-
 import android.util.Base64;
 import android.util.Log;
+
+import androidx.annotation.Nullable;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
+import androidx.core.content.ContextCompat;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -39,11 +39,70 @@ import java.util.zip.GZIPOutputStream;
 
 public class GeofenceService extends Service {
     public static final int serviceNotificationId = 1;
+    private static final int gpsDisabledId = 2;
+    private static final int gpsPermissionMissingId = 3;
+
     private HandlerThread handlerThread;
     private Handler handler;
     private boolean isRunning = false;
     private boolean isManuallyStopped = false;
     private String applicationSupportDirectory;
+
+    private boolean gpsDisabled = false;
+    private boolean gpsPermissionMissing = false;
+
+    private LocationManager locationManager = null;
+    private boolean subscribedToLocationUpdates = false;
+
+    private long lastLocationUpdate = 0;
+    private long lastLocationSent = 0;
+    private double lastLocationLatitude = 0;
+    private double lastLocationLongitude = 0;
+    private long lastFileCheck = 0;
+
+    // Experimental code using GMS Fused Location Provider
+//    private final com.google.android.gms.location.LocationListener gmsLocationListener = location -> {
+//        log("Location: " + location.getLatitude() + ", " + location.getLongitude());
+//        int random = (int) (Math.random() * 1000);
+//        String date = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date());
+//        sendNotification("Location Update", "Location: " + location.getLatitude() + ", " + location.getLongitude() + " at " + date, random);
+//
+//        double distance = distance(lastLocationLatitude, lastLocationLongitude, location.getLatitude(), location.getLongitude());
+//
+//        if (distance > 50) {
+//            log("Distance is greater than 50m, updating location");
+//            lastLocationUpdate = System.currentTimeMillis();
+//            lastLocationLatitude = location.getLatitude();
+//            lastLocationLongitude = location.getLongitude();
+//            sendUpdateToServers();
+//        }
+//    };
+    private JSONObject geofenceInfos = null;    private final LocationListener locationListener = location -> {
+        log("Location: " + location.getLatitude() + ", " + location.getLongitude());
+        int random = (int) (Math.random() * 1000);
+        String date = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date());
+        sendNotification("Location Update", "Location: " + location.getLatitude() + ", " + location.getLongitude() + " at " + date, random);
+
+        double distance = distance(lastLocationLatitude, lastLocationLongitude, location.getLatitude(), location.getLongitude());
+
+        if (distance > 50) {
+            log("Distance is greater than 50m, updating location");
+            lastLocationUpdate = System.currentTimeMillis();
+            lastLocationLatitude = location.getLatitude();
+            lastLocationLongitude = location.getLongitude();
+            sendUpdateToServers();
+        }
+    };
+
+    public static String encode(String input) {
+        try {
+            byte[] utf8Bytes = input.getBytes(StandardCharsets.UTF_8);
+            byte[] gzipBytes = compress(utf8Bytes);
+            return Base64.encodeToString(gzipBytes, Base64.NO_WRAP);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to encode the string", e);
+        }
+    }
 
     @Nullable
     @Override
@@ -56,25 +115,12 @@ public class GeofenceService extends Service {
         Log.d("GeofenceService", message);
     }
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
-
-        applicationSupportDirectory = getApplicationInfo().dataDir + "/files";
-
-        log("GeofenceService is starting");
-
-        handlerThread = new HandlerThread("GeofenceServiceHandlerThread");
-        handlerThread.start();
-        handler = new Handler(handlerThread.getLooper());
-        isRunning = true;
-
-        updateNotification("FF Alarm Geofencing ist aktiv im Hintergrund.");
-
-        handler.post(runnableCode);
-        log("GeofenceService has started");
-
-        onStartCommand(null, -1, -1);
+    private static byte[] compress(byte[] data) throws IOException {
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream)) {
+            gzipOutputStream.write(data);
+        }
+        return byteArrayOutputStream.toByteArray();
     }
 
     @Override
@@ -143,63 +189,6 @@ public class GeofenceService extends Service {
             onDestroy();
         }
     }
-
-    private boolean gpsDisabled = false;
-    private boolean gpsPermissionMissing = false;
-
-    private LocationManager locationManager = null;
-    private boolean subscribedToLocationUpdates = false;
-
-    private long lastLocationUpdate = 0;
-    private long lastLocationSent = 0;
-    private double lastLocationLatitude = 0;
-    private double lastLocationLongitude = 0;
-    private long lastFileCheck = 0;
-
-    private final LocationListener locationListener = location -> {
-        log("Location: " + location.getLatitude() + ", " + location.getLongitude());
-
-        double distance = distance(lastLocationLatitude, lastLocationLongitude, location.getLatitude(), location.getLongitude());
-
-        if (distance > 50) {
-            log("Distance is greater than 50m, updating location");
-            lastLocationUpdate = System.currentTimeMillis();
-            lastLocationLatitude = location.getLatitude();
-            lastLocationLongitude = location.getLongitude();
-            sendUpdateToServers();
-        }
-    };
-
-    private @Nullable String getFileContent(String fileName) {
-        try {
-            java.io.File file = new java.io.File(applicationSupportDirectory, fileName);
-            if (!file.exists()) {
-                return null;
-            }
-
-            java.io.FileInputStream fis = new java.io.FileInputStream(file);
-            java.io.InputStreamReader isr = new java.io.InputStreamReader(fis);
-            java.io.BufferedReader br = new java.io.BufferedReader(isr);
-
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = br.readLine()) != null) {
-                sb.append(line);
-            }
-
-            br.close();
-            isr.close();
-            fis.close();
-
-            return sb.toString();
-        } catch (Exception e) {
-            log("Error: " + e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private JSONObject geofenceInfos = null;
 
     private static class ServerInfo {
         public String address;
@@ -357,48 +346,10 @@ public class GeofenceService extends Service {
         }
     }
 
-    public static String encode(String input) {
-        try {
-            byte[] utf8Bytes = input.getBytes(StandardCharsets.UTF_8);
-            byte[] gzipBytes = compress(utf8Bytes);
-            return Base64.encodeToString(gzipBytes, Base64.NO_WRAP);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to encode the string", e);
-        }
-    }
-
-    private static byte[] compress(byte[] data) throws IOException {
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        try (GZIPOutputStream gzipOutputStream = new GZIPOutputStream(byteArrayOutputStream)) {
-            gzipOutputStream.write(data);
-        }
-        return byteArrayOutputStream.toByteArray();
-    }
-
-    // https://stackoverflow.com/questions/3694380/calculating-distance-between-two-points-using-latitude-longitude
-    private static double distance(double lat1, double lon1, double lat2, double lon2) {
-        final int R = 6371; // Radius of the earth
-
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        double distance = R * c * 1000; // convert to meters
-
-        distance = Math.pow(distance, 2);
-
-        return Math.sqrt(distance);
-    }
-
     private void removeNotification(int id) {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancel(id);
     }
-
-    private static final int gpsDisabledId = 2;
-    private static final int gpsPermissionMissingId = 3;
 
     private void sendNotification(String title, String body, int id) {
         Notification.Builder notification = new Notification.Builder(this)
@@ -420,7 +371,22 @@ public class GeofenceService extends Service {
         notificationManager.notify(id, notification.build());
     }
 
-    private final Runnable runnableCode = new Runnable() {
+    // https://stackoverflow.com/questions/3694380/calculating-distance-between-two-points-using-latitude-longitude
+    private static double distance(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371; // Radius of the earth
+
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double distance = R * c * 1000; // convert to meters
+
+        distance = Math.pow(distance, 2);
+
+        return Math.sqrt(distance);
+    }    private final Runnable runnableCode = new Runnable() {
         @Override
         public void run() {
             if (isRunning) {
@@ -490,10 +456,37 @@ public class GeofenceService extends Service {
                     }
 
                     if (!subscribedToLocationUpdates) {
-                        try {
-                            // Lint here says this is only available from API 31 but tests show otherwise, working at least on API 30
+                        // Experimental code using GMS Fused Location Provider
+//                        try {
+//                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+//                                FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
+//                                fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
+//                                    if (location != null) {
+//                                        lastLocationLatitude = location.getLatitude();
+//                                        lastLocationLongitude = location.getLongitude();
+//                                    }
+//                                });
+//                                com.google.android.gms.location.LocationRequest locationRequest = new com.google.android.gms.location.LocationRequest.Builder(5000)
+//                                        .setIntervalMillis(5000)
+//                                        .setPriority(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
+//                                        .setMinUpdateDistanceMeters(20)
+//                                        .setMinUpdateIntervalMillis(5000)
+//                                        .build();
+//
+//                                Executor executor = ContextCompat.getMainExecutor(getApplicationContext());
+//                                fusedLocationClient.requestLocationUpdates(locationRequest, executor, gmsLocationListener);
+//                                sendNotification("GMS Fused Location Provider", "Using GMS Fused Location Provider", 5);
+//                            } else {
+//                                throw new Exception("Unsupported API level");
+//                            }
+//                        } catch (Exception e) {
+//                            log("Error: " + e.getMessage());
+//                            e.printStackTrace();
+//                        }
+                        // Lint here says this is only available from API 31 but tests show otherwise, working at least on API 30
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                             locationManager.requestLocationUpdates(LocationManager.FUSED_PROVIDER, 5000, 20, locationListener);
-                        } catch (Exception e) {
+                        } else {
                             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 20, locationListener);
                         }
                         subscribedToLocationUpdates = true;
@@ -551,12 +544,10 @@ public class GeofenceService extends Service {
                             onDestroy();
                             return;
                         }
-
-                        lastFileCheck = System.currentTimeMillis();
                     }
 
                     // if lastLocationSent is > 10m ago, send update
-                    if (lastLocationUpdate != 0 && System.currentTimeMillis() - lastLocationSent > 10 * 60 * 1000) {
+                    if (lastLocationUpdate != 0 && lastLocationLatitude != 0 && lastLocationLongitude != 0 && System.currentTimeMillis() - lastLocationSent > 10 * 60 * 1000) {
                         sendUpdateToServers();
                     }
 
@@ -567,13 +558,9 @@ public class GeofenceService extends Service {
                         } catch (Exception ignored) {
                         }
                         subscribedToLocationUpdates = false;
-                        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-                        if (locationManager == null) {
-                            updateNotification("Es besteht ein Fehler mit dem Standortdienst.");
-                            log("LocationManager is null");
-                            handler.postDelayed(this, 5000);
-                            return;
-                        }
+                        locationManager = null;
+
+                        lastLocationUpdate = System.currentTimeMillis();
                     }
 
                     handler.postDelayed(this, 5000);
@@ -585,4 +572,68 @@ public class GeofenceService extends Service {
             }
         }
     };
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        applicationSupportDirectory = getApplicationInfo().dataDir + "/files";
+
+        log("GeofenceService is starting");
+
+        handlerThread = new HandlerThread("GeofenceServiceHandlerThread");
+        handlerThread.start();
+        handler = new Handler(handlerThread.getLooper());
+        isRunning = true;
+
+        handler.post(runnableCode);
+        log("GeofenceService has started");
+
+        try {
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "geofence")
+                    .setContentTitle("FF Alarm Geofence")
+                    .setContentText("FF Alarm Geofencing ist aktiv im Hintergrund.")
+                    .setSmallIcon(R.drawable.ic_launcher_foreground)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+            startForeground(serviceNotificationId, builder.build());
+        } catch (Exception e) {
+            log("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        onStartCommand(null, -1, -1);
+    }
+
+    private @Nullable String getFileContent(String fileName) {
+        try {
+            java.io.File file = new java.io.File(applicationSupportDirectory, fileName);
+            if (!file.exists()) {
+                return null;
+            }
+
+            java.io.FileInputStream fis = new java.io.FileInputStream(file);
+            java.io.InputStreamReader isr = new java.io.InputStreamReader(fis);
+            java.io.BufferedReader br = new java.io.BufferedReader(isr);
+
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+
+            br.close();
+            isr.close();
+            fis.close();
+
+            return sb.toString();
+        } catch (Exception e) {
+            log("Error: " + e.getMessage());
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
+
+
 }

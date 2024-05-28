@@ -138,8 +138,6 @@ abstract class Globals {
             bool active = await AndroidServiceManager.checkService();
             if (!active) {
               AndroidServiceManager.startService();
-            } else {
-              AndroidServiceManager.stopService().then((_) => AndroidServiceManager.startService());
             }
           } else if (Platform.isIOS) {
             bg.BackgroundGeolocation.onLocation((bg.Location location) async {

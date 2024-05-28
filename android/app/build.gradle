@@ -66,5 +66,6 @@ flutter {
 }
 
 dependencies {
-    implementation "androidx.core:core:1.12.0"
+    //noinspection KtxExtensionAvailable
+    implementation "androidx.core:core:1.13.1"
 }
