@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ServiceInfo;
+import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
@@ -17,10 +18,17 @@ import android.os.IBinder;
 import android.util.Base64;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.ServiceCompat;
 import androidx.core.content.ContextCompat;
+
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -35,6 +43,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.zip.GZIPOutputStream;
 
 public class GeofenceService extends Service {
@@ -60,28 +69,37 @@ public class GeofenceService extends Service {
     private double lastLocationLongitude = 0;
     private long lastFileCheck = 0;
 
-    // Experimental code using GMS Fused Location Provider
-//    private final com.google.android.gms.location.LocationListener gmsLocationListener = location -> {
-//        log("Location: " + location.getLatitude() + ", " + location.getLongitude());
-//        int random = (int) (Math.random() * 1000);
-//        String date = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date());
-//        sendNotification("Location Update", "Location: " + location.getLatitude() + ", " + location.getLongitude() + " at " + date, random);
-//
-//        double distance = distance(lastLocationLatitude, lastLocationLongitude, location.getLatitude(), location.getLongitude());
-//
-//        if (distance > 50) {
-//            log("Distance is greater than 50m, updating location");
-//            lastLocationUpdate = System.currentTimeMillis();
-//            lastLocationLatitude = location.getLatitude();
-//            lastLocationLongitude = location.getLongitude();
-//            sendUpdateToServers();
-//        }
-//    };
-    private JSONObject geofenceInfos = null;    private final LocationListener locationListener = location -> {
+    private JSONObject geofenceInfo = null;    // Experimental code using GMS Fused Location Provider
+    private final LocationCallback gmsLocationCallback = new LocationCallback() {
+        @Override
+        public void onLocationResult(@NonNull LocationResult locationResult) {
+            int lastIndex = locationResult.getLocations().size() - 1;
+            Location location = locationResult.getLocations().get(lastIndex);
+            onLocation(location);
+        }
+    };
+
+    // https://stackoverflow.com/questions/3694380/calculating-distance-between-two-points-using-latitude-longitude
+    private static double distance(double lat1, double lon1, double lat2, double lon2) {
+        final int R = 6371; // Radius of the earth
+
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double distance = R * c * 1000; // convert to meters
+
+        distance = Math.pow(distance, 2);
+
+        return Math.sqrt(distance);
+    }
+
+    private void onLocation(Location location) {
         log("Location: " + location.getLatitude() + ", " + location.getLongitude());
         int random = (int) (Math.random() * 1000);
-        String date = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new java.util.Date());
-        sendNotification("Location Update", "Location: " + location.getLatitude() + ", " + location.getLongitude() + " at " + date, random);
+        String date = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.GERMANY).format(new java.util.Date());
 
         double distance = distance(lastLocationLatitude, lastLocationLongitude, location.getLatitude(), location.getLongitude());
 
@@ -92,7 +110,36 @@ public class GeofenceService extends Service {
             lastLocationLongitude = location.getLongitude();
             sendUpdateToServers();
         }
-    };
+    }    private final LocationListener fusedLocationListener = this::onLocation;
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+
+        if (!isManuallyStopped) {
+            WatchdogReceiver.enqueue(this);
+        }
+
+        try {
+            Intent intent = new Intent(this, de.jena.feuerwehr.app.GeofenceService.class);
+            stopService(intent);
+        } catch (Exception e) {
+            log("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        try {
+            stopForeground(true);
+        } catch (Exception e) {
+            log("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        isRunning = false;
+        locationManager.removeUpdates(fusedLocationListener);
+        handler.removeCallbacks(runnableCode);
+        handlerThread.quitSafely();
+    }
 
     public static String encode(String input) {
         try {
@@ -127,74 +174,6 @@ public class GeofenceService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         WatchdogReceiver.enqueue(this);
         return START_STICKY;
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-
-        if (!isManuallyStopped) {
-            WatchdogReceiver.enqueue(this);
-        }
-
-        try {
-            Intent intent = new Intent(this, de.jena.feuerwehr.app.GeofenceService.class);
-            stopService(intent);
-        } catch (Exception e) {
-            log("Error: " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        try {
-            stopForeground(true);
-        } catch (Exception e) {
-            log("Error: " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        isRunning = false;
-        locationManager.removeUpdates(locationListener);
-        handler.removeCallbacks(runnableCode);
-        handlerThread.quitSafely();
-    }
-
-    private void updateNotification(String body) {
-        Notification.Builder notification = new Notification.Builder(this)
-                .setContentTitle("FF Alarm Geofence")
-                .setContentText(body)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .setGroup("geofence")
-                .setOngoing(true)
-                .setStyle(new Notification.BigTextStyle().bigText(body))
-                .setAutoCancel(false);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            notification.setChannelId("geofence");
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            notification.setAllowSystemGeneratedContextualActions(false);
-        }
-
-        int serviceCode = 0;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            serviceCode = ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION;
-        }
-
-        try {
-            ServiceCompat.startForeground(this, serviceNotificationId, notification.build(), serviceCode);
-        } catch (Exception e) {
-            log("GeofenceService failed to update notification");
-            isManuallyStopped = true;
-            onDestroy();
-        }
-    }
-
-    private static class ServerInfo {
-        public String address;
-        public int sessionId;
-        public String token;
-        public int userId;
     }
 
     private void sendUpdateToServers() {
@@ -250,9 +229,9 @@ public class GeofenceService extends Service {
             int enabledTotal = 0;
             int enabledActive = 0;
 
-            for (Iterator<String> it = geofenceInfos.keys(); it.hasNext(); ) {
+            for (Iterator<String> it = geofenceInfo.keys(); it.hasNext(); ) {
                 String key = it.next();
-                JSONObject geofence = geofenceInfos.getJSONObject(key);
+                JSONObject geofence = geofenceInfo.getJSONObject(key);
                 if (geofence.has("m") && geofence.getInt("m") != 1) continue;
                 if (!geofence.has("e") || geofence.getInt("e") != 3) continue;
                 if (!geofence.has("g") || geofence.getJSONArray("g").length() == 0) continue;
@@ -310,11 +289,10 @@ public class GeofenceService extends Service {
                 String rawAuth = serverInfo.sessionId + " " + serverInfo.token;
                 String auth = encode(rawAuth);
 
-                // body: {"a":<latitude>,"o":<longitude>,"t":<nowMillis>}
+                // body: {"a":<latitude>,"o":<longitude>}
                 JSONObject body = new JSONObject();
                 body.put("a", lastLocationLatitude);
                 body.put("o", lastLocationLongitude);
-                body.put("t", System.currentTimeMillis());
                 String bodyStr = body.toString();
 
                 // perform request
@@ -346,6 +324,47 @@ public class GeofenceService extends Service {
         }
     }
 
+    private void updateNotification(String body) {
+        Notification.Builder notification = new Notification.Builder(this)
+                .setContentTitle("FF Alarm Geofence")
+                .setContentText(body)
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setGroup("geofence")
+                .setOngoing(true)
+                .setStyle(new Notification.BigTextStyle().bigText(body))
+                .setAutoCancel(false);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            notification.setChannelId("geofence");
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            notification.setAllowSystemGeneratedContextualActions(false);
+        }
+
+        int serviceCode = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            serviceCode = ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION;
+        }
+
+        try {
+            ServiceCompat.startForeground(this, serviceNotificationId, notification.build(), serviceCode);
+        } catch (Exception e) {
+            log("GeofenceService failed to update notification");
+            isManuallyStopped = true;
+            onDestroy();
+        }
+    }
+
+    private static class ServerInfo {
+        public String address;
+        public int sessionId;
+        public String token;
+        public int userId;
+    }
+
+
+
     private void removeNotification(int id) {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancel(id);
@@ -371,22 +390,9 @@ public class GeofenceService extends Service {
         notificationManager.notify(id, notification.build());
     }
 
-    // https://stackoverflow.com/questions/3694380/calculating-distance-between-two-points-using-latitude-longitude
-    private static double distance(double lat1, double lon1, double lat2, double lon2) {
-        final int R = 6371; // Radius of the earth
 
-        double latDistance = Math.toRadians(lat2 - lat1);
-        double lonDistance = Math.toRadians(lon2 - lon1);
-        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        double distance = R * c * 1000; // convert to meters
 
-        distance = Math.pow(distance, 2);
-
-        return Math.sqrt(distance);
-    }    private final Runnable runnableCode = new Runnable() {
+    private final Runnable runnableCode = new Runnable() {
         @Override
         public void run() {
             if (isRunning) {
@@ -408,7 +414,7 @@ public class GeofenceService extends Service {
                         updateNotification("FF Alarm Geofencing ist aktiv im Hintergrund.");
                         if (locationManager != null) {
                             try {
-                                locationManager.removeUpdates(locationListener);
+                                locationManager.removeUpdates(fusedLocationListener);
                             } catch (Exception ignored) {
                             }
                             subscribedToLocationUpdates = false;
@@ -442,7 +448,7 @@ public class GeofenceService extends Service {
                         removeNotification(gpsDisabledId);
                         updateNotification("FF Alarm Geofencing ist aktiv im Hintergrund.");
                         try {
-                            locationManager.removeUpdates(locationListener);
+                            locationManager.removeUpdates(fusedLocationListener);
                         } catch (Exception ignored) {
                         }
                         subscribedToLocationUpdates = false;
@@ -457,37 +463,22 @@ public class GeofenceService extends Service {
 
                     if (!subscribedToLocationUpdates) {
                         // Experimental code using GMS Fused Location Provider
-//                        try {
-//                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-//                                FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
-//                                fusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
-//                                    if (location != null) {
-//                                        lastLocationLatitude = location.getLatitude();
-//                                        lastLocationLongitude = location.getLongitude();
-//                                    }
-//                                });
-//                                com.google.android.gms.location.LocationRequest locationRequest = new com.google.android.gms.location.LocationRequest.Builder(5000)
-//                                        .setIntervalMillis(5000)
-//                                        .setPriority(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
-//                                        .setMinUpdateDistanceMeters(20)
-//                                        .setMinUpdateIntervalMillis(5000)
-//                                        .build();
-//
-//                                Executor executor = ContextCompat.getMainExecutor(getApplicationContext());
-//                                fusedLocationClient.requestLocationUpdates(locationRequest, executor, gmsLocationListener);
-//                                sendNotification("GMS Fused Location Provider", "Using GMS Fused Location Provider", 5);
-//                            } else {
-//                                throw new Exception("Unsupported API level");
-//                            }
-//                        } catch (Exception e) {
-//                            log("Error: " + e.getMessage());
-//                            e.printStackTrace();
-//                        }
-                        // Lint here says this is only available from API 31 but tests show otherwise, working at least on API 30
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            locationManager.requestLocationUpdates(LocationManager.FUSED_PROVIDER, 5000, 20, locationListener);
-                        } else {
-                            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000, 20, locationListener);
+                        try {
+                            FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
+
+                            com.google.android.gms.location.LocationRequest locationRequest = new com.google.android.gms.location.LocationRequest.Builder(5000)
+                                    .setIntervalMillis(5000)
+                                    .setPriority(Priority.PRIORITY_BALANCED_POWER_ACCURACY)
+                                    .setMinUpdateDistanceMeters(20)
+                                    .setMinUpdateIntervalMillis(5000)
+                                    .build();
+
+                            java.util.concurrent.Executor executor = java.util.concurrent.Executors.newSingleThreadExecutor();
+
+                            fusedLocationClient.requestLocationUpdates(locationRequest, executor, gmsLocationCallback);
+                        } catch (Exception e) {
+                            // Lint here says this is only available from API 31 but tests show otherwise, working at least on API 30
+                            locationManager.requestLocationUpdates(LocationManager.FUSED_PROVIDER, 5000, 20, fusedLocationListener);
                         }
                         subscribedToLocationUpdates = true;
                     }
@@ -506,8 +497,8 @@ public class GeofenceService extends Service {
                         String geos = getFileContent("notification_settings.json");
                         if (geos != null) {
                             try {
-                                geofenceInfos = new JSONObject(geos);
-                                if (geofenceInfos.length() == 0) {
+                                geofenceInfo = new JSONObject(geos);
+                                if (geofenceInfo.length() == 0) {
                                     log("No geofences are active");
                                     isManuallyStopped = true;
                                     onDestroy();
@@ -515,9 +506,9 @@ public class GeofenceService extends Service {
                                 }
 
                                 boolean anyOn = false;
-                                for (Iterator<String> it = geofenceInfos.keys(); it.hasNext(); ) {
+                                for (Iterator<String> it = geofenceInfo.keys(); it.hasNext(); ) {
                                     String key = it.next();
-                                    JSONObject geofence = geofenceInfos.getJSONObject(key);
+                                    JSONObject geofence = geofenceInfo.getJSONObject(key);
                                     if (geofence.has("m") && geofence.getInt("m") != 1) continue;
                                     if (!geofence.has("e") || geofence.getInt("e") != 3) continue;
                                     if (!geofence.has("g") || geofence.getJSONArray("g").length() == 0) continue;
@@ -554,7 +545,7 @@ public class GeofenceService extends Service {
                     // if lastLocationUpdate is > 10m ago, restart listener
                     if (lastLocationUpdate != 0 && System.currentTimeMillis() - lastLocationUpdate > 10 * 60 * 1000) {
                         try {
-                            locationManager.removeUpdates(locationListener);
+                            locationManager.removeUpdates(fusedLocationListener);
                         } catch (Exception ignored) {
                         }
                         subscribedToLocationUpdates = false;
@@ -632,8 +623,6 @@ public class GeofenceService extends Service {
             return null;
         }
     }
-
-
 
 
 }

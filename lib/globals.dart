@@ -170,7 +170,7 @@ abstract class Globals {
                 var futures = <Future>[];
                 for (var server in servers) {
                   futures.add(
-                    Request('personSetLocation', {'a': location.coords.latitude, 'o': location.coords.longitude, 't': now.millisecondsSinceEpoch}, server).emit(true),
+                    Request('personSetLocation', {'a': location.coords.latitude, 'o': location.coords.longitude}, server).emit(true),
                   );
                 }
 
@@ -219,7 +219,7 @@ abstract class Globals {
                     var futures = <Future>[];
                     for (var server in servers) {
                       futures.add(
-                        Request('personSetLocation', {'a': lat, 'o': lon, 't': DateTime.now().millisecondsSinceEpoch}, server).emit(true),
+                        Request('personSetLocation', {'a': lat, 'o': lon}, server).emit(true),
                       );
                     }
 
