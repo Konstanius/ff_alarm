@@ -21,6 +21,7 @@ Backend:
 
 Bereitschaft:
   - Swift Background Fetch never triggers
+  - Android background fetch has issues (location gets outdated / service stops and doesnt restart / app cant start (crashes on start when service is running))
 
 Sonstige Features:
   - Umfragen, Termine, Personalmangel, Einsatzberichte

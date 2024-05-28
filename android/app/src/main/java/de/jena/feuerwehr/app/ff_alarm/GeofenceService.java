@@ -42,6 +42,7 @@ public class GeofenceService extends Service {
     private HandlerThread handlerThread;
     private Handler handler;
     private boolean isRunning = false;
+    private boolean isManuallyStopped = false;
     private String applicationSupportDirectory;
 
     @Nullable
@@ -72,10 +73,13 @@ public class GeofenceService extends Service {
 
         handler.post(runnableCode);
         log("GeofenceService has started");
+
+        onStartCommand(null, -1, -1);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        WatchdogReceiver.enqueue(this);
         return START_STICKY;
     }
 
@@ -83,8 +87,24 @@ public class GeofenceService extends Service {
     public void onDestroy() {
         super.onDestroy();
 
-        Intent intent = new Intent(this, de.jena.feuerwehr.app.GeofenceService.class);
-        stopService(intent);
+        if (!isManuallyStopped) {
+            WatchdogReceiver.enqueue(this);
+        }
+
+        try {
+            Intent intent = new Intent(this, de.jena.feuerwehr.app.GeofenceService.class);
+            stopService(intent);
+        } catch (Exception e) {
+            log("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        try {
+            stopForeground(true);
+        } catch (Exception e) {
+            log("Error: " + e.getMessage());
+            e.printStackTrace();
+        }
 
         isRunning = false;
         locationManager.removeUpdates(locationListener);
@@ -119,6 +139,7 @@ public class GeofenceService extends Service {
             ServiceCompat.startForeground(this, serviceNotificationId, notification.build(), serviceCode);
         } catch (Exception e) {
             log("GeofenceService failed to update notification");
+            isManuallyStopped = true;
             onDestroy();
         }
     }
@@ -192,12 +213,14 @@ public class GeofenceService extends Service {
             String prefsContent = getFileContent("prefs/main.json");
             if (prefsContent == null) {
                 log("Error reading prefs file");
+                isManuallyStopped = true;
                 onDestroy();
                 return;
             }
 
             JSONObject prefs = new JSONObject(prefsContent);
             if (!prefs.has("registered_users")) {
+                isManuallyStopped = true;
                 onDestroy();
                 return;
             }
@@ -227,6 +250,7 @@ public class GeofenceService extends Service {
             }
 
             if (serverInfos.isEmpty()) {
+                isManuallyStopped = true;
                 onDestroy();
                 return;
             }
@@ -282,6 +306,7 @@ public class GeofenceService extends Service {
             updateNotification(newBody);
 
             if (activeServers.isEmpty()) {
+                isManuallyStopped = true;
                 onDestroy();
                 return;
             }
@@ -478,6 +503,7 @@ public class GeofenceService extends Service {
                     File geofencesFile = new File(applicationSupportDirectory, "notification_settings.json");
                     if (!geofencesFile.exists()) {
                         log("Geofences file does not exist");
+                        isManuallyStopped = true;
                         onDestroy();
                         return;
                     }
@@ -490,6 +516,7 @@ public class GeofenceService extends Service {
                                 geofenceInfos = new JSONObject(geos);
                                 if (geofenceInfos.length() == 0) {
                                     log("No geofences are active");
+                                    isManuallyStopped = true;
                                     onDestroy();
                                     return;
                                 }
@@ -507,17 +534,20 @@ public class GeofenceService extends Service {
 
                                 if (!anyOn) {
                                     // no geofences are active
+                                    isManuallyStopped = true;
                                     onDestroy();
                                     return;
                                 }
                             } catch (Exception e) {
                                 log("Error: " + e.getMessage());
                                 e.printStackTrace();
+                                isManuallyStopped = true;
                                 onDestroy();
                                 return;
                             }
                         } else {
                             log("Error reading geofences file");
+                            isManuallyStopped = true;
                             onDestroy();
                             return;
                         }
@@ -525,9 +555,25 @@ public class GeofenceService extends Service {
                         lastFileCheck = System.currentTimeMillis();
                     }
 
-                    // if last update is > 10m ago, send update
+                    // if lastLocationSent is > 10m ago, send update
                     if (lastLocationUpdate != 0 && System.currentTimeMillis() - lastLocationSent > 10 * 60 * 1000) {
                         sendUpdateToServers();
+                    }
+
+                    // if lastLocationUpdate is > 10m ago, restart listener
+                    if (lastLocationUpdate != 0 && System.currentTimeMillis() - lastLocationUpdate > 10 * 60 * 1000) {
+                        try {
+                            locationManager.removeUpdates(locationListener);
+                        } catch (Exception ignored) {
+                        }
+                        subscribedToLocationUpdates = false;
+                        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                        if (locationManager == null) {
+                            updateNotification("Es besteht ein Fehler mit dem Standortdienst.");
+                            log("LocationManager is null");
+                            handler.postDelayed(this, 5000);
+                            return;
+                        }
                     }
 
                     handler.postDelayed(this, 5000);

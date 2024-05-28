@@ -32,16 +32,15 @@
     <application
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:usesCleartextTraffic="true"
-        android:label="FF Alarm">
+        android:label="FF Alarm"
+        android:usesCleartextTraffic="true">
 
         <service
             android:name=".GeofenceService"
-            android:foregroundServiceType="location"
-            android:stopWithTask="false"
             android:directBootAware="true"
-            android:exported="false">
-        </service>
+            android:exported="true"
+            android:foregroundServiceType="location"
+            android:stopWithTask="false" />
 
         <receiver
             android:name=".BootReceiver"
@@ -49,13 +48,19 @@
             android:exported="true">
 
             <intent-filter android:priority="2147483647">
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
-                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
-                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED"/>
-                <category android:name="android.intent.category.DEFAULT"/>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
+
+        <receiver
+            android:name=".WatchdogReceiver"
+            android:enabled="true"
+            android:exported="true" />
 
         <activity
             android:name=".MainActivity"

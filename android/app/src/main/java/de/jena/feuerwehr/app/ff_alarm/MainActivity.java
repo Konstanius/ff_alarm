@@ -30,44 +30,50 @@ public class MainActivity extends FlutterActivity {
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
                 .setMethodCallHandler(
                         (call, result) -> {
-                            switch (call.method) {
-                                case "backgroundData":
-                                    result.success(getBackgroundDataEnabled());
-                                    break;
-                                case "startGeofenceService":
-                                    try {
-                                        Intent intent = new Intent(this, de.jena.feuerwehr.app.GeofenceService.class);
-                                        ContextCompat.startForegroundService(getApplicationContext(), intent);
-                                        result.success(true);
-                                    } catch (Exception e) {
-                                        System.out.println(e.getMessage());
-                                        e.printStackTrace();
-                                        result.error("Service Error", e.getMessage(), null);
-                                    }
-                                    break;
-                                case "checkGeofenceService":
-                                    Context context = getApplicationContext();
-                                    ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-                                    for (ActivityManager.RunningServiceInfo service : activityManager.getRunningServices(Integer.MAX_VALUE)) {
-                                        if (de.jena.feuerwehr.app.GeofenceService.class.getName().equals(service.service.getClassName())) {
+                            try {
+                                switch (call.method) {
+                                    case "backgroundData":
+                                        result.success(getBackgroundDataEnabled());
+                                        break;
+                                    case "startGeofenceService":
+                                        try {
+                                            Intent intent = new Intent(this, de.jena.feuerwehr.app.GeofenceService.class);
+                                            ContextCompat.startForegroundService(getApplicationContext(), intent);
                                             result.success(true);
-                                            return;
+                                        } catch (Exception e) {
+                                            System.out.println(e.getMessage());
+                                            e.printStackTrace();
+                                            result.error("Service Error", e.getMessage(), null);
                                         }
-                                    }
-                                    result.success(false);
-                                    break;
-                                case "stopGeofenceService":
-                                    try {
-                                        Intent intent = new Intent(this, de.jena.feuerwehr.app.GeofenceService.class);
-                                        stopService(intent);
-                                        result.success(true);
-                                    } catch (Exception e) {
-                                        result.error("Service Error", e.getMessage(), null);
-                                    }
-                                    break;
-                                default:
-                                    result.notImplemented();
-                                    break;
+                                        break;
+                                    case "checkGeofenceService":
+                                        Context context = getApplicationContext();
+                                        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+                                        for (ActivityManager.RunningServiceInfo service : activityManager.getRunningServices(Integer.MAX_VALUE)) {
+                                            if (de.jena.feuerwehr.app.GeofenceService.class.getName().equals(service.service.getClassName())) {
+                                                result.success(true);
+                                                return;
+                                            }
+                                        }
+                                        result.success(false);
+                                        break;
+                                    case "stopGeofenceService":
+                                        try {
+                                            Intent intent = new Intent(this, de.jena.feuerwehr.app.GeofenceService.class);
+                                            stopService(intent);
+                                            result.success(true);
+                                        } catch (Exception e) {
+                                            result.error("Service Error", e.getMessage(), null);
+                                        }
+                                        break;
+                                    default:
+                                        result.notImplemented();
+                                        break;
+                                }
+                            } catch (Exception e) {
+                                System.out.println(e.getMessage());
+                                e.printStackTrace();
+                                result.error("Service Error", e.getMessage(), null);
                             }
                         }
                 );
