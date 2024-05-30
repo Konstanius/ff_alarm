@@ -330,6 +330,7 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
       }
       var newStations = await Future.wait(futures);
       if (!mounted) return;
+      int prevLength = stations.length;
       setState(() {
         for (var station in newStations) {
           if (station != null) {
@@ -341,6 +342,16 @@ class UnitsScreenState extends State<UnitsScreen> with AutomaticKeepAliveClientM
         }
         stations.removeWhere((s) => ids.contains(s.id));
       });
+      int newLength = stations.length;
+      if (prevLength != newLength) {
+        StationInterface.getNotifyInformation(stations.map((e) => e.server).toSet().toList()).then((value) {
+          if (!mounted) return;
+          setState(() {
+            notifyInformation = value;
+            notifyInfoTime = DateTime.now();
+          });
+        });
+      }
     } else if (info.type == UpdateType.ui && info.ids.contains("3")) {
       if (Globals.localPersons.isNotEmpty) {
         stations.clear();

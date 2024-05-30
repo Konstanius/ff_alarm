@@ -126,4 +126,24 @@ abstract class StationInterface {
     Station station = Station.fromJson(response.ackData!);
     await Station.update(station, true);
   }
+
+  static Future<String> generateMonitor({required String server, required int stationId, required List<int> units, required String name}) async {
+    Map<String, dynamic> data = {
+      'stationId': stationId,
+      'units': units,
+      'name': name,
+    };
+
+    Request response = await Request('stationGenerateMonitor', data, server).emit(true);
+
+    return response.ackData!['token'];
+  }
+
+  static Future<bool> checkMonitor({required String server, required String token}) async {
+    Map<String, dynamic> data = {'token': token};
+
+    Request response = await Request('stationCheckMonitor', data, server).emit(true);
+
+    return response.ackData!['check'];
+  }
 }

@@ -110,7 +110,9 @@ public class GeofenceService extends Service {
             lastLocationLongitude = location.getLongitude();
             sendUpdateToServers();
         }
-    }    private final LocationListener fusedLocationListener = this::onLocation;
+    }
+
+    private final LocationListener fusedLocationListener = this::onLocation;
 
     @Override
     public void onDestroy() {
@@ -364,7 +366,6 @@ public class GeofenceService extends Service {
     }
 
 
-
     private void removeNotification(int id) {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.cancel(id);
@@ -389,7 +390,6 @@ public class GeofenceService extends Service {
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         notificationManager.notify(id, notification.build());
     }
-
 
 
     private final Runnable runnableCode = new Runnable() {

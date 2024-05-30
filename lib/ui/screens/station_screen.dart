@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:ff_alarm/data/interfaces/person_interface.dart';
 import 'package:ff_alarm/data/interfaces/station_interface.dart';
 import 'package:ff_alarm/data/interfaces/unit_interface.dart';
@@ -5,6 +7,7 @@ import 'package:ff_alarm/data/models/person.dart';
 import 'package:ff_alarm/data/models/station.dart';
 import 'package:ff_alarm/data/models/unit.dart';
 import 'package:ff_alarm/globals.dart';
+import 'package:ff_alarm/link/link_session.dart';
 import 'package:ff_alarm/log/logger.dart';
 import 'package:ff_alarm/ui/home/settings_screen.dart';
 import 'package:ff_alarm/ui/screens/person_manage.dart';
@@ -15,7 +18,9 @@ import 'package:ff_alarm/ui/utils/large_card.dart';
 import 'package:ff_alarm/ui/utils/no_data.dart';
 import 'package:ff_alarm/ui/utils/toasts.dart';
 import 'package:ff_alarm/ui/utils/updater.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 import 'package:loader_overlay/loader_overlay.dart';
 import 'package:map_launcher/map_launcher.dart';
@@ -275,6 +280,213 @@ class StationPageState extends State<StationPage> with Updates {
                     ),
                   ],
                 );
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.monitor_outlined),
+              onPressed: () async {
+                // Process:
+                // Select the units that should be monitored
+                List<Unit> unitSelection = [];
+                List<Unit>? result = await generalDialog(
+                  color: Colors.blue,
+                  title: 'Einheiten auswählen',
+                  content: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        const Center(
+                          child: Row(
+                            children: [
+                              Flexible(child: Text('Wähle die Einheiten aus, die für den Monitor einbezogen werden sollen.')),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        StatefulBuilder(
+                          builder: (context, sbSetState) {
+                            return ListView.builder(
+                              itemCount: units!.length,
+                              shrinkWrap: true,
+                              itemBuilder: (context, index) {
+                                var unit = units![index];
+                                return Card(
+                                  clipBehavior: Clip.antiAliasWithSaveLayer,
+                                  elevation: 2,
+                                  margin: const EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                                  child: ListTile(
+                                    selected: unitSelection.contains(unit),
+                                    onTap: () {
+                                      sbSetState(() {
+                                        if (unitSelection.contains(unit)) {
+                                          unitSelection.remove(unit);
+                                        } else {
+                                          unitSelection.add(unit);
+                                        }
+                                      });
+                                    },
+                                    title: Text(unit.callSign),
+                                    subtitle: Column(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Flexible(child: Text("${unit.unitDescription}   ( ${unit.positionsDescription} )")),
+                                          ],
+                                        ),
+                                        () {
+                                          int count = 0;
+                                          for (var person in persons!) {
+                                            if (person.allowedUnitProperIds.contains(unit.id)) {
+                                              count++;
+                                            }
+                                          }
+
+                                          return Row(
+                                            children: [
+                                              Flexible(child: Text('Personen:  $count')),
+                                            ],
+                                          );
+                                        }(),
+                                      ],
+                                    ),
+                                    trailing: () {
+                                      return Icon(
+                                        unitSelection.contains(unit) ? Icons.check_circle_outlined : Icons.check_circle_outline,
+                                        color: unitSelection.contains(unit) ? Colors.green : Colors.grey,
+                                      );
+                                    }(),
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  actions: [
+                    DialogActionButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      text: 'Abbrechen',
+                    ),
+                    DialogActionButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(unitSelection);
+                      },
+                      text: 'Fortfahren',
+                    ),
+                  ],
+                );
+                if (result == null || result.isEmpty) return;
+
+                // Ask for a name for the monitor session
+                TextEditingController controller = TextEditingController();
+                String? text = await generalDialog(
+                  color: Colors.blue,
+                  title: 'Monitor benennen',
+                  content: Column(
+                    children: [
+                      TextField(
+                        controller: controller,
+                        maxLength: 200,
+                        decoration: const InputDecoration(
+                          labelText: 'Name',
+                          border: OutlineInputBorder(),
+                          counter: SizedBox(),
+                        ),
+                        textCapitalization: TextCapitalization.sentences,
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    DialogActionButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      text: 'Abbrechen',
+                    ),
+                    DialogActionButton(
+                      onPressed: () {
+                        if (controller.text.trim().isEmpty) {
+                          errorToast('Bitte gib einen Namen ein');
+                          return;
+                        }
+                        Navigator.of(context).pop(controller.text.trim());
+                      },
+                      text: 'Fortfahren',
+                    ),
+                  ],
+                );
+                Future.delayed(const Duration(milliseconds: 100)).then((value) => controller.dispose());
+                if (text == null) return;
+
+                // Generate a session for the monitor on the server
+                String token;
+                try {
+                  Globals.context!.loaderOverlay.show();
+                  token = await StationInterface.generateMonitor(
+                    server: station!.server,
+                    stationId: station!.idNumber,
+                    units: result.map((e) => e.idNumber).toList(),
+                    name: text,
+                  );
+                  Globals.context!.loaderOverlay.hide();
+                } catch (e, s) {
+                  Globals.context!.loaderOverlay.hide();
+                  exceptionToast(e, s);
+                  return;
+                }
+
+                // Scan the monitor QR code
+                String? scanResult = await Navigator.of(Globals.context!).push(MaterialPageRoute(builder: (context) => const QRScannerPage()));
+                if (scanResult == null) return;
+
+                LinkSession session;
+                try {
+                  session = LinkSession.importData(scanResult);
+                  Globals.context!.loaderOverlay.show();
+                  await session.updateContent(content: station!.descriptiveName);
+                  Globals.context!.loaderOverlay.hide();
+                } catch (e, s) {
+                  exceptionToast(e, s);
+                  return;
+                }
+
+                // Export the generated monitor onto the ghostbin
+                Map<String, dynamic> data = {
+                  'token': token,
+                  'server': station!.server,
+                };
+                try {
+                  Globals.context!.loaderOverlay.show();
+                  await session.updateContent(content: jsonEncode(data));
+
+                  // Monitor will fetch the session and connect to the server
+                  // Try for up to 10 seconds with the server to check if the monitor was added -> if not, fail
+                  int counter = 10;
+                  while (counter > 0) {
+                    await Future.delayed(const Duration(seconds: 1));
+                    bool checkedIn = await StationInterface.checkMonitor(server: station!.server, token: token);
+                    if (checkedIn) break;
+                    counter--;
+
+                    if (counter == 0) {
+                      errorToast('Zeitüberschreitung beim Hinzufügen des Monitors.');
+                      Globals.context!.loaderOverlay.hide();
+                      return;
+                    }
+                  }
+
+                  Globals.context!.loaderOverlay.hide();
+                  successToast('Monitor erfolgreich hinzugefügt und aktiviert!');
+                } catch (e, s) {
+                  Globals.context!.loaderOverlay.hide();
+                  exceptionToast(e, s);
+                  return;
+                }
               },
             ),
           ],

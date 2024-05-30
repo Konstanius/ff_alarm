@@ -8,7 +8,6 @@ Distanzen:
   - (möglicherweise)
 
 Allgemein:
-  - Android FCM manchmal nicht zugestellt (King Kong 3 / Turid Handy)
   - externe TETRA API aufbauen
   - Web Admin Panel fertigstellen
   - Einsatzmonitor via Raspberry Pi ODER Android TV App -> https://github.com/ardera/flutter-pi
@@ -19,9 +18,11 @@ Benachrichtigungen:
 Backend:
   - SSL setup manual / with certbot
 
+Alarmierungen:
+  - Verlauf an Einheiten für jede Alarmierung -> Wann welche Einheiten dazu, wann welche abgezogen (negative Id für Abzug)
+
 Bereitschaft:
-  - Swift Background Fetch never triggers
-  - Android background fetch has issues (location gets outdated / service stops and doesnt restart / app cant start (crashes on start when service is running))
+  - Swift Background Fetch never triggers -> geofences location doesnt update when not moving
 
 Sonstige Features:
   - Umfragen, Termine, Personalmangel, Einsatzberichte
